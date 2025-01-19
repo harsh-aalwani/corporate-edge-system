@@ -1,17 +1,30 @@
-// index.js
-import express from "express";
-import cors from "cors";
-import { PORT } from "./config.js";
-import DiscordAnnounceRoutes from "./routes/DiscordAnnounceRoutes.js";
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import { PORT, mongoURI } from './config.js';
+import userRoutes from './routes/userRoutes.js';
+import { sessionMiddleware } from './middleware/sessionMiddleware.js';
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://localhost:3001'], // Update with your frontend URLs
+  credentials: true, // Allow cookies to be sent
+};
 
-// Routes
-app.use("/api/discord", DiscordAnnounceRoutes);
+app.use(cors(corsOptions)); // CORS middleware
+app.use(express.json()); // Body parser middleware
+app.use(sessionMiddleware); // Session middleware (must be before routes)
+app.use('/api/users', userRoutes); // Routes
+app.use((req, res, next) => {
+  console.log('Session object:', req.session); // Log session object
+  next();
+});
 
-// Start the server
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// Database connection
+mongoose
+  .connect(mongoURI)
+  .then(() => {
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  })
+  .catch((err) => console.error('MongoDB connection error:', err));

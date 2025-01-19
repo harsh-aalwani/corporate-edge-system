@@ -1,13 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import Form from './FormAnnouncement';
+import App from './App';
+import { SnackbarProvider } from 'notistack';
 import reportWebVitals from './reportWebVitals';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <Form/>
+    <SnackbarProvider>
+      <App />
+    </SnackbarProvider>
   </React.StrictMode>
 );
 
