@@ -12,13 +12,13 @@ const Login = () => {
 
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
-
+  
     // Check if the email and password are not empty
     if (!email || !password) {
       enqueueSnackbar('Please enter both email and password', { variant: 'error' });
       return;
     }
-
+  
     try {
       const response = await fetch('http://localhost:5000/api/users/login', {
         method: 'POST',
@@ -26,14 +26,20 @@ const Login = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ userEmail: email, userPassword: password }),
+        credentials: 'include', // Include credentials for session management
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
-        localStorage.setItem('isLoggedIn', 'true');
+        // On successful login, store the userId and userRoleid in cookies
+        document.cookie = `userId=${data.userId}; path=/; max-age=3600`; // Expires in 1 hour
+        document.cookie = `userRoleid=${data.userRoleid}; path=/; max-age=3600`;
+  
         enqueueSnackbar('Login successful!', { variant: 'success' });
-        navigate('/SuperAdminDashboard'); // Redirect to the Dashboard
+  
+        // Redirect based on role or to default page
+        navigate(data.redirect || '/dashboard'); // Adjust to your redirect logic
       } else {
         enqueueSnackbar(data.message || 'Login failed!', { variant: 'error' });
       }
@@ -42,6 +48,7 @@ const Login = () => {
       enqueueSnackbar('An error occurred during login', { variant: 'error' });
     }
   };
+  
 
   return (
     <StyledWrapper>

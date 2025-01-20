@@ -10,6 +10,7 @@ import supportIcon from '../../website-settings/img/ces_logo_nobg.png';
 import "./CommonTemplate.css";
 // Sidebar JS
 import useSidebarLogic from '../../assets/js/useSidebar.js';
+import UserActivityHandler from '../Main/UserActivityHandler.js';
 
 const CommonTemplate = ({ children }) => {
   const navigate = useNavigate();
@@ -19,32 +20,37 @@ const CommonTemplate = ({ children }) => {
       behavior: 'smooth',
     });
   };
+
   useSidebarLogic();
+  UserActivityHandler();
+
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
   const [fullName, setFullName] = useState('');
-
+  const [userEmail, setUserEmail] = useState('');
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/users/profile', {
           credentials: 'include', // Include session cookie
         });
-  
+
         if (response.ok) {
           const data = await response.json();
-          setFullName(data.data?.fullName); // Safely access fullName
+          setFullName(data.fullName);
+          setUserEmail(data.userEmail);
         } else {
           const errorData = await response.json();
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
+        
       } catch (error) {
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
       }
     };
-  
+
     fetchProfile();
-  }, [enqueueSnackbar]);  
+  }, [enqueueSnackbar]);
 
   const handleLogout = async () => {
     try {
@@ -57,7 +63,11 @@ const CommonTemplate = ({ children }) => {
   
       if (response.ok) {
         // Logout was successful, clear any local states or caches (if necessary)
-        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('isLoggedIn');  // Clear the login state if needed
+        document.cookie = 'userId=; path=/; max-age=0'; // Clear user cookies
+        document.cookie = 'userRoleid=; path=/; max-age=0'; // Clear role cookies
+        enqueueSnackbar('Logout successful', { variant: 'success' });
+  
         navigate('/Login');  // Redirect to login page after logout
       } else {
         enqueueSnackbar(data.message || 'Failed to log out. Please try again.', { variant: 'error' });
@@ -68,7 +78,6 @@ const CommonTemplate = ({ children }) => {
     }
   };
   
-
   return (
     <div className={`wrapper`}>
       {/* Sidebar */}
@@ -99,7 +108,7 @@ const CommonTemplate = ({ children }) => {
                 <h4 className="text-section">Components</h4>
               </li>
               <li className="nav-item active">
-                <Link to="/SuperAdminDashboard" className="collapsed">
+                <Link to="/dashboard" className="collapsed">
                   <i className="fas fa-home"></i>
                   <p>Dashboard</p>
                 </Link>
@@ -290,34 +299,30 @@ const CommonTemplate = ({ children }) => {
                   href="#"
                   aria-expanded="false"
                 >
-                  <div className="avatar-sm">
+                  {/* <div className="avatar-sm">
                     <img
                       alt="Profile"
                       className="avatar-img rounded-circle"
                     />
-                  </div>
+                  </div> */}
                   <span className="profile-username">
-                    <span className="op-7">Hi,</span>
-                    <span className="fw-bold">{fullName|"User"}</span>
+                    <span className="op-7">Hi, </span>
+                    <span className="fw-bold">{fullName.split(' ')[0]}</span>
                   </span>
                 </a>
                 <ul className="dropdown-menu dropdown-user animated fadeIn">
                   <div className="dropdown-user-scroll scrollbar-outer">
                     <li>
                       <div className="user-box">
-                        <div className="avatar-lg">
+                        {/* <div className="avatar-lg">
                           <img
                             alt="User"
                             className="avatar-img rounded"
                           />
-                        </div>
+                        </div> */}
                         <div className="u-text">
-                          <h4>User</h4>
-                          <p className="text-muted">hello@example.com</p>
-                          <a href="
-                          .html" className="btn btn-xs btn-secondary btn-sm">
-                            View Profile
-                          </a>
+                          <h4 className="fw-bold">{fullName }</h4>
+                          <p className="text-muted">{userEmail}</p>
                         </div>
                       </div>
                     </li>
