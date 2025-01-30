@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import CommonTemplate from "../../../components/SuperAdmin/CommonTemplate";
+import SUTemplate from "../../../components/SuperAdmin/SUTemplate";
 import DepartmentHead from "../../../components/Main/Manage/DepartmentHead";
 
 const MngDepartmentManager = () => {
   return (
-    <CommonTemplate>
+    <SUTemplate>
       <DepartmentHead />
-    </CommonTemplate>
+    </SUTemplate>
   );
 };
 

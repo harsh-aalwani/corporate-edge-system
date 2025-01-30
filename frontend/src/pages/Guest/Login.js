@@ -1,54 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack'; // Import useSnackbar
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
+  const navigate = useNavigate(); // useNavigate should work because it's inside Router context
+  const { enqueueSnackbar } = useSnackbar(); // For notifications
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Check if user is already logged in (via userRoleid in localStorage)
+  useEffect(() => {
+    const userRoleid = localStorage.getItem('userRoleid');
+    if (userRoleid) {
+      navigate('/dashboard'); // Redirect to dashboard if already logged in
+    }
+  }, [navigate]);
+
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
-  
-    // Check if the email and password are not empty
+
+    // Validate email and password
     if (!email || !password) {
       enqueueSnackbar('Please enter both email and password', { variant: 'error' });
       return;
     }
-  
+
     try {
       const response = await fetch('http://localhost:5000/api/users/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userEmail: email, userPassword: password }),
         credentials: 'include', // Include credentials for session management
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
-        // On successful login, store the userId and userRoleid in cookies
-        document.cookie = `userId=${data.userId}; path=/; max-age=3600`; // Expires in 1 hour
-        document.cookie = `userRoleid=${data.userRoleid}; path=/; max-age=3600`;
-  
         enqueueSnackbar('Login successful!', { variant: 'success' });
-  
-        // Redirect based on role or to default page
-        navigate(data.redirect || '/dashboard'); // Adjust to your redirect logic
+        // Save the user role in localStorage
+        localStorage.setItem('userRoleid', data.userRoleid);
+        navigate('/dashboard'); // Redirect to dashboard after login
       } else {
         enqueueSnackbar(data.message || 'Login failed!', { variant: 'error' });
       }
     } catch (error) {
-      console.error('Error during login:', error);
       enqueueSnackbar('An error occurred during login', { variant: 'error' });
     }
   };
-  
 
   return (
     <StyledWrapper>

@@ -6,45 +6,28 @@ import User from '../models/userModel.js';
 export const loginUser = async (req, res) => {
   const { userEmail, userPassword } = req.body;
 
-  if (!userEmail || !userPassword) {
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
-
-  if (!validator.isEmail(userEmail)) {
-    return res.status(400).json({ message: 'Invalid email format' });
+  // Input validation and sanitization
+  if (!userEmail || !userPassword || !validator.isEmail(userEmail)) {
+    return res.status(400).json({ message: 'Invalid input' });
   }
 
   const sanitizedEmail = validator.normalizeEmail(userEmail);
 
   try {
     const user = await User.findOne({ userEmail: sanitizedEmail });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isPasswordValid = await bcrypt.compare(userPassword, user.userPassword);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
+    if (!isPasswordValid) return res.status(401).json({ message: 'Invalid credentials' });
+
+    // Create session
+    req.session.userId = user.userId;
+    req.session.userRoleid = user.userRoleid;
 
     // Update user status to online
     user.userStatus = true;
     await user.save();
 
-    // Set cookies for userId and userRoleid
-    res.cookie('userId', user.userId, {
-      secure: false,  // Set to false for local development (HTTPS not used)
-      sameSite: 'Strict', // Prevent CSRF attacks
-      maxAge: 24 * 60 * 60 * 1000 // Cookie expiry set to 1 day
-    });
-
-    res.cookie('userRoleid', user.userRoleid, {
-      secure: false, // Only in development
-      sameSite: 'Strict', 
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    });
-    
-    console.log(req.cookies.userId);
     return res.status(200).json({
       message: 'Login successful',
       userId: user.userId,
@@ -56,9 +39,10 @@ export const loginUser = async (req, res) => {
   }
 };
 
+
 export const logoutUser = async (req, res) => {
   try {
-    const userId = req.cookies.userId || req.body.userId; // Support cookies or body payload
+    const userId = req.session.userId;
     if (!userId) {
       return res.status(401).json({ message: 'User not logged in' });
     }
@@ -72,9 +56,10 @@ export const logoutUser = async (req, res) => {
     user.userStatus = false;
     await user.save();
 
-    // Clear cookies (optional for manual logout)
+    // Clear cookies and destroy session
     res.clearCookie('userId');
     res.clearCookie('roleId');
+    req.session.destroy(); // Destroy session
 
     return res.status(200).json({ message: 'User logged out successfully' });
   } catch (error) {
@@ -82,7 +67,6 @@ export const logoutUser = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 
 export const updateUserStatus = async (req, res) => {
   try {
@@ -107,29 +91,40 @@ export const updateUserStatus = async (req, res) => {
 };
 export const getUserProfile = async (req, res) => {
   try {
-    // Retrieve the userId from the cookie
-    const userId = req.cookies.userId; 
+      // Check if session contains userId
+      if (!req.session.userId) {
+          return res.status(401).json({ message: 'Unauthorized. Please log in.' });
+      }
 
-    console.log(req.cookies.userId);
-    // If userId does not exist in cookies, return an error response
-    if (!userId) {
-      return res.status(400).json({ message: 'User not authenticated' });
-    }
+      // Find user by userId from session
+      const user = await User.findOne({ userId: req.session.userId });
 
-    // Fetch the user from the database using the userId as a string
-    const user = await User.findOne({ userId: userId });
-    console.log(user);
-    // If no user is found, return an error response
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+      // If user not found
+      if (!user) {
+          return res.status(404).json({ message: 'User not found.' });
+      }
 
-    // Return the user's full name
-    res.status(200).json({ fullName: user.fullName , userEmail: user.userEmail });
+      // Send user data (you can send fullName or other user info as needed)
+      res.status(200).json({
+          data: {
+              fullName: user.fullName,
+              userEmail: user.userEmail,
+              userMobileNumber: user.userMobileNumber,
+              userDepartment: user.userDepartment,
+              // Include other fields as needed
+          }
+      });
   } catch (error) {
-    // Handle errors
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
+// Endpoint to fetch user role from session
+export const getUserRole = (req, res) => {
+  if (!req.session.userRoleid) {
+    return res.status(401).json({ message: 'Not logged in' });
+  }
+
+  res.status(200).json({ userRoleid: req.session.userRoleid });
+};

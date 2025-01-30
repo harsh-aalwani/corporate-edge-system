@@ -1,36 +1,44 @@
-// App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
-import { SnackbarProvider } from 'notistack';  // Import SnackbarProvider
-import Cookies from 'js-cookie';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { SnackbarProvider } from 'notistack';
+import Loader from './components/Main/Loader';
+import ProtectedRoute from './components/Main/ProtectedRoute';
 
+// Guest Pages
 import Home from './pages/Guest/Home';
 import Login from './pages/Guest/Login';
+
+
 // SuperAdmin Modules
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
+
 import SuperAdminManageSystemAdmin from './pages/SuperAdmin/Manage/MngSystemAdmin';
 import SuperAdminManageHRManager from './pages/SuperAdmin/Manage/MngHRManager';
-import SuperAdminManageDepartmentHead from './pages/SuperAdmin/Manage/MngDepartmentManager';
-import SuperAdminManageEmployee from './pages/SuperAdmin/Manage/MngEmployee';
+import SuperAdminManageDepartmentManager from './pages/SuperAdmin/Manage/MngDepartmentManager';
 import SuperAdminManageProjectManager from './pages/SuperAdmin/Manage/MngProjectManager';
+import SuperAdminManageEmployee from './pages/SuperAdmin/Manage/MngEmployee';
 
-import ProtectedRoute from './components/Main/ProtectedRoute';
-import Loader from './components/Main/Loader';  // Import Loader component
+//SystemAdmin Modules
+import SystemAdminDashboard from './pages/SystemAdmin/Dashboard';
+
+//HRManager Modules
+import HRManagerDashboard from './pages/HRManager/Dashboard';
+
+//Department Modules
+import DepartmentManagerDashboard from './pages/DepartmentManager/Dashboard';
+
+//EmployeeDashboard Modules
+import EmployeeDashboard from './pages/Employee/Dashboard';
 
 const App = () => {
-  const [userRole, setUserRole] = useState(null);  // Store the user role
-  const [isLoading, setIsLoading] = useState(true);  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch the user role from cookies
-    const role = Cookies.get('userRoleid');
-    setUserRole(role);  // Set user role
-    setIsLoading(false);  // Stop loading once role is fetched
+    setIsLoading(false);
   }, []);
 
   if (isLoading) {
-    return <Loader />;  // Show loader while the role is being fetched
+    return <Loader />;
   }
 
   return (
@@ -39,59 +47,88 @@ const App = () => {
         <Routes>
           {/* Guest Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/Login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
-          {/* Protected Route for /dashboard */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute requiredRoles={[userRole]}>
-                {userRole === 'R1' && <SuperAdminDashboard />}
-              </ProtectedRoute>
+          {/* Role-Based Dashboards */}
+          <Route path="/dashboard" element={<ProtectedRoute requiredRoles={['R1', 'R2', 'R3', 'R4', 'R5']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (userRole) {
+                case 'R1': return <SuperAdminDashboard />;
+                case 'R2': return <SystemAdminDashboard />;
+                case 'R3': return <HRManagerDashboard />;
+                case 'R4': return <DepartmentManagerDashboard />;
+                case 'R5': return <EmployeeDashboard />;
+                default: return <Navigate to="/login" />;
+              }
             }
-          />
+          } />} />
 
-          {/* Additional Routes with role-based access */}
-          <Route
-            path="/ManageSystemAdmin"
-            element={
-              <ProtectedRoute requiredRoles={['R1', 'R2']}>
-                {userRole === 'R1' && <SuperAdminManageSystemAdmin />}
-              </ProtectedRoute>
+          {/* ManageSystemAdmin */}
+          <Route path="/ManageSystemAdmin" element={<ProtectedRoute requiredRoles={['R1']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (userRole) {
+                case 'R1': return <SuperAdminManageSystemAdmin />;
+                // case 'R2': return <SystemAdminPlusManageSystemAdmin />;
+                default: return <Navigate to="/login" />;
+              }
             }
-          />
-          <Route
-            path="/ManageHRManager"
-            element={
-              <ProtectedRoute requiredRoles={['R1']}>
-                {userRole === 'R1' && <SuperAdminManageHRManager />}
-              </ProtectedRoute>
+          } />} />
+          
+          {/* ManageHRManager */}
+          <Route path="/ManageHRManager" element={<ProtectedRoute requiredRoles={['R1','R2']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (userRole) {
+                case 'R1': return <SuperAdminManageHRManager />;
+                // case 'R2': return <SystemAdminManageHRManager />;
+                default: return <Navigate to="/login" />;
+              }
             }
-          />
-          <Route
-            path="/ManageDepartmentHead"
-            element={
-              <ProtectedRoute requiredRoles={['R1']}>
-                {userRole === 'R1' && <SuperAdminManageDepartmentHead />}
-              </ProtectedRoute>
+          } />} />
+
+          {/* ManageDepartmentManager */}
+          <Route path="/ManageDepartmentManager" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (userRole) {
+                case 'R1': return <SuperAdminManageDepartmentManager />;
+                // case 'R2': return <SystemAdminManageDepartmentManager />;
+                // case 'R3': return <HRManagerManageDepartmentManager />;
+                default: return <Navigate to="/login" />;
+              }
             }
-          />
-          <Route
-            path="/ManageEmployee"
-            element={
-              <ProtectedRoute requiredRoles={['R1', 'R2', 'R3']}>
-                {userRole === 'R1' && <SuperAdminManageEmployee />}
-              </ProtectedRoute>
+          } />} />
+
+          {/* ManageProjectManager */}
+          <Route path="/ManageProjectManager" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (userRole) {
+                case 'R1': return <SuperAdminManageDepartmentManager />;
+                // case 'R2': return <SystemAdminManageProjectManager />;
+                // case 'R3': return <HRManagerManageProjectManager />;
+                // case 'R4': return <DepartmentManagerManageProjectManager />;
+                default: return <Navigate to="/login" />;
+              }
             }
-          />
-          <Route
-            path="/ManageProjectManager"
-            element={
-              <ProtectedRoute requiredRoles={['R1', 'R2']}>
-                {userRole === 'R1' && <SuperAdminManageProjectManager />}
-              </ProtectedRoute>
+          } />} />
+
+          {/* ManageEmployee */}
+          <Route path="/ManageEmployee" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (userRole) {
+                case 'R1': return <SuperAdminManageEmployee />;
+                // case 'R2': return <SystemAdminManageEmployee />;
+                // case 'R3': return <HRManagerManageEmployee />;
+                // case 'R4': return <DepartmentManagerManageEmployee />;
+                default: return <Navigate to="/login" />;
+              }
             }
-          />
+          } />} />
+
         </Routes>
       </Router>
     </SnackbarProvider>

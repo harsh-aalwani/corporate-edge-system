@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import CommonTemplate from "../../../components/SuperAdmin/CommonTemplate";
+import SUTemplate from "../../../components/SuperAdmin/SUTemplate";
 import HRManager from "../../../components/Main/Manage/HRManager";
 
 const MngHRManager = () => {
   return (
-    <CommonTemplate>
+    <SUTemplate>
       <HRManager />
-    </CommonTemplate>
+    </SUTemplate>
   );
 };
 

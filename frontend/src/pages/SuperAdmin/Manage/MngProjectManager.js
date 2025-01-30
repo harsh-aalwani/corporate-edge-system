@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import CommonTemplate from "../../../components/SuperAdmin/CommonTemplate";
+import SUTemplate from "../../../components/SuperAdmin/SUTemplate";
 import ProjectManagers from "../../../components/Main/Manage/ProjectManager";
 const MngHRManager = () => {
   return (
-    <CommonTemplate>
+    <SUTemplate>
       <ProjectManagers />
-    </CommonTemplate>
+    </SUTemplate>
   );
 };
 

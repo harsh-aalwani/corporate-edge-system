@@ -7,13 +7,16 @@ import '../../assets/css/fonts.min.css';
 import '../../assets/css/MainStyle.min.css';
 import logo from '../../website-settings/img/custom_logo.png';
 import supportIcon from '../../website-settings/img/ces_logo_nobg.png';
-import "./CommonTemplate.css";
-// Sidebar JS
+import "../../assets/css/Main/CommonTemplate.css";
+// Required Hooks and Components
 import useSidebarLogic from '../../assets/js/useSidebar.js';
-import UserActivityHandler from '../Main/UserActivityHandler.js';
+import UserActivityHandler from '../../components/Main/UserActivityHandler.js'; // Import UserActivityHandler
 
-const CommonTemplate = ({ children }) => {
+const SUTemplate = ({ children }) => {
+  const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
   const navigate = useNavigate();
+  const [fullName, setFullName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const backToTop = () => {
     window.scrollTo({
       top: 0,
@@ -22,11 +25,7 @@ const CommonTemplate = ({ children }) => {
   };
 
   useSidebarLogic();
-  UserActivityHandler();
 
-  const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
-  const [fullName, setFullName] = useState('');
-  const [userEmail, setUserEmail] = useState('');
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -36,13 +35,16 @@ const CommonTemplate = ({ children }) => {
 
         if (response.ok) {
           const data = await response.json();
-          setFullName(data.fullName);
-          setUserEmail(data.userEmail);
+          if (data && data.data) {
+            setFullName(data.data.fullName);
+            setUserEmail(data.data.userEmail);
+          } else {
+            enqueueSnackbar('Profile data is missing.', { variant: 'error' });
+          }
         } else {
           const errorData = await response.json();
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
-        
       } catch (error) {
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
@@ -50,34 +52,8 @@ const CommonTemplate = ({ children }) => {
     };
 
     fetchProfile();
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar]); 
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/users/logout', {
-        method: 'POST',
-        credentials: 'include',  // Ensure session cookie is sent with the request
-      });
-  
-      const data = await response.json();  // Parse JSON response
-  
-      if (response.ok) {
-        // Logout was successful, clear any local states or caches (if necessary)
-        localStorage.removeItem('isLoggedIn');  // Clear the login state if needed
-        document.cookie = 'userId=; path=/; max-age=0'; // Clear user cookies
-        document.cookie = 'userRoleid=; path=/; max-age=0'; // Clear role cookies
-        enqueueSnackbar('Logout successful', { variant: 'success' });
-  
-        navigate('/Login');  // Redirect to login page after logout
-      } else {
-        enqueueSnackbar(data.message || 'Failed to log out. Please try again.', { variant: 'error' });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      enqueueSnackbar('An error occurred. Please try again later.', { variant: 'error' });
-    }
-  };
-  
   return (
     <div className={`wrapper`}>
       {/* Sidebar */}
@@ -344,7 +320,7 @@ const CommonTemplate = ({ children }) => {
                     </li>
                     <li><div className="dropdown-divider"></div></li>
                     <li>
-                      <button className="dropdown-item" onClick={handleLogout}>Logout</button>
+                        <UserActivityHandler/>
                     </li>
                   </div>
                 </ul>
@@ -465,4 +441,4 @@ const CommonTemplate = ({ children }) => {
   );
 };
 
-export default CommonTemplate;
+export default SUTemplate;

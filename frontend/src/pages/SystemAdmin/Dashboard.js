@@ -1,4 +1,4 @@
-import SUTemplate from "../../components/SuperAdmin/SUTemplate";
+import SUTemplate from "../../components/SystemAdmin/SYTemplate";
 const Dashboard = () => {
     return (
         <>
