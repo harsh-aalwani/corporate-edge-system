@@ -39,13 +39,16 @@ const SUTemplate = ({ children }) => {
             setFullName(data.data.fullName);
             setUserEmail(data.data.userEmail);
           } else {
+            localStorage.removeItem('userRoleid');
             enqueueSnackbar('Profile data is missing.', { variant: 'error' });
           }
         } else {
           const errorData = await response.json();
+          localStorage.removeItem('userRoleid');
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
       } catch (error) {
+        localStorage.removeItem('userRoleid');
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
       }

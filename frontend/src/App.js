@@ -4,30 +4,29 @@ import { SnackbarProvider } from 'notistack';
 import Loader from './components/Main/Loader';
 import ProtectedRoute from './components/Main/ProtectedRoute';
 
+// Import decryption utility
+import { decryptData } from './utils/decrypt';
+
 // Guest Pages
 import Home from './pages/Guest/Home';
 import Login from './pages/Guest/Login';
 
-
 // SuperAdmin Modules
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
-
 import SuperAdminManageSystemAdmin from './pages/SuperAdmin/Manage/MngSystemAdmin';
 import SuperAdminManageHRManager from './pages/SuperAdmin/Manage/MngHRManager';
 import SuperAdminManageDepartmentManager from './pages/SuperAdmin/Manage/MngDepartmentManager';
 import SuperAdminManageProjectManager from './pages/SuperAdmin/Manage/MngProjectManager';
 import SuperAdminManageEmployee from './pages/SuperAdmin/Manage/MngEmployee';
-
-//SystemAdmin Modules
+import SuperAdminAddUser from './pages/SuperAdmin/Manage/AddUser';
+import SuperAdminEditUser from './pages/SuperAdmin/Manage/EditUser';
+// SystemAdmin Modules
 import SystemAdminDashboard from './pages/SystemAdmin/Dashboard';
-
-//HRManager Modules
+// HRManager Modules
 import HRManagerDashboard from './pages/HRManager/Dashboard';
-
-//Department Modules
+// Department Modules
 import DepartmentManagerDashboard from './pages/DepartmentManager/Dashboard';
-
-//EmployeeDashboard Modules
+// Employee Dashboard Modules
 import EmployeeDashboard from './pages/Employee/Dashboard';
 
 const App = () => {
@@ -52,8 +51,8 @@ const App = () => {
           {/* Role-Based Dashboards */}
           <Route path="/dashboard" element={<ProtectedRoute requiredRoles={['R1', 'R2', 'R3', 'R4', 'R5']} Component={
             () => {
-              const userRole = localStorage.getItem('userRoleid');
-              switch (userRole) {
+            const userRole = localStorage.getItem('userRoleid');
+              switch (decryptData(userRole)) {
                 case 'R1': return <SuperAdminDashboard />;
                 case 'R2': return <SystemAdminDashboard />;
                 case 'R3': return <HRManagerDashboard />;
@@ -64,25 +63,45 @@ const App = () => {
             }
           } />} />
 
-          {/* ManageSystemAdmin */}
-          <Route path="/ManageSystemAdmin" element={<ProtectedRoute requiredRoles={['R1']} Component={
+          {/* Add Form */}
+          <Route path="/AddUser" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
             () => {
               const userRole = localStorage.getItem('userRoleid');
-              switch (userRole) {
-                case 'R1': return <SuperAdminManageSystemAdmin />;
-                // case 'R2': return <SystemAdminPlusManageSystemAdmin />;
+              switch (decryptData(userRole)) {
+                case 'R1': return <SuperAdminAddUser />;
                 default: return <Navigate to="/login" />;
               }
             }
           } />} />
-          
+
+          {/* Edit Form */}
+          <Route path="/EditUser" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (decryptData(userRole)) {
+                case 'R1': return <SuperAdminEditUser />;
+                default: return <Navigate to="/login" />;
+              }
+            }
+          } />} />
+
+          {/* ManageSystemAdmin */}
+          <Route path="/ManageSystemAdmin" element={<ProtectedRoute requiredRoles={['R1']} Component={
+            () => {
+              const userRole = localStorage.getItem('userRoleid');
+              switch (decryptData(userRole)) {
+                case 'R1': return <SuperAdminManageSystemAdmin />;
+                default: return <Navigate to="/login" />;
+              }
+            }
+          } />} />
+
           {/* ManageHRManager */}
           <Route path="/ManageHRManager" element={<ProtectedRoute requiredRoles={['R1','R2']} Component={
             () => {
               const userRole = localStorage.getItem('userRoleid');
-              switch (userRole) {
+              switch (decryptData(userRole)) {
                 case 'R1': return <SuperAdminManageHRManager />;
-                // case 'R2': return <SystemAdminManageHRManager />;
                 default: return <Navigate to="/login" />;
               }
             }
@@ -92,10 +111,8 @@ const App = () => {
           <Route path="/ManageDepartmentManager" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
             () => {
               const userRole = localStorage.getItem('userRoleid');
-              switch (userRole) {
+              switch (decryptData(userRole)) {
                 case 'R1': return <SuperAdminManageDepartmentManager />;
-                // case 'R2': return <SystemAdminManageDepartmentManager />;
-                // case 'R3': return <HRManagerManageDepartmentManager />;
                 default: return <Navigate to="/login" />;
               }
             }
@@ -105,11 +122,8 @@ const App = () => {
           <Route path="/ManageProjectManager" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
             () => {
               const userRole = localStorage.getItem('userRoleid');
-              switch (userRole) {
-                case 'R1': return <SuperAdminManageDepartmentManager />;
-                // case 'R2': return <SystemAdminManageProjectManager />;
-                // case 'R3': return <HRManagerManageProjectManager />;
-                // case 'R4': return <DepartmentManagerManageProjectManager />;
+              switch (decryptData(userRole)) {
+                case 'R1': return <SuperAdminManageProjectManager />;
                 default: return <Navigate to="/login" />;
               }
             }
@@ -119,11 +133,8 @@ const App = () => {
           <Route path="/ManageEmployee" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
             () => {
               const userRole = localStorage.getItem('userRoleid');
-              switch (userRole) {
+              switch (decryptData(userRole)) {
                 case 'R1': return <SuperAdminManageEmployee />;
-                // case 'R2': return <SystemAdminManageEmployee />;
-                // case 'R3': return <HRManagerManageEmployee />;
-                // case 'R4': return <DepartmentManagerManageEmployee />;
                 default: return <Navigate to="/login" />;
               }
             }

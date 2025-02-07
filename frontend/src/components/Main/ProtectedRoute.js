@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+import { decryptData } from '../../utils/decrypt'; // Import decryption function
 
 const ProtectedRoute = ({ requiredRoles, Component }) => {
   const [userRole, setUserRole] = useState(null);
@@ -8,7 +9,9 @@ const ProtectedRoute = ({ requiredRoles, Component }) => {
   useEffect(() => {
     const storedRole = localStorage.getItem('userRoleid');
     if (storedRole) {
-      setUserRole(storedRole);
+      // Decrypt the stored role
+      const decryptedRole = decryptData(storedRole);
+      setUserRole(decryptedRole);
     }
     setIsLoading(false);
   }, []);

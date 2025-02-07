@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import {Link} from 'react-router-dom';
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
 import axios from 'axios';  // Import axios for making HTTP requests
@@ -46,20 +47,20 @@ const HRManager = () => {
   const isRowChecked = (rowId) => checkedRows.includes(rowId);
 
   return (
-    <div className="page-inner page-box page-start" style={{ marginTop: "60px" }}>
+    <div className="page-inner page-box page-start mt-5">
       <div className="d-flex align-items-center align-items-md-center flex-column flex-md-row pt-2 pb-4">
         <div>
           <h4 className="fw-bold mb-3">Manage HR Members</h4> {/* Changed title */}
           <h6 className="op-7 mb-2">Add, Change and Delete HR Members</h6> {/* Updated description */}
         </div>
         <div className="ms-md-auto py-2 py-md-0">
-          <a href="#" className="btn btn-label-info w-100 btn-round mb-2">
+          <Link to="/EditUser" className="btn btn-label-info w-100 btn-round mb-2">
             Edit
-          </a>
+          </Link>
           <br />
-          <a href="#" className="btn btn-primary btn-round me-2">
+          <Link to="/AddUser" className="btn btn-primary btn-round me-2">
             Add
-          </a>
+          </Link>
           <a href="#" className="btn btn-primary btn-round">
             Remove
           </a>

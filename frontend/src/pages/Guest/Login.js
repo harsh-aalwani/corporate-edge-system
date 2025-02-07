@@ -39,8 +39,8 @@ const Login = () => {
 
       if (response.ok) {
         enqueueSnackbar('Login successful!', { variant: 'success' });
-        // Save the user role in localStorage
-        localStorage.setItem('userRoleid', data.userRoleid);
+        const encryptedRole = data.encryptedRole;
+        localStorage.setItem('userRoleid', encryptedRole);
         navigate('/dashboard'); // Redirect to dashboard after login
       } else {
         enqueueSnackbar(data.message || 'Login failed!', { variant: 'error' });

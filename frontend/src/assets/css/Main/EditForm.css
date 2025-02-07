@@ -1,0 +1,97 @@
+/* Applying Roboto font to body */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .edit-user-bg-gradient {
+    background-image: linear-gradient(to right, #4F46E5);
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Form container style */
+  .edit-user-container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    margin: 20px;
+  }
+  
+  .edit-user-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1F2937;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .edit-user-label {
+    font-size: 100%;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+    display: block;
+  }
+  
+  /* Input fields styling */
+  .edit-user-input, .edit-user-select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #4A4A4A;
+    background-color: #F9F9F9;
+  }
+  
+  .edit-user-input:focus, .edit-user-select:focus {
+    border-color: #9333EA;
+    outline: none;
+    box-shadow: 0 0 5px rgba(147, 51, 234, 0.3);
+  }
+  
+  .edit-user-input::placeholder {
+    color: #B3B3B3;
+  }
+  
+  /* Button styling */
+  .edit-user-button {
+    background: linear-gradient(to right, #4F46E5, blue);
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+  }
+  
+  .edit-user-button:hover {
+    background-color: #7C3AED;
+  }
+  
+  /* Responsive form container */
+  @media (max-width: 768px) {
+    .edit-user-container {
+      padding: 1.5rem;
+    }
+  
+    .edit-user-title {
+      font-size: 1.1rem;
+    }
+  
+    .edit-user-input, .edit-user-select, .edit-user-button {
+      font-size: 1rem;
+    }
+  }
+  

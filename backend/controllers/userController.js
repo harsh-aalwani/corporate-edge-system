@@ -2,6 +2,8 @@
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import User from '../models/userModel.js';
+import CryptoJS from 'crypto-js';
+import { COOKIE_SECRET_KEY } from '../config.js';
 
 export const loginUser = async (req, res) => {
   const { userEmail, userPassword } = req.body;
@@ -24,14 +26,17 @@ export const loginUser = async (req, res) => {
     req.session.userId = user.userId;
     req.session.userRoleid = user.userRoleid;
 
+    // Encrypt the userRoleid
+    const encryptedRole = CryptoJS.AES.encrypt(user.userRoleid.toString(), COOKIE_SECRET_KEY).toString();
+
     // Update user status to online
     user.userStatus = true;
     await user.save();
 
+    // Send encrypted role to frontend
     return res.status(200).json({
       message: 'Login successful',
-      userId: user.userId,
-      userRoleid: user.userRoleid,
+      encryptedRole: encryptedRole,  // Send encrypted `userRoleid`
     });
   } catch (error) {
     console.error('Error during login:', error);
@@ -120,11 +125,3 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-// Endpoint to fetch user role from session
-export const getUserRole = (req, res) => {
-  if (!req.session.userRoleid) {
-    return res.status(401).json({ message: 'Not logged in' });
-  }
-
-  res.status(200).json({ userRoleid: req.session.userRoleid });
-};
