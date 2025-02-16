@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { decryptData } from '../../utils/decrypt'; // Import decryption function
-
+import {getUserRoleCookie, removeUserRoleCookie } from '../../utils/cookieHelper';
 const ProtectedRoute = ({ requiredRoles, Component }) => {
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedRole = localStorage.getItem('userRoleid');
+    const storedRole = getUserRoleCookie();
     if (storedRole) {
-      // Decrypt the stored role
-      const decryptedRole = decryptData(storedRole);
-      setUserRole(decryptedRole);
+      setUserRole(storedRole);
     }
     setIsLoading(false);
   }, []);
@@ -21,6 +18,7 @@ const ProtectedRoute = ({ requiredRoles, Component }) => {
   }
 
   if (!userRole || !requiredRoles.includes(userRole)) {
+    removeUserRoleCookie();
     return <Navigate to="/login" />; // Redirect to login if unauthorized
   }
 

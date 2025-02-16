@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-
+import { removeUserRoleCookie } from '../../utils/cookieHelper';
 const useLogout = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -14,7 +14,7 @@ const useLogout = () => {
       });
 
       if (response.ok) {
-        localStorage.removeItem('userRoleid');
+        removeUserRoleCookie();
         enqueueSnackbar('Logged out successfully', { variant: 'success' });
         window.location.href = '/login'; // Redirect to login page
       } else {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
+import { Link } from "react-router-dom";
 
 const SystemAdmin = () => {
   const [checkedRows, setCheckedRows] = useState([]);
@@ -65,23 +66,20 @@ const SystemAdmin = () => {
   ];
 
   return (
-    <div className="page-inner page-box page-start" style={{ marginTop: "60px" }}>
-      <div className="d-flex align-items-center align-items-md-center flex-column flex-md-row pt-2 pb-4">
+    <div className="page-inner page-box page-start mt-5">
+      <div className="d-flex align-items-center flex-column flex-md-row pt-2 pb-4">
         <div>
-          <h4 className="fw-bold mb-3">Manage System-Admin</h4>
-          <h6 className="op-7 mb-2">Add, Change and Delete System Admin</h6>
+          <h4 className="fw-bold mb-3">Manage SystemAdmin</h4>
+          <h6 className="op-7 mb-2">Add, Change, and Delete Departments</h6>
         </div>
         <div className="ms-md-auto py-2 py-md-0">
-          <a href="#" className="btn btn-label-info w-100 btn-round mb-2">
+          <Link to="/EditDepartment" className="btn btn-label-info btn-round me-2">
             Edit
-          </a>
-          <br />
-          <a href="#" className="btn btn-primary btn-round me-2">
+          </Link>
+          <Link to="/AddDepartment" className="btn btn-primary btn-round me-2">
             Add
-          </a>
-          <a href="#" className="btn btn-primary btn-round">
-            Remove
-          </a>
+          </Link>
+          <button className="btn btn-dark btn-round">Remove</button>
         </div>
       </div>
       <div className="input-group">

@@ -11,13 +11,14 @@ import "../../assets/css/Main/CommonTemplate.css";
 // Required Hooks and Components
 import useSidebarLogic from '../../assets/js/useSidebar.js';
 import UserActivityHandler from '../../components/Main/UserActivityHandler.js'; // Import UserActivityHandler
-
+import {getUserRoleCookie, removeUserRoleCookie } from '../../utils/cookieHelper';
+import useSocket from '../../components/Main/useSocket.js';
 const SUTemplate = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
   const location = useLocation();
   const [fullName, setFullName] = useState('');
   const [userEmail, setUserEmail] = useState('');
-
+  useSocket();
   // Fetch profile data
   useEffect(() => {
     const fetchProfile = async () => {
@@ -32,16 +33,16 @@ const SUTemplate = ({ children }) => {
             setFullName(data.data.fullName);
             setUserEmail(data.data.userEmail);
           } else {
-            localStorage.removeItem('userRoleid');
+            removeUserRoleCookie();
             enqueueSnackbar('Profile data is missing.', { variant: 'error' });
           }
         } else {
-          localStorage.removeItem('userRoleid');
+          removeUserRoleCookie();
           const errorData = await response.json();
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
       } catch (error) {
-        localStorage.removeItem('userRoleid');
+        removeUserRoleCookie();
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
       }
@@ -146,10 +147,10 @@ const SUTemplate = ({ children }) => {
             </li>
 
             {/* Add Department */}
-            <li className={`nav-item ${isActive(['/AddDepartment']) ? 'active' : ''}`}>
-              <Link to="/AddDepartment">
+            <li className={`nav-item ${isActive(['/department']) ? 'active' : ''}`}>
+              <Link to="/departments">
                 <i className="fas fa-building"></i>
-                <p>Add Department</p>
+                <p>Departments</p>
               </Link>
             </li>
 

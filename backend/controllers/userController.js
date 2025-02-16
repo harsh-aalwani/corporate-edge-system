@@ -125,3 +125,10 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
+export const getUserAccess = async (req, res) => {
+  if (req.session && req.session.userRoleid) {
+    // You can also return more session details if needed
+    return res.status(200).json({ userRoleid: req.session.userRoleid });
+  }
+  res.status(401).json({ message: 'No active session found' });
+};

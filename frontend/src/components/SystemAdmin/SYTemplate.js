@@ -11,6 +11,7 @@ import "../../assets/css/Main/CommonTemplate.css";
 // Required Hooks and Components
 import useSidebarLogic from '../../assets/js/useSidebar.js';
 import UserActivityHandler from '../../components/Main/UserActivityHandler.js'; // Import UserActivityHandler
+import {getUserRoleCookie, removeUserRoleCookie } from '../../utils/cookieHelper';
 
 const SUTemplate = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
@@ -39,16 +40,16 @@ const SUTemplate = ({ children }) => {
             setFullName(data.data.fullName);
             setUserEmail(data.data.userEmail);
           } else {
-            localStorage.removeItem('userRoleid');
+            removeUserRoleCookie();
             enqueueSnackbar('Profile data is missing.', { variant: 'error' });
           }
         } else {
-          localStorage.removeItem('userRoleid');
+          removeUserRoleCookie();
           const errorData = await response.json();
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
       } catch (error) {
-        localStorage.removeItem('userRoleid');
+        removeUserRoleCookie();
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
       }

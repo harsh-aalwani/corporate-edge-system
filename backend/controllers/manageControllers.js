@@ -4,8 +4,7 @@ import User from '../models/userModel.js';  // Import the User model
 export const getHRManagers = async (req, res) => {
   try {
     const hrManagers = await User.find({ userRoleid: 'R3' });
-    
-    console.log('HR Managers found:', hrManagers);  // Add logging
+
 
     if (!hrManagers.length) {
       return res.status(404).json({ message: 'No HR Managers found' });

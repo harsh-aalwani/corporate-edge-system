@@ -1,20 +1,30 @@
 import React, { useState , useEffect} from 'react';
-import styled from 'styled-components';
+import styled from "styled-components";
+
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack'; // Import useSnackbar
+import { setUserRoleCookie , getUserRoleCookie } from '../../utils/cookieHelper';
+import backgroundImage from "../../assets/img/Login/background_login.jpg";
+import profileImage from "../../assets/img/Login/profile.png";
 
 const Login = () => {
   const navigate = useNavigate(); // useNavigate should work because it's inside Router context
   const { enqueueSnackbar } = useSnackbar(); // For notifications
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [step, setStep] = useState(1); // 1: Email Step, 2: OTP Step
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Check if user is already logged in (via userRoleid in localStorage)
+  // Check if user is already logged in (via userRoleid in Cookie)
   useEffect(() => {
-    const userRoleid = localStorage.getItem('userRoleid');
+    const userRoleid = getUserRoleCookie();
     if (userRoleid) {
-      navigate('/dashboard'); // Redirect to dashboard if already logged in
+      navigate('/dashboard'); 
     }
   }, [navigate]);
 
@@ -40,7 +50,7 @@ const Login = () => {
       if (response.ok) {
         enqueueSnackbar('Login successful!', { variant: 'success' });
         const encryptedRole = data.encryptedRole;
-        localStorage.setItem('userRoleid', encryptedRole);
+        setUserRoleCookie(encryptedRole);
         navigate('/dashboard'); // Redirect to dashboard after login
       } else {
         enqueueSnackbar(data.message || 'Login failed!', { variant: 'error' });
@@ -50,36 +60,154 @@ const Login = () => {
     }
   };
 
+    // Open and Close Modal
+    const openModal = () => {
+      setStep(1);
+      setIsModalOpen(true);
+    };
+    const closeModal = () => setIsModalOpen(false);
+  
+    // Generate a Random 6-digit OTP
+    const generateOtp = () => {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    };
+  
+    // Handle Send OTP
+    const handleSendOtp = (e) => {
+      e.preventDefault();
+      const otpCode = generateOtp();
+      setGeneratedOtp(otpCode);
+      alert(`Your OTP is: ${otpCode}`); // Mock OTP send, replace with API call
+      setStep(2);
+    };
+  
+    // Handle Reset Password
+    const handleResetPassword = (e) => {
+      e.preventDefault();
+      if (otp !== generatedOtp) {
+        alert("Invalid OTP. Please try again.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+      alert("Password reset successfully!"); // Replace with API call
+      setIsModalOpen(false);
+    };
+
   return (
     <StyledWrapper>
-      <form className="login-form-control" onSubmit={handleLoginSubmit}>
-        <p className="login-title">Login</p>
-        <div className="login-input-field">
-          <input
-            required
-            className="login-input"
-            type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)} // Set email state
-          />
-          <label className="login-label">Enter Email</label>
+      <div
+        className="container-fluid"
+        style={{
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          height: "100vh",
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div className="login-container">
+          <form className="login-form" onSubmit={handleLoginSubmit}>
+            <div className="logo-container">
+              <img src={profileImage} alt="User Logo" className="logo" />
+            </div>
+            <p className="heading">Login</p>
+            <div className="input-group">
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <button className="button-container" type="submit">Login</button>
+            </div>
+            <div className="bottom-text">
+              <p>
+                <a href="#" onClick={openModal}>
+                  Forgot password?
+                </a>
+              </p>
+            </div>
+          </form>
         </div>
-        <div className="login-input-field">
-          <input
-            required
-            className="login-input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)} // Set password state
-          />
-          <label className="login-label">Enter Password</label>
+
+        {/* Forgot Password Modal */}
+        {isModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-content animate">
+              <span className="close-btn" onClick={closeModal}>&times;</span>
+              {step === 1 ? (
+                <>
+                  <h2 className="modal-title">Reset Password</h2>
+                  <p className="modal-desc">Enter your email to receive an OTP.</p>
+                  <form onSubmit={handleSendOtp}>
+                    <input
+                      type="email"
+                      className="modal-input"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <button type="submit" className="modal-btn">Send OTP</button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <h2 className="modal-title">Enter OTP & Reset Password</h2>
+                  <form onSubmit={handleResetPassword}>
+                    <input
+                      type="text"
+                      className="modal-input"
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                    />
+                    <input
+                      type="password"
+                      className="modal-input"
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                    <input
+                      type="password"
+                      className="modal-input"
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                    <button type="submit" onClick={{handleLoginSubmit}} className="modal-btn">Reset Password</button>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+          )}
         </div>
-        <a>Forgot your password?</a>
-        <button className="login-submit-btn" type="submit">
-          Sign In
-        </button>
-      </form>
-    </StyledWrapper>
+      </StyledWrapper>
   );
 };
 
@@ -90,74 +218,201 @@ const StyledWrapper = styled.div`
   height: 100vh;
   background-color: #f5f5f5;
 
-  .login-form-control {
-    margin: 20px;
-    background-color: #ffffff;
-    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
-    width: 400px;
+  .login-container {
+    background-color: rgb(227, 238, 243);
+    border-radius: 8px;
+    box-shadow: rgb(219, 207, 207) 0px -23px 25px 0px inset,
+      rgb(108 108 108 / 23%) 0px -36px 30px 0px inset,
+      rgba(0, 0, 0, 0.1) 0px -79px 40px 0px inset, rgba(0, 0, 0, 0.06) 0px 2px 1px,
+      rgba(0, 0, 0, 0.09) 0px 4px 2px, rgba(0, 0, 0, 0.09) 0px 8px 4px,
+      rgba(0, 0, 0, 0.09) 0px 16px 8px, rgba(0, 0, 0, 0.09) 0px 32px 16px;
+    padding: 40px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    margin: 50px auto 0 auto;
+  }
+
+  .logo-container {
     display: flex;
     justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .logo {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .login-form {
+    display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 25px;
-    border-radius: 8px;
   }
-  .login-title {
-    font-size: 28px;
-    font-weight: 800;
+
+  .heading {
+    color: #110f0f;
+    font-weight: 500;
+    font-size: 2.6rem;
+    margin-bottom: 5px;
   }
-  .login-input-field {
-    position: relative;
-    width: 100%;
-  }
-  .login-input {
-    margin-top: 15px;
-    width: 100%;
-    outline: none;
-    border-radius: 8px;
-    height: 45px;
-    border: 1.5px solid #ecedec;
-    background: transparent;
-    padding-left: 10px;
-  }
-  .login-input:focus {
-    border: 1.5px solid #2d79f3;
-  }
-  .login-input-field .login-label {
-    position: absolute;
-    top: 25px;
-    left: 15px;
-    color: #ccc;
-    transition: all 0.3s ease;
-    pointer-events: none;
-    z-index: 2;
-  }
-  .login-input-field .login-input:focus ~ .login-label,
-  .login-input-field .login-input:valid ~ .login-label {
-    top: 5px;
-    left: 5px;
-    font-size: 12px;
-    color: #2d79f3;
-    background-color: #ffffff;
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-  .login-submit-btn {
-    margin-top: 30px;
-    height: 55px;
-    background: #f2f2f2;
-    border-radius: 11px;
-    border: 0;
-    outline: none;
+
+  .paragraph {
     color: #ffffff;
-    font-size: 18px;
-    font-weight: 700;
-    background: linear-gradient(180deg, #363636 0%, #1b1b1b 50%, #000000 100%);
-    transition: all 0.3s cubic-bezier(0.15, 0.83, 0.66, 1);
-    cursor: pointer;
+    font-weight: 400;
+    font-size: 15px;
+    margin-bottom: 15px;
   }
-  .login-submit-btn:hover {
-    box-shadow: 0px 0px 0px 2px #ffffff, 0px 0px 0px 4px #0000003a;
+
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-group input {
+    background: none;
+    border: 1px solidrgb(89, 89, 89);
+    padding: 15px 23px;
+    font-size: 18px;
+    border-radius: 8px;
+    color:rgb(0, 0, 0);
+    width: 100%;
+    box-shadow: rgb(136 136 136 / 17%) 0px -23px 25px 0px inset,
+      rgb(81 81 81 / 23%) 0px -36px 30px 0px inset,
+      rgba(255, 255, 255, 0.74) 0px -79px 40px 0px inset;
+  }
+
+  .input-group input:focus {
+    border-color: #0173ed;
+    outline: none;
+  }
+
+  button {
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: #0a0a0a;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #2a3138;
+  }
+
+  .bottom-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: 20px;
+    color: #1a0505;
+    font-size: 15px;
+    font-weight: 400;
+  }
+
+  .bottom-text a {
+    color: #364350;
+    text-decoration: none;
+    font-size: large;
+    transition: color 0.3s ease;
+  }
+
+  .bottom-text a:hover {
+    color: #3f4e5e;
+  }
+
+  .button-container {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    background-color: #0a0a0a;
+    border-radius: 8px;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .modal-content {
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    width: 350px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-20px);
+    animation: slideIn 0.3s ease-in-out forwards;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #333;
+  }
+
+  .close-btn:hover {
+    color: red;
+  }
+
+  .modal-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+  }
+
+  .modal-desc {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  .modal-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+    margin-bottom: 15px;
+  }
+
+  .modal-input:focus {
+    border-color: #007bff;
+  }
+
+  .modal-btn {
+    background: #424952;
+    color: #fff;
+    padding: 10px 15px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s ease-in-out;
+    width: 100%;
+  }
+
+  .modal-btn:hover {
+    background: #101011;
   }
 `;
 

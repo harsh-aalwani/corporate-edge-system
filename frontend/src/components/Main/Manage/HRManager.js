@@ -48,22 +48,19 @@ const HRManager = () => {
 
   return (
     <div className="page-inner page-box page-start mt-5">
-      <div className="d-flex align-items-center align-items-md-center flex-column flex-md-row pt-2 pb-4">
+      <div className="d-flex align-items-center flex-column flex-md-row pt-2 pb-4">
         <div>
-          <h4 className="fw-bold mb-3">Manage HR Members</h4> {/* Changed title */}
-          <h6 className="op-7 mb-2">Add, Change and Delete HR Members</h6> {/* Updated description */}
+          <h4 className="fw-bold mb-3">Manage HR-Manager</h4>
+          <h6 className="op-7 mb-2">Add, Change, and Delete Departments</h6>
         </div>
         <div className="ms-md-auto py-2 py-md-0">
-          <Link to="/EditUser" className="btn btn-label-info w-100 btn-round mb-2">
+          <Link to="/EditUser" className="btn btn-label-info btn-round me-2">
             Edit
           </Link>
-          <br />
           <Link to="/AddUser" className="btn btn-primary btn-round me-2">
             Add
           </Link>
-          <a href="#" className="btn btn-primary btn-round">
-            Remove
-          </a>
+          <button className="btn btn-dark btn-round">Remove</button>
         </div>
       </div>
       <div className="input-group">
