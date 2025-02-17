@@ -4,18 +4,26 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
-    "start-backend": "nodemon index.js",
-    "start-frontend": "cd frontend && npm start" 
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "axios": "^1.7.8",
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^5.1.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "discord.js": "^14.16.3",
-    "express": "^4.21.1"
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.1",
+    "mongoose": "^8.9.5",
+    "nodemailer": "^6.10.0",
+    "socket.io": "^4.8.1",
+    "validator": "^13.12.0"
   },
   "devDependencies": {
-    "nodemon": "^3.x.x",
-    "concurrently": "^7.x.x"
+    "concurrently": "^7.x.x",
+    "nodemon": "^3.x.x"
   }
 }

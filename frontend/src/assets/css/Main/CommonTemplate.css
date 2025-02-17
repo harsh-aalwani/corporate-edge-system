@@ -1,0 +1,61 @@
+/* Hide scrollbar but keep scrolling enabled */
+.sidebar-wrapper::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.sidebar-wrapper {
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.sidebar-wrapper .nav-item:hover .collapse {
+  display: block !important;
+  visibility: visible;
+  opacity: 1;
+  height: auto;
+  transition: all 0.3s ease;
+}
+
+.sidebar-wrapper .nav-item .collapse {
+  display: none;
+  visibility: hidden;
+  opacity: 0;
+  height: 0;
+  transition: all 0.3s ease;
+}
+
+.website-title {
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #333;
+}
+.page-box {
+  background-color: white;
+  border-radius: 12px;       /* Rounded corners */
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 0.0625em 0.0625em, rgba(0, 0, 0, 0.25) 0px 0.125em 0.5em, rgba(255, 255, 255, 0.1) 0px 0px 0px 1px inset; /* Light shadow */
+  margin: 25px auto;         /* Center horizontally in the container */
+}
+
+.page-start{
+  margin:35px;
+}
+.atlas-hr {
+  border: 0; /* Remove default border */
+  height: 6px; /* Thickness of the line */
+  background: linear-gradient(90deg, #2b6cb0, #68d391, #ed8936); /* Cool atlas colors: Blue, Green, Orange */
+  border-radius: 3px; /* Rounded edges for a smooth look */
+  margin: 20px 0; /* Space around the line */
+}
+
+hr#title-line {
+  @include background-image(linear-gradient(left, black, white));
+  &:before {
+    left: 90%;
+    width: 100%;
+    padding: 1em;
+    top: 1px;
+  }
+}
