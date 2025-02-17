@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack'; // Import useSnackbar
 import { setUserRoleCookie , getUserRoleCookie } from '../../utils/cookieHelper';
 import backgroundImage from "../../assets/img/Login/background_login.jpg";
-import profileImage from "../../assets/img/Login/profile.png";
+import profileImage from "../../assets/img/Login/logo.jpg";
 
 const Login = () => {
   const navigate = useNavigate(); // useNavigate should work because it's inside Router context
@@ -16,7 +16,6 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -66,35 +65,54 @@ const Login = () => {
       setIsModalOpen(true);
     };
     const closeModal = () => setIsModalOpen(false);
-  
-    // Generate a Random 6-digit OTP
-    const generateOtp = () => {
-      return Math.floor(100000 + Math.random() * 900000).toString();
-    };
-  
-    // Handle Send OTP
-    const handleSendOtp = (e) => {
-      e.preventDefault();
-      const otpCode = generateOtp();
-      setGeneratedOtp(otpCode);
-      alert(`Your OTP is: ${otpCode}`); // Mock OTP send, replace with API call
-      setStep(2);
-    };
-  
-    // Handle Reset Password
-    const handleResetPassword = (e) => {
-      e.preventDefault();
-      if (otp !== generatedOtp) {
-        alert("Invalid OTP. Please try again.");
-        return;
+
+  // Handle Send OTP (API call)
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:5000/api/authuser/sendotp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        enqueueSnackbar(data.message, { variant: 'success' }); // Show success snackbar
+        setStep(2);
+      } else {
+        enqueueSnackbar(data.message || "Error sending OTP. Please try again.", { variant: 'error' }); // Show error snackbar
       }
-      if (newPassword !== confirmPassword) {
-        alert("Passwords do not match!");
-        return;
+    } catch (error) {
+      enqueueSnackbar("Error sending OTP. Please try again.", { variant: 'error' }); // Show error snackbar
+    }
+  };
+
+  // Handle Reset Password (API call)
+  const handleResetPassword = async (e) => {
+
+    try {
+      const response = await fetch("http://localhost:5000/api/authuser/resetpassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, otp, newPassword }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        enqueueSnackbar(data.message, { variant: 'success' }); // Show success snackbar
+        setIsModalOpen(false); // Close modal
+      } else {
+        enqueueSnackbar(data.message || "Error resetting password. Please try again.", { variant: 'error' }); // Show error snackbar
       }
-      alert("Password reset successfully!"); // Replace with API call
-      setIsModalOpen(false);
-    };
+    } catch (error) {
+      enqueueSnackbar("Error resetting password. Please try again.", { variant: 'error' }); // Show error snackbar
+    }
+  };
 
   return (
     <StyledWrapper>
@@ -199,7 +217,7 @@ const Login = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                     />
-                    <button type="submit" onClick={{handleLoginSubmit}} className="modal-btn">Reset Password</button>
+                    <button type="submit" className="modal-btn">Reset Password</button>
                   </form>
                 </>
               )}

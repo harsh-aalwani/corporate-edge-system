@@ -6,6 +6,7 @@ import { PORT, mongoURI } from './config.js';
 import userRoutes from './routes/userRoutes.js';
 import manageRoutes from './routes/manageRoutes.js';
 import departmentsRoutes from './routes/departmentsRoutes.js';
+import authUserRoutes from './routes/authUserRoutes.js';
 import { sessionMiddleware } from './middleware/sessionMiddleware.js';
 import initializeSocket from './socket/socketHandler.js'; // Import socket handler
 
@@ -21,7 +22,7 @@ app.use(sessionMiddleware);
 app.use('/api/users', userRoutes);
 app.use('/api/manage', manageRoutes);
 app.use('/api/departments', departmentsRoutes);
-
+app.use('/api/authuser',authUserRoutes);
 // Initialize Socket.IO
 initializeSocket(server);
 
