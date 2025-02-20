@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useSnackbar } from "notistack"; // Import Snackbar Provider
+import { useNavigate } from "react-router-dom"; // Import Navigate Hook
 import "../../../assets/css/FormsCss/form.css"; // Import custom CSS
 
 const AddDep = () => {
   const { enqueueSnackbar } = useSnackbar(); // Snackbar instance
+  const navigate = useNavigate(); // Navigation Hook
 
   const [formData, setFormData] = useState({
     departmentName: "",
@@ -49,12 +51,20 @@ const AddDep = () => {
     }
   };
 
+  const handleClear = () => {
+    setFormData({ departmentName: "", departmentDescription: "" });
+    setErrors({});
+  };
+
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="container mt-5 px-5">
       <div className="card p-4 page-box">
         <h4 className="mb-3 text-center">Add Department</h4>
         <form onSubmit={handleSubmit} className="custom-form">
-
           {/* Department Name - Textbox */}
           <div className="form-group full-width">
             <label className="form-label">Department Name:</label>
@@ -81,9 +91,18 @@ const AddDep = () => {
             {errors.departmentDescription && <div className="invalid-feedback">{errors.departmentDescription}</div>}
           </div>
 
-          {/* Submit Button */}
-          <button type="submit" className="btn btn-primary mt-3">Submit</button>
-
+          {/* Buttons */}
+          <div className="d-flex justify-content-center gap-3 mt-4">
+            <button type="submit" className="btn btn-primary px-4">
+              Submit
+            </button>
+            <button type="button" className="btn btn-dark px-4" onClick={handleClear}>
+              Clear Data
+            </button>
+            <button type="button" className="btn btn-danger px-4" onClick={handleGoBack}>
+              Go Back
+            </button>
+          </div>
         </form>
       </div>
     </div>

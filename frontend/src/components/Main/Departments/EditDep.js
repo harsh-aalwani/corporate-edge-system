@@ -1,85 +1,147 @@
 import React, { useState, useEffect } from "react";
-import { useSnackbar } from "notistack";
 import { useParams, useNavigate } from "react-router-dom";
-import "../../../assets/css/FormsCss/form.css";
+import axios from "axios";
+import { useSnackbar } from "notistack";
 
 const EditDep = () => {
-  const { enqueueSnackbar } = useSnackbar();
-  const { id } = useParams(); // Get department ID from URL
+  const { departmentIds } = useParams();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [formData, setFormData] = useState({
     departmentName: "",
     departmentDescription: "",
   });
-  
   const [errors, setErrors] = useState({});
 
-  // Fetch department details
   useEffect(() => {
-    const fetchDepartment = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/api/departments/${id}`);
-        const result = await response.json();
-        if (response.ok) {
-          setFormData({
-            departmentName: result.departmentName,
-            departmentDescription: result.departmentDescription,
-          });
-        } else {
-          enqueueSnackbar(result.message, { variant: "error" });
-        }
-      } catch (error) {
-        enqueueSnackbar("Failed to load department details.", { variant: "error" });
+    if (departmentIds) {
+      fetchDepartments(departmentIds.split(","));
+    }
+  }, [departmentIds]);
+
+  const fetchDepartments = async (ids, keepSelectedId = null) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/departments/getDepartment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ departmentIds: ids }), // Send array of department IDs
+      });
+  
+      if (!response.ok) throw new Error("Failed to fetch departments");
+  
+      const data = await response.json();
+      if (!data.length) {
+        enqueueSnackbar("No departments found", { variant: "error" });
+        return;
       }
-    };
-
-    fetchDepartment();
-  }, [id, enqueueSnackbar]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  
+      setDepartments(data);
+  
+      // Keep previously selected department if it exists, else select the first one
+      const newSelectedId = keepSelectedId && data.some(dept => dept.departmentid === keepSelectedId)
+        ? keepSelectedId
+        : data[0].departmentid;
+  
+      setSelectedDepartmentId(newSelectedId);
+  
+      // Set form data for the selected department
+      const selectedDepartment = data.find(dept => dept.departmentid === newSelectedId);
+      if (selectedDepartment) {
+        setFormData({
+          departmentName: selectedDepartment.departmentName,
+          departmentDescription: selectedDepartment.departmentDescription,
+        });
+      }
+    } catch (error) {
+      enqueueSnackbar("Failed to fetch departments", { variant: "error" });
+    }
+  };
+  
+  
+  
+  const handleDepartmentSelect = (e) => {
+    const selectedId = e.target.value;
+    setSelectedDepartmentId(selectedId);
+    const selectedDepartment = departments.find((dept) => dept.departmentid === selectedId);
+    if (selectedDepartment) {
+      setFormData({
+        departmentName: selectedDepartment.departmentName,
+        departmentDescription: selectedDepartment.departmentDescription,
+      });
+    }
   };
 
-  const validate = () => {
-    let tempErrors = {};
-    if (!formData.departmentName) tempErrors.departmentName = "Department Name is required";
-    if (!formData.departmentDescription) tempErrors.departmentDescription = "Department Description is required";
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
+  const validateForm = () => {
+    let validationErrors = {};
+    if (!formData.departmentName.trim()) validationErrors.departmentName = "Department name is required";
+    if (!formData.departmentDescription.trim()) validationErrors.departmentDescription = "Description is required";
+    setErrors(validationErrors);
+    return Object.keys(validationErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-
+    if (!validateForm()) return;
+  
     try {
-      const response = await fetch(`http://localhost:5000/api/departments/update/${id}`, {
+      const response = await fetch("http://localhost:5000/api/departments/updateDepartment", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          departmentid: selectedDepartmentId, // Sending departmentid in req.body
+          ...formData,
+        }),
       });
-
-      const result = await response.json();
-      if (response.ok) {
-        enqueueSnackbar(result.message, { variant: "success" });
-        navigate("/departments"); // Redirect to departments list after update
-      } else {
-        enqueueSnackbar(result.message, { variant: "error" });
-      }
+  
+      if (!response.ok) throw new Error("Failed to update department");
+  
+      enqueueSnackbar("Department updated successfully", { variant: "success" });
+  
+      // Refetch departments and ensure selected department remains the same
+      fetchDepartments(departmentIds.split(","), selectedDepartmentId);
     } catch (error) {
-      enqueueSnackbar("Server error. Please try again.", { variant: "error" });
+      enqueueSnackbar("Failed to update department", { variant: "error" });
     }
   };
-
+  
+    // Clear form fields
+    const handleClear = () => {
+      setFormData({
+        departmentName: "",
+        departmentDescription: "",
+      });
+      setErrors({});
+    };
+  
+    // Go back to the previous page
+    const handleGoBack = () => {
+      navigate(-1);
+    };
   return (
     <div className="container mt-5 px-5">
       <div className="card p-4 page-box">
         <h4 className="mb-3 text-center">Edit Department</h4>
         <form onSubmit={handleSubmit} className="custom-form">
-          {/* Department Name - Textbox */}
+          {departments.length > 1 && (
+            <div className="form-group full-width">
+              <label className="form-label">Select Department: [Save changes before you want to switch] </label>
+              <select className="form-control" value={selectedDepartmentId} onChange={handleDepartmentSelect}>
+                {departments.map((dept) => (
+                  <option key={dept.departmentid} value={dept.departmentid}>
+                    {dept.departmentid + " \u00A0:\u00A0\u00A0 " + dept.departmentName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="form-group full-width">
             <label className="form-label">Department Name:</label>
             <input
@@ -92,7 +154,6 @@ const EditDep = () => {
             {errors.departmentName && <div className="invalid-feedback">{errors.departmentName}</div>}
           </div>
 
-          {/* Department Description - Textarea */}
           <div className="form-group full-width">
             <label className="form-label">Department Description:</label>
             <textarea
@@ -105,8 +166,18 @@ const EditDep = () => {
             {errors.departmentDescription && <div className="invalid-feedback">{errors.departmentDescription}</div>}
           </div>
 
-          {/* Submit Button */}
-          <button type="submit" className="btn btn-primary mt-3">Update</button>
+          {/* Button Group with Proper Spacing */}
+          <div className="d-flex justify-content-center gap-3 mt-4">
+            <button type="submit" className="btn btn-primary px-4">
+              Confirm Changes
+            </button>
+            <button type="button" className="btn btn-dark px-4" onClick={handleClear}>
+              Clear Data
+            </button>
+            <button type="button" className="btn btn-danger px-4" onClick={handleGoBack}>
+              Go Back
+            </button>
+          </div>
         </form>
       </div>
     </div>

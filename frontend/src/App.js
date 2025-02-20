@@ -19,6 +19,7 @@ import SuperAdminAddUser from './pages/SuperAdmin/Manage/AddUser';
 import SuperAdminEditUser from './pages/SuperAdmin/Manage/EditUser';
 import SuperAdminDepartmentsList from './pages/SuperAdmin/Departments/DepartmentsList'
 import SuperAdminAddDepartments from './pages/SuperAdmin/Departments/AddDepartments'
+import SuperAdminEditDepartments from './pages/SuperAdmin/Departments/EditDepartments';
 // SystemAdmin Modules
 import SystemAdminDashboard from './pages/SystemAdmin/Dashboard';
 // HRManager Modules
@@ -171,6 +172,16 @@ const App = () => {
             }
           } />} />
 
+          {/* Departments List */}
+          <Route path="/EditDepartment/:departmentIds" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+            () => {
+              const userRole = getUserRoleCookie();
+              switch (userRole) {
+                case 'R1': return <SuperAdminEditDepartments />;
+                default: return <Navigate to="/login" />;
+              }
+            }
+          } />} />
         </Routes>
       </Router>
     </SnackbarProvider>

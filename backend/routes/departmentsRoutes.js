@@ -1,12 +1,13 @@
 // backend/routes/DiscordAnnounceRoutes.js
 import express from "express";
-import { getDepartments,createDepartment,deleteDepartments } from "../controllers/departmentController.js";
+import { getDepartments, getDepartmentById, createDepartment, updateDepartment, deleteDepartments } from "../controllers/departmentController.js";
 
 const router = express.Router();
 
-// POST route for sending an announcement
 router.get("/list", getDepartments);
+router.post("/getDepartment", getDepartmentById); // Changed from GET to POST
 router.post("/addDepartment", createDepartment);
+router.put("/updateDepartment", updateDepartment); 
 router.delete("/deleteDepartment", deleteDepartments);
 
 export default router;
