@@ -132,3 +132,46 @@ export const getUserAccess = async (req, res) => {
   }
   res.status(401).json({ message: 'No active session found' });
 };
+
+export const getUserRoles = async (req, res) => {
+  try {
+    const { userRoleid } = req.session;
+
+    if (!userRoleid) {
+      return res.status(401).json({ message: "Not logged in" });
+    }
+
+    let availableRoles = [];
+
+    switch (userRoleid) {
+      case "R1":
+        availableRoles = ["System-Admin", "HR", "Department-Manager", "Employee"];
+        break;
+
+      case "R2":
+        // Check userPermissions.SystemAdminExtra from tableUser
+        const user = await User.findOne({ userRoleid: "R2" });
+        if (user && user.userPermissions.SystemAdminExtra) {
+          availableRoles = ["System-Admin", "HR", "Department-Manager", "Employee"];
+        } else {
+          availableRoles = ["HR", "Department-Manager", "Employee"];
+        }
+        break;
+
+      case "R3":
+        availableRoles = ["Department-Manager", "Employee"];
+        break;
+
+      case "R4":
+        availableRoles = ["Employee"];
+        break;
+
+      default:
+        return res.status(403).json({ message: "Unauthorized role" });
+    }
+
+    res.status(200).json({ roles: availableRoles });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};

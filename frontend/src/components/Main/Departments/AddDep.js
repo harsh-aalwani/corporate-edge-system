@@ -92,15 +92,15 @@ const AddDep = () => {
           </div>
 
           {/* Buttons */}
-          <div className="d-flex justify-content-center gap-3 mt-4">
+          <div className="d-flex justify-content-between w-100 mt-4">
+            <button type="button" className="btn btn-danger px-4" onClick={handleGoBack}>
+              Go Back
+            </button>
             <button type="submit" className="btn btn-primary px-4">
               Submit
             </button>
             <button type="button" className="btn btn-dark px-4" onClick={handleClear}>
               Clear Data
-            </button>
-            <button type="button" className="btn btn-danger px-4" onClick={handleGoBack}>
-              Go Back
             </button>
           </div>
         </form>
