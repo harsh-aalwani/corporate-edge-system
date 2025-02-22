@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 const UserForm = () => {
   const [departments, setDepartments] = useState([]);
+  const [imagePreview, setImagePreview] = useState(""); 
   const [userRoles, setUserRoles] = useState([]);
   const [systemAdminExtra, setSystemAdminExtra] = useState(false); 
   const [formData, setFormData] = useState({
@@ -22,8 +23,8 @@ const UserForm = () => {
     gender: "",
     maritalStatus: "",
     languagesKnown: "",
-    identityProof: "",
-    picture: "",
+    identityProof: null,
+    picture: null,
     presentAddress: "",
     permanentAddress: "",
   
@@ -118,34 +119,77 @@ const UserForm = () => {
       return { ...prev, educationQualification: updatedEducation };
     });
   };
-  
+    
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-  
-    if (file) {
-      const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
-      
-      if (!allowedTypes.includes(file.type)) {
-        enqueueSnackbar("Only JPG, JPEG, PNG, WEBP and GIF images are allowed!", { 
-          variant: "error",
-          autoHideDuration: 3000,
-          anchorOrigin: { vertical: "top", horizontal: "right" },
-        });
-        e.target.value = ""; // Clear the input field if invalid
-        setFormData((prev) => ({ ...prev, picture: "" })); // Reset picture in formData
-        return;
-      }
-  
-      // Read file as Data URL and store in formData
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFormData((prev) => ({ ...prev, picture: reader.result }));
-      };
-      reader.readAsDataURL(file);
+
+    if (!file) return; // Exit if no file is selected
+
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
+    const maxSize = 2 * 1024 * 1024; // 2MB limit
+
+    if (!allowedTypes.includes(file.type)) {
+      enqueueSnackbar("Only JPG, JPEG, PNG, WEBP, and GIF images are allowed!", {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+      e.target.value = "";
+      return;
     }
+
+    if (file.size > maxSize) {
+      enqueueSnackbar("File size must be less than 2MB!", {
+        variant: "warning",
+        autoHideDuration: 3000,
+      });
+      e.target.value = "";
+      return;
+    }
+
+    // ✅ Generate preview URL
+    const imageUrl = URL.createObjectURL(file);
+    setImagePreview(imageUrl); // Store preview URL
+
+    // ✅ Store the actual file object in formData for upload
+    setFormData((prev) => ({
+      ...prev,
+      picture: file, // File object
+    }));
   };
 
-
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+  
+    if (!file) return; // Exit if no file is selected
+  
+    const allowedTypes = [
+      "image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", // Images
+      "application/pdf" // PDF files
+    ];
+    const maxSize = 5 * 1024 * 1024; // 5MB limit
+  
+    if (!allowedTypes.includes(file.type)) {
+      enqueueSnackbar("Only JPG, JPEG, PNG, WEBP, GIF, and PDF files are allowed!", {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+      e.target.value = "";
+      return;
+    }
+  
+    if (file.size > maxSize) {
+      enqueueSnackbar("File size must be less than 5MB!", {
+        variant: "warning",
+        autoHideDuration: 3000,
+      });
+      e.target.value = "";
+      return;
+    }
+  
+    // ✅ Store the actual file in formData instead of Base64
+    setFormData((prev) => ({ ...prev, identityProof: file }));
+  };
+  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
   
@@ -186,47 +230,46 @@ const UserForm = () => {
     e.preventDefault();
   
     try {
-      // Create a single payload for both tables (without createdBy)
-      const userPayload = {
-        fullName: `${formData.firstName} ${formData.fatherName} ${formData.surName}`.trim(),
-        userEmail: formData.email,
-        userMobileNumber: formData.phone,
-        userStatus: false,
-        userRoleid: formData.userRoleid,
-        userDepartment: formData.department,
-        userPermissions: {
-          SystemAdminExtra: formData.extraPermissions || false,
-        },
-        createdAt: new Date().toISOString(),
+      // Create FormData object
       
-        // tableUserDetails fields
-        dob: formData.dob,
-        age: formData.age,
-        nativePlace: formData.nativePlace,
-        nationality: formData.nationality,
-        gender: formData.gender,
-        maritalStatus: formData.maritalStatus,
-        languagesKnown: formData.languagesKnown,
-        identityProof: formData.identityProof,
-        picture: formData.picture,
-        presentAddress: formData.presentAddress,
-        permanentAddress: formData.permanentAddress,
-      
-        // Missing fields added (except confirmInformation)
-        educationQualification: formData.educationQualification,
-        specialization: formData.specialization,
-        userDesignation: formData.userDesignation,
-        lastWorkPlace: formData.lastWorkPlace,
-        yearsOfExperience: formData.yearsOfExperience,
-        addressOfWorkPlace: formData.addressOfWorkPlace,
-        responsibilities: formData.responsibilities,
-        referenceContact: formData.referenceContact,
-        totalYearsOfExperience: formData.totalYearsOfExperience,
-      };      
-      console.log(userPayload.educationQualification);
+      const formDataToServer = new FormData();
+      // Append fields from formData
+      formDataToServer.append('userEmail', formData.email);
+      formDataToServer.append('fullName', `${formData.firstName} ${formData.fatherName} ${formData.surName}`.trim());
+      formDataToServer.append('userMobileNumber', formData.phone);
+      formDataToServer.append('userStatus', false);
+      formDataToServer.append('userRoleid', formData.userRoleid);
+      formDataToServer.append('userDepartment', formData.department);
+      formDataToServer.append('userPermissions[SystemAdminExtra]', formData.extraPermissions || false);
+      formDataToServer.append('createdAt', new Date().toISOString());
+    
+      formDataToServer.append('dob', formData.dob);
+      formDataToServer.append('age', formData.age);
+      formDataToServer.append('nativePlace', formData.nativePlace);
+      formDataToServer.append('nationality', formData.nationality);
+      formDataToServer.append('gender', formData.gender);
+      formDataToServer.append('maritalStatus', formData.maritalStatus);
+      formDataToServer.append('languagesKnown', formData.languagesKnown);  // Store as plain text
+      formDataToServer.append('identityProof', formData.identityProof);
+      formDataToServer.append('picture', formData.picture);
+      formDataToServer.append('presentAddress', formData.presentAddress);
+      formDataToServer.append('permanentAddress', formData.permanentAddress);
+      formDataToServer.append('educationQualification', JSON.stringify(formData.educationQualification));
+      formDataToServer.append('specialization', formData.specialization);
+      formDataToServer.append('userDesignation', formData.userDesignation);
+      formDataToServer.append('lastWorkPlace', formData.lastWorkPlace);
+      formDataToServer.append('yearsOfExperience', formData.yearsOfExperience);
+      formDataToServer.append('addressOfWorkPlace', formData.addressOfWorkPlace);
+      formDataToServer.append('responsibilities', formData.responsibilities);
+      formDataToServer.append('referenceContact', formData.referenceContact);
+      formDataToServer.append('totalYearsOfExperience', formData.totalYearsOfExperience);
+      for (const pair of formDataToServer.entries()) {
+        console.log(`${pair[0]}:`, pair[1]);
+      }
       // Send API request to backend
-      const response = await axios.post("http://localhost:5000/api/users/createUserWithDetails", userPayload, {
+      const response = await axios.post("http://localhost:5000/api/users/createUserWithDetails", formDataToServer, {
         withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' } // Important for sending FormData
       });
   
       if (response.status === 201) {
@@ -238,7 +281,6 @@ const UserForm = () => {
     } catch (error) {
       console.error("Error creating user:", error);
   
-      // ✅ Show detailed error messages from backend
       if (error.response) {
         enqueueSnackbar(error.response.data.message || "An unexpected error occurred.", {
           variant: "error",
@@ -280,7 +322,7 @@ const UserForm = () => {
         <h3 className="mb-3 text-center">Add New-User Form</h3>
         <h4 className="mb-1 mt-4">Personal Information:</h4>
         <hr id="title-line" className="mb-4" data-symbol="✈" />
-        <form className="custom-form" onSubmit={handleSubmit}>
+        <form className="custom-form" onSubmit={handleSubmit} method="POST" encType="multipart/form-data">
           <div className="row">
             <div className="col-md-6 mb-3">
               <label className="form-label">First Name:</label>
@@ -363,25 +405,31 @@ const UserForm = () => {
             </div>
             <div className="col-md-6 mb-3">
               <label className="form-label">Identity Proof: [Any Government Document]</label>
-              <input type="file" name="identityProof" className="form-control" onChange={handleChange} required/>
+              <input
+                type="file"
+                name="identityProof"
+                className="form-control"
+                accept="image/png, image/jpeg, image/jpg, application/pdf"
+                onChange={handleFileChange}  // Use a different handler if necessary
+                required
+              />
             </div>
-           
-              {/* Show Image Preview */}
-              {formData.picture && (
-                <>
+            {/* Show Image Preview */}
+            {imagePreview && (
+              <>
                 <div className="col-md-2 mt-5 text-center">
                   <label className="form-label">Preview:</label>
                 </div>
                 <div className="col-md-6 mt-2">
                   <img
-                    src={formData.picture}
+                    src={imagePreview} // ✅ Uses preview URL, not file object
                     alt="Selected"
                     className="img-fluid rounded"
                     style={{ maxWidth: "150px", maxHeight: "150px", border: "1px solid #ccc" }}
                   />
                 </div>
-                </>
-              )}
+              </>
+            )}
             <h4 className="mb-1 mt-4">Education Qualifications: </h4>
             <hr id="title-line" className="mb-4" data-symbol="✈" />
 
