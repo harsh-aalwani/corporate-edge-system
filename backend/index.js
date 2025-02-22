@@ -10,6 +10,7 @@ import authUserRoutes from './routes/authUserRoutes.js';
 import { sessionMiddleware } from './middleware/sessionMiddleware.js';
 import initializeSocket from './socket/socketHandler.js'; // Import socket handler
 
+
 const app = express();
 const server = createServer(app); // Create HTTP server
 

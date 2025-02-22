@@ -142,10 +142,12 @@ export const getUserRoles = async (req, res) => {
     }
 
     let availableRoles = [];
+    let systemAdminExtra = false; 
 
     switch (userRoleid) {
       case "R1":
         availableRoles = ["System-Admin", "HR", "Department-Manager", "Employee"];
+        systemAdminExtra = true;
         break;
 
       case "R2":
@@ -170,7 +172,7 @@ export const getUserRoles = async (req, res) => {
         return res.status(403).json({ message: "Unauthorized role" });
     }
 
-    res.status(200).json({ roles: availableRoles });
+    res.status(200).json({ roles: availableRoles, systemAdminExtra });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
