@@ -2,6 +2,8 @@ import { useEffect ,useState } from "react";
 import { FaPlus , FaTimes, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack"; 
+import { useNavigate } from "react-router-dom";
+
 const UserForm = () => {
   const [departments, setDepartments] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
@@ -46,7 +48,8 @@ const UserForm = () => {
     // Confirmation
     confirmInformation: false
   });
-  
+  const navigate = useNavigate();
+
   const [ErrorMessage, setError] = useState('');
   const [collapsedEntries, setCollapsedEntries] = useState({});
   const toggleCollapse = (id) => {
@@ -179,10 +182,62 @@ const UserForm = () => {
     });
   };  
   
-  const handleSubmit=()=>{
-    alert(formData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    try {
+      // Create a single payload for both tables (without createdBy)
+      const userPayload = {
+        fullName: `${formData.firstName} ${formData.fatherName} ${formData.surName}`.trim(),
+        userEmail: formData.email,
+        userMobileNumber: formData.phone,
+        userStatus: false,
+        userRoleid: formData.userRoleid,
+        userDepartment: formData.department,
+        userPermissions: {
+          SystemAdminExtra: formData.extraPermissions || false,
+        },
+        createdAt: new Date().toISOString(),
+  
+        // tableUserDetails fields
+        dob: formData.dob,
+        age: formData.age,
+        nativePlace: formData.nativePlace,
+        nationality: formData.nationality,
+        gender: formData.gender,
+        maritalStatus: formData.maritalStatus,
+        languagesKnown: formData.languagesKnown,
+        identityProof: formData.identityProof,
+        picture: formData.picture,
+        presentAddress: formData.presentAddress,
+        permanentAddress: formData.permanentAddress,
+      };
+  
+      // Send API request to backend
+      const response = await axios.post("http://localhost:5000/api/users/createUserWithDetails", userPayload, {
+        withCredentials: true,
+      });
+  
+      if (response.status === 201) {
+        enqueueSnackbar("User created successfully!", { variant: "success" });
+        navigate(-1);
+      } else {
+        throw new Error("Failed to create user.");
+      }
+    } catch (error) {
+      console.error("Error creating user:", error);
+  
+      // ✅ Show detailed error messages from backend
+      if (error.response) {
+        enqueueSnackbar(error.response.data.message || "An unexpected error occurred.", {
+          variant: "error",
+        });
+      } else {
+        enqueueSnackbar("Error creating user. Please try again.", { variant: "error" });
+      }
+    }
   };
-
+  
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -268,7 +323,8 @@ const UserForm = () => {
                 <option value="">Select Status</option>
                 <option value="Unmarried">Unmarried</option>
                 <option value="Married">Married</option>
-                <option value="Divorsed">Divorsed</option>
+                <option value="Divorced">Divorced</option> {/* Fixed Typo */}
+                <option value="Widowed">Widowed</option>
               </select>
             </div>
             <div className="col-md-6 mb-3">
@@ -684,15 +740,15 @@ const UserForm = () => {
           
           {/* Confirmation Checkbox */}
           <div className="form-check mb-4">
-            <input type="checkbox" name="confirmInformation" className="form-check-input" checked={formData.confirmInformation} onChange={handleChange} />
+            <input type="checkbox" name="confirmInformation" className="form-check-input" checked={formData.confirmInformation} onChange={handleChange} required />
             <label className="form-check-label">
               I confirm that all the information provided is an accurate depiction of a real person and complies with our policies.
             </label>
           </div>
           <div className="d-flex justify-content-between w-100 mt-5">
-            <button type="button" className="btn btn-danger px-8" onClick={() => window.history.back()}>
-              Go Back
-            </button>
+          <button type="button" className="btn btn-danger px-8" onClick={() => navigate(-1)}>
+            Go Back
+          </button>
             <button type="submit" className="btn btn-primary px-4">
               Submit
             </button>

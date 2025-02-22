@@ -2,6 +2,7 @@
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import User from '../models/userModel.js';
+import UserDetails from "../models/userDetailsModel.js";
 import CryptoJS from 'crypto-js';
 import { COOKIE_SECRET_KEY } from '../config.js';
 
@@ -175,5 +176,114 @@ export const getUserRoles = async (req, res) => {
     res.status(200).json({ roles: availableRoles, systemAdminExtra });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const createUserWithDetails = async (req, res) => {
+  try {
+    const {
+      fullName, userEmail, userMobileNumber, userRoleid, userDepartment, userPermissions,
+      dob, age, nativePlace, nationality, gender, maritalStatus, languagesKnown, identityProof,
+      picture, presentAddress, permanentAddress
+    } = req.body;
+
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized: Please log in first." });
+    }
+
+    const createdBy = req.session.userId;
+
+    // ✅ Convert Role Name to Role ID & Prefix
+    let convertedRoleId, rolePrefix;
+    switch (userRoleid) {
+      case "System-Admin":
+        convertedRoleId = "R2";
+        rolePrefix = "SY";
+        break;
+      case "HR":
+        convertedRoleId = "R3";
+        rolePrefix = "HR";
+        break;
+      case "Department-Manager":
+        convertedRoleId = "R4";
+        rolePrefix = "DM";
+        break;
+      case "Employee":
+        convertedRoleId = "R5";
+        rolePrefix = "EM";
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid user role selected." });
+    }
+
+    // ✅ Check if email already exists
+    const existingUser = await User.findOne({ userEmail });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already registered. Try a different email." });
+    }
+
+    // ✅ Count users with the same role
+    const userCount = await User.countDocuments({ userRoleid: convertedRoleId });
+
+    // ✅ Generate userId
+    const userId = `${rolePrefix}${userCount + 1}`;
+
+    // ✅ Generate Default Password
+    const currentYear = new Date().getFullYear();
+    const emailPrefix = userEmail.split("@")[0];
+    const rawPassword = `${currentYear}#${emailPrefix}`; // Ex: 2024#john.doe
+
+    // ✅ Hash Password
+    const hashedPassword = await bcrypt.hash(rawPassword, 10); // Salt rounds = 10
+
+    // ✅ Insert into tableUser
+    const newUser = await User.create({
+      userId,
+      fullName,
+      userEmail,
+      userMobileNumber,
+      userStatus: false,
+      userPassword: hashedPassword, // ✅ Store hashed password
+      userRoleid: convertedRoleId,
+      userDepartment,
+      userPermissions: {
+        SystemAdminExtra: userPermissions?.SystemAdminExtra || false,
+      },
+      activateAccount: true,
+      createdAt: new Date(),
+    });
+
+    // ✅ Insert into tableUserDetails
+    const newUserDetails = await UserDetails.create({
+      userdetailsId: `${userId}-D`,
+      userId,
+      dob,
+      age,
+      nativePlace,
+      nationality,
+      gender,
+      maritalStatus,
+      languagesKnown,
+      identityProof,
+      picture,
+      presentAddress,
+      permanentAddress,
+      createdBy,
+    });
+
+    res.status(201).json({
+      message: "User and details created successfully!",
+      user: newUser,
+      userDetails: newUserDetails,
+      rawPassword, // Optional: Send raw password to frontend for first-time login
+    });
+  } catch (error) {
+    console.error("Error creating user:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: "Invalid data. Please check your inputs." });
+    }
+
+    res.status(500).json({ message: "Server error. Please try again later.", error });
   }
 };

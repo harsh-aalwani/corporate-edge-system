@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema({
   userRoleid: { type: String, required: true },
   userDepartment: { type: String, required: true },
   userPermissions: { type: Object, default: { SystemAdminExtra: false } },
+  activateAccount: { type: Boolean, default: true }, // ✅ New field, default: true
   createdAt: { type: Date, default: Date.now },
 });
 
