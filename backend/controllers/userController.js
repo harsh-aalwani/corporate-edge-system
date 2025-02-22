@@ -181,10 +181,12 @@ export const getUserRoles = async (req, res) => {
 
 export const createUserWithDetails = async (req, res) => {
   try {
-    const {
-      fullName, userEmail, userMobileNumber, userRoleid, userDepartment, userPermissions,
+    let {
+      fullName, userEmail, userMobileNumber, userRoleid, userDepartment, userDesignation, userPermissions,
       dob, age, nativePlace, nationality, gender, maritalStatus, languagesKnown, identityProof,
-      picture, presentAddress, permanentAddress
+      picture, presentAddress, permanentAddress, educationQualification, specialization,
+      lastWorkPlace, yearsOfExperience, addressOfWorkPlace, responsibilities,
+      referenceContact, totalYearsOfExperience
     } = req.body;
 
     if (!req.session.userId) {
@@ -192,6 +194,19 @@ export const createUserWithDetails = async (req, res) => {
     }
 
     const createdBy = req.session.userId;
+
+    // ✅ Ensure educationQualification is properly formatted
+    if (typeof educationQualification === "string") {
+      try {
+        educationQualification = JSON.parse(educationQualification);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid educationQualification format." });
+      }
+    }
+
+    if (!Array.isArray(educationQualification)) {
+      return res.status(400).json({ message: "Education Qualification should be an array." });
+    }
 
     // ✅ Convert Role Name to Role ID & Prefix
     let convertedRoleId, rolePrefix;
@@ -246,6 +261,7 @@ export const createUserWithDetails = async (req, res) => {
       userPassword: hashedPassword, // ✅ Store hashed password
       userRoleid: convertedRoleId,
       userDepartment,
+      userDesignation, // ✅ Added userDesignation
       userPermissions: {
         SystemAdminExtra: userPermissions?.SystemAdminExtra || false,
       },
@@ -268,6 +284,14 @@ export const createUserWithDetails = async (req, res) => {
       picture,
       presentAddress,
       permanentAddress,
+      educationQualification, // ✅ Store as array of objects
+      specialization,
+      lastWorkPlace,
+      yearsOfExperience,
+      addressOfWorkPlace,
+      responsibilities,
+      referenceContact,
+      totalYearsOfExperience,
       createdBy,
     });
 

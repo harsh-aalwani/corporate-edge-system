@@ -19,8 +19,9 @@ const userSchema = new mongoose.Schema({
   },
   userRoleid: { type: String, required: true },
   userDepartment: { type: String, required: true },
+  userDesignation: { type: String, required: false }, // ✅ Added field
   userPermissions: { type: Object, default: { SystemAdminExtra: false } },
-  activateAccount: { type: Boolean, default: true }, // ✅ New field, default: true
+  activateAccount: { type: Boolean, default: true }, // ✅ Default: true
   createdAt: { type: Date, default: Date.now },
 });
 

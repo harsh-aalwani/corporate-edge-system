@@ -198,7 +198,7 @@ const UserForm = () => {
           SystemAdminExtra: formData.extraPermissions || false,
         },
         createdAt: new Date().toISOString(),
-  
+      
         // tableUserDetails fields
         dob: formData.dob,
         age: formData.age,
@@ -211,8 +211,19 @@ const UserForm = () => {
         picture: formData.picture,
         presentAddress: formData.presentAddress,
         permanentAddress: formData.permanentAddress,
-      };
-  
+      
+        // Missing fields added (except confirmInformation)
+        educationQualification: formData.educationQualification,
+        specialization: formData.specialization,
+        userDesignation: formData.userDesignation,
+        lastWorkPlace: formData.lastWorkPlace,
+        yearsOfExperience: formData.yearsOfExperience,
+        addressOfWorkPlace: formData.addressOfWorkPlace,
+        responsibilities: formData.responsibilities,
+        referenceContact: formData.referenceContact,
+        totalYearsOfExperience: formData.totalYearsOfExperience,
+      };      
+      console.log(userPayload.educationQualification);
       // Send API request to backend
       const response = await axios.post("http://localhost:5000/api/users/createUserWithDetails", userPayload, {
         withCredentials: true,
