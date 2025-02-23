@@ -60,10 +60,12 @@ const UserForm = () => {
     }));
   };
 
+  // Function to add a new education entry
   const addEducationField = () => {
     setFormData((prev) => ({
       ...prev,
       educationQualification: [
+        ...prev.educationQualification,
         {
           id: Date.now(),
           field: "",
@@ -78,16 +80,16 @@ const UserForm = () => {
           noOfAttempts: "",
           yearOfPassing: "",
         },
-        ...prev.educationQualification,
       ],
     }));
-  
-    enqueueSnackbar("New entry added successfully!", { 
+
+    // Show Snackbar message with count
+    enqueueSnackbar(`New education entry added! Total entries: ${formData.educationQualification.length+1}`, {
       variant: "success",
-      autoHideDuration: 3000, 
+      autoHideDuration: 3000,
     });
   };
-  
+
   //Remove Education Entry
   const removeEducationEntry = (id) => {
     setFormData((prev) => ({
@@ -96,7 +98,7 @@ const UserForm = () => {
     }));
   
     // Show Snackbar message
-    enqueueSnackbar("Education entry removed successfully!", { 
+    enqueueSnackbar(`Education entry removed successfully! Total entries: ${formData.educationQualification.length-1}`, { 
       variant: "error",
       autoHideDuration: 3000,
     });
@@ -475,10 +477,9 @@ const UserForm = () => {
                 {collapsedEntries[edu.id] && (
                   <p className="mt-3 fw-bold text-center">Education: {edu.field || "Not Selected"}</p>
                 )}
-
-                {/* Show fields only if expanded */}
-                {!collapsedEntries[edu.id] && (
-                  <>
+                  {/* Show fields only if expanded */}
+                  {!collapsedEntries[edu.id] && (
+                    <>
                     <div className="row">
                       {/* Education Dropdown */}
                       <div className="col-md-12 mb-3 mt-4">
@@ -490,11 +491,11 @@ const UserForm = () => {
                           onChange={(e) => handleEducationChange(edu.id, "field", e.target.value)}
                         >
                           <option value="">Select Form</option>
-                          <option value="PhD">Ph.D</option>
-                          <option value="PostGraduate">Post Graduate</option>
-                          <option value="Graduate">Graduate</option>
-                          <option value="HSC">HSC</option>
                           <option value="SSC">SSC</option>
+                          <option value="HSC">HSC</option>
+                          <option value="Graduate">Graduate</option>
+                          <option value="PostGraduate">Post Graduate</option>
+                          <option value="PhD">Ph.D</option>
                         </select>
                       </div>
                     </div>

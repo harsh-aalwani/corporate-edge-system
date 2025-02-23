@@ -183,8 +183,8 @@ export const createUserWithDetails = async (req, res) => {
   try {
     let {
       fullName, userEmail, userMobileNumber, userRoleid, userDepartment, userDesignation, userPermissions,
-      dob, age, nativePlace, nationality, gender, maritalStatus, languagesKnown, identityProof,
-      picture, presentAddress, permanentAddress, educationQualification, specialization,
+      dob, age, nativePlace, nationality, gender, maritalStatus, languagesKnown,
+      presentAddress, permanentAddress, educationQualification, specialization,
       lastWorkPlace, yearsOfExperience, addressOfWorkPlace, responsibilities,
       referenceContact, totalYearsOfExperience
     } = req.body;
@@ -195,7 +195,7 @@ export const createUserWithDetails = async (req, res) => {
 
     const createdBy = req.session.userId;
 
-    // ✅ Ensure educationQualification is properly formatted
+    // ✅ Convert educationQualification string to array
     if (typeof educationQualification === "string") {
       try {
         educationQualification = JSON.parse(educationQualification);
@@ -207,6 +207,10 @@ export const createUserWithDetails = async (req, res) => {
     if (!Array.isArray(educationQualification)) {
       return res.status(400).json({ message: "Education Qualification should be an array." });
     }
+
+    // ✅ Extract file paths
+    const identityProof = req.files?.identityProof?.[0]?.path || null;
+    const picture = req.files?.picture?.[0]?.path || null;
 
     // ✅ Convert Role Name to Role ID & Prefix
     let convertedRoleId, rolePrefix;
@@ -237,19 +241,30 @@ export const createUserWithDetails = async (req, res) => {
       return res.status(400).json({ message: "Email already registered. Try a different email." });
     }
 
-    // ✅ Count users with the same role
-    const userCount = await User.countDocuments({ userRoleid: convertedRoleId });
+    // ✅ Find the last user with the same role to determine the next ID
+    const lastUser = await User.findOne({ userRoleid: convertedRoleId })
+      .sort({ createdAt: -1 }) // Sort by latest created user
+      .lean();
+
+    let nextUserNumber = 1;
+    if (lastUser) {
+      const lastUserId = lastUser.userId;
+      const lastNumberMatch = lastUserId.match(/\d+$/); // Extract numeric part
+      if (lastNumberMatch) {
+        nextUserNumber = parseInt(lastNumberMatch[0]) + 1; // Increment the number
+      }
+    }
 
     // ✅ Generate userId
-    const userId = `${rolePrefix}${userCount + 1}`;
+    const userId = `${rolePrefix}${nextUserNumber}`;
 
     // ✅ Generate Default Password
     const currentYear = new Date().getFullYear();
     const emailPrefix = userEmail.split("@")[0];
-    const rawPassword = `${currentYear}#${emailPrefix}`; // Ex: 2024#john.doe
+    const rawPassword = `${currentYear}#${emailPrefix}`;
 
     // ✅ Hash Password
-    const hashedPassword = await bcrypt.hash(rawPassword, 10); // Salt rounds = 10
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // ✅ Insert into tableUser
     const newUser = await User.create({
@@ -258,10 +273,10 @@ export const createUserWithDetails = async (req, res) => {
       userEmail,
       userMobileNumber,
       userStatus: false,
-      userPassword: hashedPassword, // ✅ Store hashed password
+      userPassword: hashedPassword,
       userRoleid: convertedRoleId,
       userDepartment,
-      userDesignation, // ✅ Added userDesignation
+      userDesignation,
       userPermissions: {
         SystemAdminExtra: userPermissions?.SystemAdminExtra || false,
       },
@@ -284,7 +299,7 @@ export const createUserWithDetails = async (req, res) => {
       picture,
       presentAddress,
       permanentAddress,
-      educationQualification, // ✅ Store as array of objects
+      educationQualification,
       specialization,
       lastWorkPlace,
       yearsOfExperience,
@@ -299,7 +314,7 @@ export const createUserWithDetails = async (req, res) => {
       message: "User and details created successfully!",
       user: newUser,
       userDetails: newUserDetails,
-      rawPassword, // Optional: Send raw password to frontend for first-time login
+      rawPassword,
     });
   } catch (error) {
     console.error("Error creating user:", error);
