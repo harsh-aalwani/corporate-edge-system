@@ -1,0 +1,142 @@
+{
+  "Header": {
+    "Name": "Corporate Edge System",
+    "logo": "img/Companylogo/logo_bordered.png",
+    "title": "Welcome to the Corporate Edge system",
+    "paragraph": "Welcome to the future of business management with the Corporate Edge System. Our platform offers innovative solutions to optimize workflows, connect teams, and drive success in a rapidly evolving marketplace."
+  },
+  "images": [
+    {
+      "id": 1,
+      "src": "img/portfolio/images/slider1.jpg",
+      "alt": "Image 1"
+    },
+    {
+      "id": 2,
+      "src": "img/portfolio/images/slider2.jpg",
+      "alt": "Image 2"
+    },
+    {
+      "id": 3,
+      "src": "img/portfolio/images/slider3.jpg",
+      "alt": "Image 3"
+    }
+  ],
+"About": {
+  "paragraph": "The Corporate Edge System is designed to streamline operations, enhance collaboration, and drive efficiency across all business functions. Our platform ensures seamless integration and a user-friendly experience, helping organizations achieve their goals effortlessly.",
+  "Why": [
+    "Seamless business operations",
+    "Enhanced team collaboration",
+    "Data-driven decision making",
+    "Scalable and flexible platform"
+  ],
+  "Why2": [
+    "User-friendly and intuitive interface",
+    "Secure and reliable system",
+    "Real-time analytics and insights",
+    "Customizable to fit business needs"
+  ]
+},
+  
+"Services": [
+  {
+    "icon": "fa fa-briefcase",
+    "name": "Business Management",
+    "text": "Optimize your operations with a system that integrates all essential business functions seamlessly."
+  },
+  {
+    "icon": "fa fa-users",
+    "name": "Team Collaboration",
+    "text": "Enhance productivity with tools designed for effective communication and teamwork."
+  },
+  {
+    "icon": "fa fa-line-chart",
+    "name": "Performance Analysis",
+    "text": "Gain valuable insights with real-time data analytics and reporting capabilities."
+  },
+  {
+    "icon": "fa fa-cogs",
+    "name": "Automation",
+    "text": "Automate repetitive tasks to increase efficiency and reduce manual workload."
+  },
+  {
+    "icon": "fa fa-shield-alt",
+    "name": "Security & Compliance",
+    "text": "Ensure data security and regulatory compliance with robust system safeguards."
+  },
+  {
+    "icon": "fa fa-clock-o",
+    "name": "Fast & Reliable",
+    "text": "Experience a high-performance system with minimal downtime and quick responses."
+  }
+],
+  "Testimonials": [
+    {
+      "img": "img/testimonials/01.jpg",
+      "text": "\"The Corporate Edge System transformed how we manage projects and collaborate as a team. A must-have for any organization!\"",
+      "name": "Alex Johnson"
+    },
+    {
+      "img": "img/testimonials/02.jpg",
+      "text": "\"User-friendly and highly efficient! This system has improved our workflow tremendously.\"",
+      "name": "Sophia Lee"
+    },
+    {
+      "img": "img/testimonials/03.jpg",
+      "text": "\"A game-changer for business management. The analytics and automation features are outstanding!\"",
+      "name": "Michael Brown"
+    }
+  ],
+  "Team": [
+    {
+      "img": "img/team/01.png",
+      "name": "Harsh Aalwani",
+      "job": ""
+    },
+    {
+      "img": "img/team/01.png",
+      "name": "Vishal Agrawal",
+      "job": ""
+    },
+    {
+      "img": "img/team/01.png",
+      "name": "Vatsal Bharodiya",
+      "job": ""
+    },
+    {
+      "img": "img/team/04.png",
+      "name": "Heer Mistry",
+      "job": ""
+    }
+  ],
+  "Contact": {
+    "address": "Prefered not to be disclosed",
+    "phone": "Prefered not to be disclosed",
+    "email": "projectces123@gmail.com",
+    "facebook": "facebook.com/add_your_username",
+    "twitter": "twitter.com/add_your_username",
+    "youtube": "youtube.com/add_your_username"
+  },
+  "Features": [
+    {
+      "icon": "fa fa-comments",
+      "title": "Enhanced Communication",
+      "text": "Improve team collaboration with integrated messaging and discussion boards."
+    },
+    {
+      "icon": "fa fa-bullhorn",
+      "title": "Announcements & Alerts",
+      "text": "Keep everyone informed with real-time updates and notifications."
+    },
+    {
+      "icon": "fa fa-bar-chart",
+      "title": "Data Insights",
+      "text": "Make data-driven decisions with powerful analytics and reporting tools."
+    },
+    {
+      "icon": "fa fa-tachometer-alt",
+      "title": "Speed & Efficiency",
+      "text": "Experience a fast, optimized system that keeps up with your business demands."
+    }
+  ]
+}

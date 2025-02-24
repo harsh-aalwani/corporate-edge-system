@@ -3,10 +3,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { SnackbarProvider } from 'notistack';
 import Loader from './components/Main/Loader';
 import ProtectedRoute from './components/Main/ProtectedRoute';
+import JsonData from "./components/data/data.json";
 
 // Guest Pages
-import Home from './pages/Guest/Home';
 import Login from './pages/Guest/Login';
+import MainLayout from "./pages/Layout/MainLayout";
+import AuthLayout from "./pages/Layout/AuthLayout";
+import { Header } from "./components/Guest/header";
+import { Features } from "./components/Guest/features";
+import { About } from "./components/Guest/about";
+import { Services } from "./components/Guest/services";
+import { Team } from "./components/Guest/Team";
+import { Contact } from "./components/Guest/contact";
+import JobAnnouncement from "./components/Guest/JobAnnouncement";
+import JobVacancy from "./components/Guest/JobVacancy";
 
 // SuperAdmin Modules
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
@@ -29,11 +39,13 @@ import DepartmentManagerDashboard from './pages/DepartmentManager/Dashboard';
 // Employee Dashboard Modules
 import EmployeeDashboard from './pages/Employee/Dashboard';
 import {getUserRoleCookie, removeUserRoleCookie } from './utils/cookieHelper';
+
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
-
+  const [landingPageData, setLandingPageData] = useState({});
   useEffect(() => {
     setIsLoading(false);
+    setLandingPageData(JsonData);
   }, []);
 
   if (isLoading) {
@@ -44,8 +56,31 @@ const App = () => {
     <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
       <Router>
         <Routes>
+
+
           {/* Guest Routes */}
-          <Route path="/" element={<Home />} />
+        <Route element={<MainLayout />}>
+          <Route
+            path="/"
+            element={
+              <>
+                <Header data={landingPageData.Header} />
+                <Features data={landingPageData.Features} />
+                <About data={landingPageData.About} />
+                <Services data={landingPageData.Services} />
+                <Team data={landingPageData.Team} />
+                <Contact data={landingPageData.Contact} />
+              </>
+            }
+          />
+          <Route path="/features" element={<Features data={landingPageData.Features} />} />
+          <Route path="/about" element={<About data={landingPageData.About} />} />
+          <Route path="/services" element={<Services data={landingPageData.Services} />} />
+          <Route path="/team" element={<Team data={landingPageData.Team} />} />
+          <Route path="/contact" element={<Contact data={landingPageData.Contact} />} />
+          <Route path="/PublicAnnouncement" element={<JobAnnouncement />} />
+          <Route path="/JobApplicationForm" element={<JobVacancy />} />
+        </Route>
           <Route path="/login" element={<Login />} />
 
           {/* Role-Based Dashboards */}

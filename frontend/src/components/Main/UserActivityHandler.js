@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { removeUserRoleCookie } from '../../utils/cookieHelper';
+import {  useNavigate  } from "react-router-dom";
 
 const UserActivityHandler = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogoutBackend = async () => {
     setIsLoggingOut(true);
@@ -17,7 +19,7 @@ const UserActivityHandler = () => {
 
       if (response.ok) {
         removeUserRoleCookie();
-        window.location.href = '/login';
+        navigate('/'); 
       } else {
         const errorData = await response.json();
         enqueueSnackbar(errorData.message || 'Failed to log out', { variant: 'error' });

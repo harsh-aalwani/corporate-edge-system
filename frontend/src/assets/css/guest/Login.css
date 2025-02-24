@@ -1,0 +1,231 @@
+/* From Uiverse.io by Cksunandh */ 
+.login-container {
+  background-color:rgb(227, 238, 243);
+  border-radius: 8px;
+  box-shadow: rgb(219, 207, 207) 0px -23px 25px 0px inset,
+    rgb(108 108 108 / 23%) 0px -36px 30px 0px inset,
+    rgba(0, 0, 0, 0.1) 0px -79px 40px 0px inset, rgba(0, 0, 0, 0.06) 0px 2px 1px,
+    rgba(0, 0, 0, 0.09) 0px 4px 2px, rgba(0, 0, 0, 0.09) 0px 8px 4px,
+    rgba(0, 0, 0, 0.09) 0px 16px 8px, rgba(0, 0, 0, 0.09) 0px 32px 16px;
+  padding: 40px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  margin: 0 auto;
+  margin-top: 50px;
+  /* background-image: url('login.jpg'); */
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 80px; /* Adjust the size as needed */
+  height: 80px;
+  border-radius: 50%; /* Optional: Make it circular */
+  object-fit: cover;
+}
+
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  color: #110f0f;
+  font-weight: 500;
+  font-size: 40px;
+  margin-bottom: 5px;
+}
+
+.paragraph {
+  color: #ffffff;
+  font-weight: 400;
+  font-size: 15px;
+  margin-bottom: 15px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group input {
+  background: none;
+  border: 1px solid #353535;
+  padding: 15px 23px;
+  font-size: 18px;
+  border-radius: 8px;
+  color: #131212;
+  width: 100%;
+  box-shadow: rgb(136 136 136 / 17%) 0px -23px 25px 0px inset,
+    rgb(81 81 81 / 23%) 0px -36px 30px 0px inset,
+    rgba(0, 0, 0, 0.1) 0px -79px 40px 0px inset, rgba(0, 0, 0, 0.06) 0px 2px 1px,
+    rgba(0, 0, 0, 0.09) 0px 4px 2px, rgba(0, 0, 0, 0.09) 0px 8px 4px,
+    rgba(0, 0, 0, 0.09) 0px 16px 8px, rgba(0, 0, 0, 0.09) 0px 32px 16px;
+}
+
+.input-group input:focus {
+  border-color: #0173ed;
+  outline: none;
+}
+
+button {
+  padding: 15px;
+  border: none;
+  
+  border-radius: 8px;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #2a3138;
+}
+
+.bottom-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 20px;
+  color: #1a0505;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.bottom-text a {
+  color: #364350;
+  text-decoration: none;
+  font-size: large;
+  transition: color 0.3s ease;
+}
+
+.bottom-text a:hover {
+  color: #3f4e5e;
+}
+
+.button-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  background-color: #0a0a0a;
+  border-radius: 8px; 
+}
+
+
+
+/* Modal Background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Modal Box */
+.modal-content {
+  background: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  width: 350px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-20px);
+  animation: slideIn 0.3s ease-in-out forwards;
+}
+
+/* Close Button */
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #333;
+}
+
+.close-btn:hover {
+  color: red;
+}
+
+/* Modal Title */
+.modal-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+/* Modal Description */
+.modal-desc {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Input Field */
+.modal-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  margin-bottom: 15px;
+}
+
+.modal-input:focus {
+  border-color: #007bff;
+}
+
+/* Submit Button */
+.modal-btn {
+  background: #424952;
+  color: #fff;
+  padding: 10px 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+  width: 100%;
+}
+
+.modal-btn:hover {
+  background: #101011;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
