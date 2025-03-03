@@ -32,6 +32,8 @@ app.use('/api/authuser', authUserRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/employee-concerns", employeeConcernRoutes);
 app.use("/api/employee-appraisal", employeeAppraisalRoutes);
+app.use('/uploads', express.static('uploads'));
+
 // Use Routes
 app.use("/api/candidates",candidateRoutes);
 // Initialize Socket.IO
