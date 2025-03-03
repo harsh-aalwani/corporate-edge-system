@@ -11,7 +11,6 @@ import "../../assets/css/Main/CommonTemplate.css";
 // Required Hooks and Components
 import useSidebarLogic from '../../assets/js/useSidebar.js';
 import UserActivityHandler from '../../components/Main/UserActivityHandler.js'; // Import UserActivityHandler
-import {getUserRoleCookie, removeUserRoleCookie } from '../../utils/cookieHelper';
 
 const SUTemplate = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
@@ -41,16 +40,13 @@ const SUTemplate = ({ children }) => {
             setFullName(data.data.fullName);
             setUserEmail(data.data.userEmail);
           } else {
-            removeUserRoleCookie();
             enqueueSnackbar('Profile data is missing.', { variant: 'error' });
           }
         } else {
-          removeUserRoleCookie();
           const errorData = await response.json();
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
       } catch (error) {
-        removeUserRoleCookie();
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
       }
@@ -95,47 +91,18 @@ const SUTemplate = ({ children }) => {
                 </Link>
               </li>
 
-              <li className="nav-item">
-                <Link to="#" data-bs-toggle="collapse">
-                  <i className="fas fa-users-cog"></i>
-                  <p>Manage Users</p>
-                  <span className="caret"></span>
-                </Link>
-                <div className="collapse" id="sidebarLayouts">
-                  <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/ManageSystemAdmin">
-                        <span className="sub-item">System Admin</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ManageHRManager">
-                        <span className="sub-item">HR Manager</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ManageDepartmentHead">
-                        <span className="sub-item">Department-Manager</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ManageProjectManager">
-                        <span className="sub-item">Project-Manager</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ManageEmployee">
-                        <span className="sub-item">Employee</span>
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </li>
+         
 
               <li className="nav-item">
                 <Link to="/AddDepartment">
-                  <i className="fas fa-building"></i>
-                  <p>Add Department</p>
+                  <i className="fas fa-list-alt"></i>
+                  <p>Project list</p>
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/AddDepartment">
+                  <i className="fas fa-user-edit"></i>
+                  <p>Customize Profile</p>
                 </Link>
               </li>
 
@@ -147,6 +114,21 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
+                  <li>
+                      <Link to="/LeaveApply">
+                        <span className="sub-item">Leave Apply</span>
+                      </Link>
+                    </li>
+                    <li>
+                    <li>
+                      <Link to="/WithdrawLeave">
+                        <span className="sub-item">Withdraw Leave</span>
+                      </Link>
+                    </li>
+                      <Link to="/MyLeave">
+                        <span className="sub-item">My Leave</span>
+                      </Link>
+                    </li>
                     <li>
                       <Link to="/LeaveBalance">
                         <span className="sub-item">Leave Balance</span>
@@ -161,39 +143,14 @@ const SUTemplate = ({ children }) => {
                 </div>
               </li>
 
+           
               <li className="nav-item">
-                <Link to="/OrganizationChart">
-                  <i className="fas fa-sitemap"></i>
-                  <p>Organization Chart</p>
+                <Link to="/PrivateAnnouncements">
+                  <i className="fas fa-bell"></i>
+                  <p>Receive Announcement</p>
                 </Link>
               </li>
 
-              <li className="nav-item">
-                <Link to="/Announcements" data-bs-toggle="collapse">
-                  <i className="fas fa-bullhorn"></i>
-                  <p>Announcement</p>
-                  <span className="caret"></span>
-                </Link>
-                <div className="collapse" id="tables">
-                  <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/CreateAnnouncement">
-                        <span className="sub-item">Create</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/AnnouncementTable">
-                        <span className="sub-item">Table</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ReceiveAnnouncement">
-                        <span className="sub-item">Receive Announcement</span>
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </li>
 
               <li className="nav-item">
                 <Link to="/MyProfile">
@@ -203,32 +160,27 @@ const SUTemplate = ({ children }) => {
               </li>
 
               <li className="nav-item">
-                <Link to="/Logs" data-bs-toggle="collapse">
-                  <i className="fas fa-cogs"></i>
-                  <p>Logs</p>
+                <Link to="/LeaveManagement" data-bs-toggle="collapse">
+                  <i className="fas fa-handshake"></i>
+                  <p>Employee Assistance </p>
                   <span className="caret"></span>
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/SystemAccessLog">
-                        <span className="sub-item">System Access log</span>
+                  <li>
+                      <Link to="/RaiseaConcern">
+                        <span className="sub-item">Raise a Concern</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/UserLog">
-                        <span className="sub-item">User log</span>
+                      <Link to="/RaiseaAppraisal">
+                        <span className="sub-item">Appraisal Request</span>
                       </Link>
                     </li>
-                    <li>
-                      <Link to="/DepartmentLog">
-                        <span className="sub-item">Department log</span>
-                      </Link>
-                    </li>
-                    {/* Add more log links as needed */}
                   </ul>
                 </div>
               </li>
+            
             </ul>
           </div>
         </div>
@@ -370,7 +322,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu footer-menu--1" style={{ paddingLeft: '48px' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Popular Category</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['Dashboard', 'System Admin', 'HR manager', 'Department-Manager', 'Project-Manager','Employee','Manage Department','Employee Asistance','Announcement','Logs'].map((item) => (
+                        {['Dashboard', 'System Admin', 'HR manager', 'Department-Manager', 'Project-Manager','Employee','Manage Department','Employee Asistance','Announcement','Customize Profile','Leave Managment'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>
@@ -396,47 +348,7 @@ const SUTemplate = ({ children }) => {
                   </div>
                 </div>
 
-                {/* Help Support Section */}
-                <div className="col-md-3 col-sm-4">
-                  <div className="footer-widget" style={{ marginBottom: '40px' }}>
-                    <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
-                      <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
-                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['demo1','demo2'].map((item) => (
-                          <li key={item} style={{ lineHeight: '32px' }}>
-                            <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div
-                    className="backToTop"
-                    onClick={backToTop}
-                    style={{
-                      lineHeight: '40px',
-                      cursor: 'pointer',
-                      width: '40px',
-                      background: '#5867dd',
-                      color: '#fff',
-                      position: 'fixed',
-                      boxShadow: '0 4px 4px rgba(0,0,0,.1)',
-                      borderRadius: '50%',
-                      right: 'calc((100% - 1200px)/ 2)',
-                      zIndex: 111,
-                      bottom: '80px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <span
-                      className="icon-arrow-up"
-                      style={{
-                        display: 'inline-block',
-                      }}
-                    ></span>
-                  </div>
-                </div>
+               
               </div>
             </div>
           </div>

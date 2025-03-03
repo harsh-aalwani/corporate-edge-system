@@ -11,7 +11,6 @@ import "../../assets/css/Main/CommonTemplate.css";
 // Required Hooks and Components
 import useSidebarLogic from '../../assets/js/useSidebar.js';
 import UserActivityHandler from '../../components/Main/UserActivityHandler.js'; // Import UserActivityHandler
-import {getUserRoleCookie, removeUserRoleCookie } from '../../utils/cookieHelper';
 
 const SUTemplate = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
@@ -40,16 +39,13 @@ const SUTemplate = ({ children }) => {
             setFullName(data.data.fullName);
             setUserEmail(data.data.userEmail);
           } else {
-            removeUserRoleCookie();
             enqueueSnackbar('Profile data is missing.', { variant: 'error' });
           }
         } else {
           const errorData = await response.json();
-          removeUserRoleCookie();
           enqueueSnackbar(errorData.message || 'Failed to fetch user profile', { variant: 'error' });
         }
       } catch (error) {
-        removeUserRoleCookie();
         console.error('Error fetching profile:', error);
         enqueueSnackbar('An error occurred while fetching the profile', { variant: 'error' });
       }
@@ -102,21 +98,9 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="sidebarLayouts">
                   <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/ManageSystemAdmin">
-                        <span className="sub-item">System Admin</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ManageHRManager">
-                        <span className="sub-item">HR Manager</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ManageDepartmentHead">
-                        <span className="sub-item">Department-Manager</span>
-                      </Link>
-                    </li>
+                   
+                   
+                   
                     <li>
                       <Link to="/ManageProjectManager">
                         <span className="sub-item">Project-Manager</span>
@@ -132,12 +116,23 @@ const SUTemplate = ({ children }) => {
               </li>
 
               <li className="nav-item">
-                <Link to="/AddDepartment">
-                  <i className="fas fa-building"></i>
-                  <p>Add Department</p>
+                <Link to="/AddProject">
+                  <i className="fas fa-project-diagram"></i>
+                  <p>Add Project</p>
                 </Link>
               </li>
-
+              <li className="nav-item">
+                <Link to="/ManageProject">
+                  <i className="fas fa-tasks"></i>
+                  <p>Manage Project</p>
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/AddCredits">
+                  <i className="fas fa-coins"></i>
+                  <p>Employee Credits</p>
+                </Link>
+              </li>
               <li className="nav-item">
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
                   <i className="fas fa-id-card"></i>
@@ -146,54 +141,58 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
+                  <li>
+                      <Link to="/LeaveApplye">
+                        <span className="sub-item">Leave Applye</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/MyApplye">
+                        <span className="sub-item">My Applye</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/Withdrawleave">
+                        <span className="sub-item">Withdraw Leave</span>
+                      </Link>
+                    </li>
                     <li>
                       <Link to="/LeaveBalance">
                         <span className="sub-item">Leave Balance</span>
                       </Link>
                     </li>
-                    <li>
-                      <Link to="/LeaveAllocation">
-                        <span className="sub-item">Leave Allocation</span>
-                      </Link>
-                    </li>
+                    
                   </ul>
                 </div>
               </li>
-
               <li className="nav-item">
-                <Link to="/OrganizationChart">
-                  <i className="fas fa-sitemap"></i>
-                  <p>Organization Chart</p>
+                <Link to="/PrivateAnnouncements">
+                  <i className="fas fa-bullhorn"></i>
+                  <p>Receive Announcement</p>
                 </Link>
               </li>
-
-              <li className="nav-item">
-                <Link to="/Announcements" data-bs-toggle="collapse">
-                  <i className="fas fa-bullhorn"></i>
-                  <p>Announcement</p>
+             
+  <li className="nav-item">
+                <Link to="/LeaveManagement" data-bs-toggle="collapse">
+                  <i className="fas fa-handshake"></i>
+                  <p>Employee Assistance </p>
                   <span className="caret"></span>
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/CreateAnnouncement">
-                        <span className="sub-item">Create</span>
+                  <li>
+                      <Link to="/EmployeeConcerns">
+                        <span className="sub-item">Employee Concern</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/AnnouncementTable">
-                        <span className="sub-item">Table</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ReceiveAnnouncement">
-                        <span className="sub-item">Receive Announcement</span>
+                      <Link to="/EmployeeAppraisal">
+                        <span className="sub-item">Employee Appraisal</span>
                       </Link>
                     </li>
                   </ul>
                 </div>
               </li>
-
               <li className="nav-item">
                 <Link to="/MyProfile">
                   <i className="fas fa-user"></i>
@@ -210,21 +209,30 @@ const SUTemplate = ({ children }) => {
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
                     <li>
+                      <Link to="/EmployeeLog">
+                        <span className="sub-item">Employee log</span>
+                      </Link>
+                    </li>
+                    <li>
                       <Link to="/SystemAccessLog">
                         <span className="sub-item">System Access log</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/UserLog">
-                        <span className="sub-item">User log</span>
+                      <Link to="/ProjectLog">
+                        <span className="sub-item">Project log</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/DepartmentLog">
-                        <span className="sub-item">Department log</span>
+                      <Link to="/AnnocementLog">
+                        <span className="sub-item">Annocement log</span>
                       </Link>
                     </li>
-                    {/* Add more log links as needed */}
+                    <li>
+                      <Link to="/LeaveLog">
+                        <span className="sub-item">Leave log</span>
+                      </Link>
+                    </li>
                   </ul>
                 </div>
               </li>
@@ -369,7 +377,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu footer-menu--1" style={{ paddingLeft: '48px' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Popular Category</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['Dashboard', 'System Admin', 'HR manager', 'Department-Manager', 'Project-Manager','Employee','Manage Department','Employee Asistance','Announcement','Logs'].map((item) => (
+                        {['Dashboard', 'System Admin', 'HR manager', 'Department-Manager', 'Project-Manager','Employee','Manage Department','Add Project','Manage Project','Employee Credits','Leave Management','Announcement','My Profile'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>
@@ -401,7 +409,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['demo1','demo2'].map((item) => (
+                        {['Employee log','System Access log','Project log','Announcment log','Leave log'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>

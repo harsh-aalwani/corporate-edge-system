@@ -13,7 +13,11 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath = "uploads/";
 
-    if (file.fieldname === "identityProof") {
+    if (file.fieldname === "candidateDocuments") {
+      uploadPath += "candidate/candidateDocuments/";
+    } else if (file.fieldname === "candidatePicture") {
+      uploadPath += "candidate/candidatePictures/";
+    } else if (file.fieldname === "identityProof") {
       uploadPath += "userDocuments/";
     } else if (file.fieldname === "picture") {
       uploadPath += "userPictures/";

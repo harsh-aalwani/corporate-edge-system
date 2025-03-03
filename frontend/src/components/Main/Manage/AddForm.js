@@ -265,9 +265,6 @@ const UserForm = () => {
       formDataToServer.append('responsibilities', formData.responsibilities);
       formDataToServer.append('referenceContact', formData.referenceContact);
       formDataToServer.append('totalYearsOfExperience', formData.totalYearsOfExperience);
-      for (const pair of formDataToServer.entries()) {
-        console.log(`${pair[0]}:`, pair[1]);
-      }
       // Send API request to backend
       const response = await axios.post("http://localhost:5000/api/users/createUserWithDetails", formDataToServer, {
         withCredentials: true,

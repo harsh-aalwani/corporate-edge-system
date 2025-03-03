@@ -186,7 +186,7 @@ const SUTemplate = ({ children }) => {
             </li>
 
             {/* Announcement */}
-            <li className={`nav-item ${isActive(['/CreateAnnouncement', '/AnnouncementTable', '/ReceiveAnnouncement']) ? 'active' : ''}`}>
+            <li className={`nav-item ${isActive(['/AddAnnouncement', '/AnnouncementList', '/ReceiveAnnouncement']) ? 'active' : ''}`}>
               <Link to="/Announcements" data-bs-toggle="collapse">
                 <i className="fas fa-bullhorn"></i>
                 <p>Announcement</p>
@@ -194,14 +194,14 @@ const SUTemplate = ({ children }) => {
               </Link>
               <div className="collapse" id="tables">
                 <ul className="nav nav-collapse">
-                  <li className={isActive(['/CreateAnnouncement']) ? 'active' : ''}>
-                    <Link to="/CreateAnnouncement">
-                      <span className="sub-item">Create</span>
+                  <li className={isActive(['/AddAnnouncement']) ? 'active' : ''}>
+                    <Link to="/AddAnnouncement">
+                      <span className="sub-item">Add Announcement</span>
                     </Link>
                   </li>
                   <li className={isActive(['/AnnouncementTable']) ? 'active' : ''}>
-                    <Link to="/AnnouncementTable">
-                      <span className="sub-item">Table</span>
+                    <Link to="/AnnouncementList">
+                      <span className="sub-item">Manage Announcement</span>
                     </Link>
                   </li>
                   <li className={isActive(['/ReceiveAnnouncement']) ? 'active' : ''}>
@@ -243,6 +243,46 @@ const SUTemplate = ({ children }) => {
                   <li className={isActive(['/DepartmentLog']) ? 'active' : ''}>
                     <Link to="/DepartmentLog">
                       <span className="sub-item">Department log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/AnnouncementLog']) ? 'active' : ''}>
+                    <Link to="/Announcementlog">
+                      <span className="sub-item">Announcement log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/VacancyLog']) ? 'active' : ''}>
+                    <Link to="/VacancyLog">
+                      <span className="sub-item">Vacancy log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/CandidateLog']) ? 'active' : ''}>
+                    <Link to="/CandidateLog">
+                      <span className="sub-item">Candidate log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/Websiteupdatelog']) ? 'active' : ''}>
+                    <Link to="/Websiteupdatelog">
+                      <span className="sub-item">Website update log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/Leavelog']) ? 'active' : ''}>
+                    <Link to="/Leavelog">
+                      <span className="sub-item">Leave log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/ProjectLog']) ? 'active' : ''}>
+                    <Link to="/ProjectLog">
+                      <span className="sub-item">Project Log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/EmployeeConcernslog']) ? 'active' : ''}>
+                    <Link to="/EmployeeConcernslog">
+                      <span className="sub-item">Employee Concerns log</span>
+                    </Link>
+                  </li>
+                  <li className={isActive(['/EmployeeAppraisallog']) ? 'active' : ''}>
+                    <Link to="/EmployeeAppraisallog">
+                      <span className="sub-item">Employee Appraisal log</span>
                     </Link>
                   </li>
                 </ul>
@@ -421,7 +461,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['demo1','demo2'].map((item) => (
+                        {['System Access log','User log','Department log','Announcement log','Vacancy Log','Candidate Log','Website update log','Leave log','Project Log','Employee Concerns log','Employee Appraisal log'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>

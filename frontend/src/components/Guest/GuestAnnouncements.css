@@ -1,0 +1,80 @@
+.laptop-screen-modal .modal-dialog {
+  max-width: 90vw;  /* Increased from 80vw to 90vw */
+  height: 90vh;
+}
+
+.laptop-modal-body {
+  max-height: 75vh; /* Increased height to accommodate more content */
+  overflow-y: auto;
+}
+
+.full-screen-modal .modal-dialog {
+  max-width: 100vw;
+  height: 100vh;
+  margin: 0;
+}
+
+.full-screen-body {
+  height: 85vh;
+  overflow-y: auto;
+}
+
+  /* main css */
+  .announcement-box {
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 10px;
+    padding: 20px;
+    min-height: 300px;
+    box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  
+  .announcement-box:hover {
+    transform: scale(1.02);
+    box-shadow: 6px 6px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  .announcement-box h4 {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #000;
+    margin-bottom: 10px;
+  }
+  
+  .announcement-box p {
+    font-size: 1rem;
+    color: #333;
+    margin: 5px 0;
+    line-height: 1.5;
+  }
+  
+  .announcement-box strong {
+    color: #000;
+  }
+  
+  .announcement-box .tag {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #007bff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    background-color: #e3f2fd;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  
+  .announcement-box .job-info {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #28a745;
+    margin-top: 10px;
+  }
+  
+  .announcement-box .not-specified {
+    color: #dc3545;
+    font-style: italic;
+  }

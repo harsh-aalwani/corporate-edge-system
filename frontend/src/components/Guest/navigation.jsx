@@ -214,14 +214,10 @@ export const Navigation = () => {
             ))}
             <li style={navItemStyle} className="nav-item">
               <Link className="nav-link" to="/PublicAnnouncement" style={navLinkStyle}>
-                Announcement
+                Career
               </Link>
             </li>
-            <li style={navItemStyle} className="nav-item">
-              <Link className="nav-link" to="/JobApplicationForm" style={navLinkStyle}>
-                Job Application
-              </Link>
-            </li>
+          
             <li style={navItemStyle} className="nav-item">
               <button style={btn23Style} className="btn-23">
                 

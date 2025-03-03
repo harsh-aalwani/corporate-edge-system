@@ -137,6 +137,28 @@ const SUTemplate = ({ children }) => {
                   <p>Add Department</p>
                 </Link>
               </li>
+              <li className="nav-item">
+                <Link to="/LeaveManagement" data-bs-toggle="collapse">
+                  <i className="	fa fa-cog"></i>
+                  <p>Web Settings</p>
+                  <span className="caret"></span>
+                </Link>
+                <div className="collapse" id="tables">
+                  <ul className="nav nav-collapse">
+                    <li>
+                      <Link to="/LeaveBalance">
+                        <span className="sub-item">Website Setup </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/LeaveAllocation">
+                        <span className="sub-item">Set Discord Bot</span>
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+
 
               <li className="nav-item">
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
@@ -154,6 +176,16 @@ const SUTemplate = ({ children }) => {
                     <li>
                       <Link to="/LeaveAllocation">
                         <span className="sub-item">Leave Allocation</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/LeaveAllocation">
+                        <span className="sub-item">Withdraw Allocation</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/LeaveAllocation">
+                        <span className="sub-item">Leave Balance</span>
                       </Link>
                     </li>
                   </ul>
@@ -176,17 +208,17 @@ const SUTemplate = ({ children }) => {
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
                     <li>
-                      <Link to="/CreateAnnouncement">
-                        <span className="sub-item">Create</span>
+                      <Link to="/SYAddAnnouncement">
+                        <span className="sub-item">Add Announcement</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/AnnouncementTable">
-                        <span className="sub-item">Table</span>
+                      <Link to="/SYAnnouncementList">
+                        <span className="sub-item">Manage Announcement</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/ReceiveAnnouncement">
+                      <Link to="/SYReceiveAnnouncement">
                         <span className="sub-item">Receive Announcement</span>
                       </Link>
                     </li>
@@ -224,7 +256,53 @@ const SUTemplate = ({ children }) => {
                         <span className="sub-item">Department log</span>
                       </Link>
                     </li>
-                    {/* Add more log links as needed */}
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Announcement log</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Vacancy Log
+                        </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Candidate Log
+                        </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Website settings log
+                        </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Leave log
+                        </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Project log
+                        </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Employee Concerns log
+                        </span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/DepartmentLog">
+                        <span className="sub-item">Employee Appraisal log
+                        </span>
+                      </Link>
+                    </li>
                   </ul>
                 </div>
               </li>
@@ -401,7 +479,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['demo1','demo2'].map((item) => (
+                      {['System Access log','User log','Department log','Announcement log','Vacancy Log','Candidate Log','Website update log','Leave log','Project Log','Employee Concerns log','Employee Appraisal log'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>

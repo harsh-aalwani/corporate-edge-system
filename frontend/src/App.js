@@ -30,10 +30,29 @@ import SuperAdminEditUser from './pages/SuperAdmin/Manage/EditUser';
 import SuperAdminDepartmentsList from './pages/SuperAdmin/Departments/DepartmentsList'
 import SuperAdminAddDepartments from './pages/SuperAdmin/Departments/AddDepartments'
 import SuperAdminEditDepartments from './pages/SuperAdmin/Departments/EditDepartments';
+import SuperAdminAddAnnouncment from './pages/SuperAdmin/Announcements/AddAnnouncement';
+import SuperAdminAnnouncementList from './pages/SuperAdmin/Announcements/AnnouncementList';
+import SuperAdminEditAnnouncements from './pages/SuperAdmin/Announcements/EditAnnouncement';
+import SuperAdminReceiveAnnouncement from './pages/SuperAdmin/Announcements/ReceiveAnnouncement';
+import HRAdminPrivateAnnouncment from './pages/HRManager/Announcements/PrivateAnnouncements';
+import DepartmentManagerPrivateAnnouncment from './pages/DepartmentManager/Announcements/PrivateAnnouncements';
+import EmployeePrivateAnnouncment from './pages/Employee/Announcements/PrivateAnnouncements';
+import SystemAdminAddAnnouncment from './pages/SystemAdmin/Announcements/SYAddAnnouncement';
+import SystemAdminAnnouncementList from './pages/SystemAdmin/Announcements/SYAnnouncementList';
+import SystemAdminEditAnnouncements from './pages/SystemAdmin/Announcements/SYEditAnnouncement';
+import SystemAdminReceiveAnnouncement from './pages/SystemAdmin/Announcements/SYReceiveAnnouncement';
+import EmployeeRaiseaConcern from './pages/Employee/EmployeeAssistance/RaiseaConcern';
+import DepartmentManagerEmployeeConcerns from './pages/DepartmentManager/EmployeeConcerns/EmployeeConcerns';
+import HREmployeeConcerns from './pages/HRManager/EmployeeConcerns/FinalEmployeeConcerns';
+import EmployeeRaiseaAppraisal from './pages/Employee/EmployeeAssistance/RaiseaAppraisal';
+import DepartmentManagerEmployeeAppraisal from './pages/DepartmentManager/EmployeeAppraisal/EmployeeAppraisal';
+import HREmployeeAppraisal from './pages/HRManager/EmployeeAppraisal/FinalEmployeeAppraisal'; 
 // SystemAdmin Modules
 import SystemAdminDashboard from './pages/SystemAdmin/Dashboard';
 // HRManager Modules
 import HRManagerDashboard from './pages/HRManager/Dashboard';
+import HRJobListing from './pages/HRManager/Recruitment/HRJobListing';
+import HRCandidateList from './pages/HRManager/Recruitment/HRCandidateList';
 // Department Modules
 import DepartmentManagerDashboard from './pages/DepartmentManager/Dashboard';
 // Employee Dashboard Modules
@@ -217,6 +236,181 @@ const App = () => {
               }
             }
           } />} />
+
+          <Route path="/AddAnnouncement" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+            () => {
+              const userRole = getUserRoleCookie();
+              switch (userRole) {
+                case 'R1': return <SuperAdminAddAnnouncment />;
+                default: return <Navigate to="/login" />;
+              }
+            }
+            } />} />
+            <Route path="/AnnouncementList" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R1': return <SuperAdminAnnouncementList />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/EditAnnouncement/:announcementIds" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R1': return <SuperAdminEditAnnouncements />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/PrivateAnnouncements" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R3': return <HRAdminPrivateAnnouncment />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/PrivateAnnouncements" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R4': return <DepartmentManagerPrivateAnnouncment />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/PrivateAnnouncements" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R5': return <EmployeePrivateAnnouncment />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/ReceiveAnnouncement" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R1': return <SuperAdminReceiveAnnouncement />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/RaiseaConcern" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R5': return <EmployeeRaiseaConcern />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/EmployeeConcerns" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R4': return <DepartmentManagerEmployeeConcerns />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+          
+          <Route path="/FinalEmployeeConcerns" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R3': return <HREmployeeConcerns />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+                <Route path="/RaiseaAppraisal" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R5': return <EmployeeRaiseaAppraisal />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/EmployeeAppraisal" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R4': return <DepartmentManagerEmployeeAppraisal />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+          <Route path="/FinalEmployeeAppraisal" element={<ProtectedRoute requiredRoles={['R1','R2','R3','R4','R5']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R3': return <HREmployeeAppraisal />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+
+            {/* super Admin */}
+            <Route path="/SYAddAnnouncement" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R2': return <SystemAdminAddAnnouncment />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+                <Route path="/SYAnnouncementList" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R2': return <SystemAdminAnnouncementList />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/SYEditAnnouncement/:announcementIds" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R2': return <SystemAdminEditAnnouncements />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/SYReceiveAnnouncement" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R2': return <SystemAdminReceiveAnnouncement />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/Recruitment" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R3': return <HRJobListing />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />
+            <Route path="/CandidateList" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+              () => {
+                const userRole = getUserRoleCookie();
+                switch (userRole) {
+                  case 'R3': return <HRCandidateList />;
+                  default: return <Navigate to="/login" />;
+                }
+              }
+            } />} />                
         </Routes>
       </Router>
     </SnackbarProvider>
