@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 
 const candidateSchema = new mongoose.Schema({
+  candidateId: { type: String, unique: true }, // New field
   firstName: String,
   fatherName: String,
   surName: String,
   email: { type: String, required: true },
-
   phone: String,
   dob: String,
   age: Number,
@@ -19,8 +19,9 @@ const candidateSchema = new mongoose.Schema({
   presentAddress: String,
   permanentAddress: String,
   educationQualification: Array,
+  announcementId: { type: String, default: null },
   position: String,
-  departmentId: { type: String, default: null }, 
+  departmentId: { type: String, default: null },
   skills: String,
   specialization: String,
   salary: String,
@@ -32,7 +33,13 @@ const candidateSchema = new mongoose.Schema({
   totalYearsOfExperience: String,
   confirmInformation: Boolean,
 
-  // New fields
+  // ✅ Performance Evaluation (Percentage-Based)
+  candidateEvaluation: { 
+    type: Number, 
+    default: 0, // Default score is 0%
+    min: 0, // Cannot be below 0%
+    max: 100 // Cannot exceed 100%
+  },
   selected: { type: Boolean, default: false },
   result: { type: Boolean, default: false }
 });

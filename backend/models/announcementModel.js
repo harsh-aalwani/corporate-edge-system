@@ -17,6 +17,7 @@ const announcementSchema = new mongoose.Schema({
   // Job details
   jobPosition: { type: String, default: null },
   jobType: { type: String, default: null },
+  jobDescription: { type: String, default: null },
   salaryRange: {
     currency: { type: String, default: null },
     min: { type: Number, default: null },

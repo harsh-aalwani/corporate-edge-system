@@ -9,6 +9,8 @@
   const JobVacancyForm = () => {
     const [imagePreview, setImagePreview] = useState(""); 
     const [positions, setPositions] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [formData, setFormData] = useState({
       // Personal Information
       firstName: "",
@@ -31,9 +33,10 @@
       // Education Qualifications (Array)
       educationQualification: [],
     
-      //Job Position Details :
+      // Job Position Details:
+      announcementId: "", // ✅ Added announcementId
       position: "",
-      department: "", // Default value
+      department: "",
       skills: "",
       specialization: "",
       salary: "",
@@ -49,9 +52,11 @@
       // Confirmation
       confirmInformation: false
     });
+    
     const navigate = useNavigate();
 
     const [ErrorMessage, setError] = useState('');
+    const [TotalYearError,setErrorForTY ] = useState('');
     const [collapsedEntries, setCollapsedEntries] = useState({});
     const toggleCollapse = (id) => {
       setCollapsedEntries((prev) => ({
@@ -66,7 +71,6 @@
         try {
           const response = await axios.get("http://localhost:5000/api/announcements/jobdata");
     
-    
           if (Array.isArray(response.data) && response.data.length > 0) {
             setPositions(response.data); // Ensure it's an array before updating state
           } else {
@@ -74,6 +78,7 @@
             setPositions([]); // Set empty to prevent undefined errors
           }
         } catch (error) {
+          console.error("❌ Error fetching job positions:", error);
           setPositions([]); // Prevent app crashes by setting empty state
         }
       };
@@ -220,7 +225,13 @@
       setFormData((prev) => {
         let updatedForm = { ...prev };
     
-        // Handle Date of Birth & Age Calculation
+        // 🔹 Prevent numbers from being typed in name fields
+        const nameFields = ["firstName", "fatherName", "surName"];
+        if (nameFields.includes(name)) {
+          return { ...prev, [name]: value.replace(/[0-9]/g, "") }; // Remove numbers
+        }
+    
+        // 🔹 Handle Date of Birth & Age Calculation (Disallow under 18)
         if (name === "dob") {
           const birthDate = new Date(value);
           const today = new Date();
@@ -232,36 +243,51 @@
           }
     
           if (age < 18 || isNaN(age)) {
-            setError("Age must be 18 or above");
+            setError("❌ Age must be 18 or above");
             return { ...prev, [name]: value, age: "" };
           } else {
             setError("");
             return { ...prev, [name]: value, age };
           }
         }
-    
-        // Reset extraPermissions when changing role to anything other than "System-Admin"
-        if (name === "userRoleid" && value !== "System-Admin") {
-          updatedForm = { ...updatedForm, [name]: value, extraPermissions: false };
-        }
-    
-        // Auto-fill department when job position changes
-        if (name === "position") {
-          if (positions && positions.length > 0) {
-            const selectedJob = positions.find((job) => job.position === value);
-            updatedForm = {
-              ...updatedForm,
-              jobDetails: {
-                ...updatedForm.jobDetails,
-                position: value,
-                departmentId: selectedJob ? selectedJob.departmentId : "", // Store department ID
-              },
-              department: selectedJob ? selectedJob.departmentName : "", // Store department name
-            };
+
+        // 🔹 Prevent `yearsOfExperience` from exceeding `totalYearsOfExperience`
+        if (name === "yearsOfExperience") {
+          const enteredYears = parseInt(value, 10) || 0;
+          const totalYears = parseInt(prev.totalYearsOfExperience, 10) || 0;
+
+          if (enteredYears > totalYears) {
+            setErrorForTY("Years of Experience cannot be greater than Total Years of Experience.");
+          } else {
+            setErrorForTY(""); // Clear error if valid
           }
         }
+
+        // 🔹 Ensure `totalYearsOfExperience` is always >= `yearsOfExperience`
+        if (name === "totalYearsOfExperience") {
+          const totalYears = parseInt(value, 10) || 0;
+          const enteredYears = parseInt(prev.yearsOfExperience, 10) || 0;
+
+          if (totalYears < enteredYears) { // ✅ Fixed condition: It should be `<` not `<=`
+            setErrorForTY("Total Years of Experience must be greater than or equal to Years of Experience.");
+          } else {
+            setErrorForTY(""); // Clear error if valid
+          }
+        }
+        // 🔹 Auto-fill position & department when job selection changes
+        if (name === "announcementId") {
+          const selectedJob = positions.find((job) => job.announcementId === value);
     
-        // Ensure other fields update correctly
+          updatedForm = {
+            ...updatedForm,
+            announcementId: value, // ✅ Store announcementId
+            position: selectedJob ? selectedJob.position : "", // ✅ Store position
+            departmentId: selectedJob ? selectedJob.departmentId : "", // ✅ Store departmentId for backend
+            department: selectedJob ? selectedJob.departmentName : "", // ✅ Show departmentName for UI
+          };
+        }
+    
+        // 🔹 Ensure other fields update correctly
         updatedForm = {
           ...updatedForm,
           [name]: type === "checkbox" ? checked : value,
@@ -274,60 +300,77 @@
     
     const handleSubmit = async (e) => {
       e.preventDefault();
+    
+      // 🔹 Check for validation errors before submitting
+      if (ErrorMessage || TotalYearError) {
+        enqueueSnackbar(ErrorMessage || TotalYearError, { variant: "error" }); // ✅ Show error in snackbar
+        return; // ✅ Stop form submission if there's an error
+      }
+    
+      console.log("Form Data:", formData);
+      setIsLoading(true);
+      
       try {
-        
         const formDataToServer = new FormData();
-        // Personal Information
-        formDataToServer.append('firstName', formData.firstName);
-        formDataToServer.append('fatherName', formData.fatherName);
-        formDataToServer.append('surName', formData.surName);
-        formDataToServer.append('email', formData.email);
-        formDataToServer.append('userMobileNumber', formData.phone);
-        formDataToServer.append('dob', formData.dob);
-        formDataToServer.append('age', formData.age);
-        formDataToServer.append('nativePlace', formData.nativePlace);
-        formDataToServer.append('nationality', formData.nationality);
-        formDataToServer.append('gender', formData.gender);
-        formDataToServer.append('maritalStatus', formData.maritalStatus);
-        formDataToServer.append('languagesKnown', formData.languagesKnown);
-        formDataToServer.append('presentAddress', formData.presentAddress);
-        formDataToServer.append('permanentAddress', formData.permanentAddress);
-        
-        // File uploads
-        formDataToServer.append('candidateDocuments', formData.candidateDocuments);
-        formDataToServer.append('candidatePicture', formData.candidatePicture);         
-
-        // Education Qualifications (as JSON)
-        formDataToServer.append('educationQualification', JSON.stringify(formData.educationQualification));
     
-        // Job Position Details
-        formDataToServer.append('position', formData.position);
-        formDataToServer.append('skills', formData.skills);
-        formDataToServer.append('specialization', formData.specialization);
-        formDataToServer.append('salary', formData.salary);
-        
-        formDataToServer.append('departmentId', formData.jobDetails.departmentId);
+        // 🔹 Personal Information
+        formDataToServer.append("firstName", formData.firstName);
+        formDataToServer.append("fatherName", formData.fatherName);
+        formDataToServer.append("surName", formData.surName);
+        formDataToServer.append("email", formData.email);
+        formDataToServer.append("phone", formData.phone);
+        formDataToServer.append("dob", formData.dob);
+        formDataToServer.append("age", formData.age);
+        formDataToServer.append("nativePlace", formData.nativePlace);
+        formDataToServer.append("nationality", formData.nationality);
+        formDataToServer.append("gender", formData.gender);
+        formDataToServer.append("maritalStatus", formData.maritalStatus);
+        formDataToServer.append("languagesKnown", formData.languagesKnown);
+        formDataToServer.append("presentAddress", formData.presentAddress);
+        formDataToServer.append("permanentAddress", formData.permanentAddress);
     
-        // Other Information
-        formDataToServer.append('lastWorkPlace', formData.lastWorkPlace);
-        formDataToServer.append('yearsOfExperience', formData.yearsOfExperience);
-        formDataToServer.append('addressOfWorkPlace', formData.addressOfWorkPlace);
-        formDataToServer.append('responsibilities', formData.responsibilities);
-        formDataToServer.append('referenceContact', formData.referenceContact);
-        formDataToServer.append('totalYearsOfExperience', formData.totalYearsOfExperience);
+        // 🔹 File uploads
+        if (formData.candidateDocuments) {
+          formDataToServer.append("candidateDocuments", formData.candidateDocuments);
+        }
+        if (formData.candidatePicture) {
+          formDataToServer.append("candidatePicture", formData.candidatePicture);
+        }
     
-        // Confirmation
-        formDataToServer.append('confirmInformation', formData.confirmInformation);
+        // 🔹 Education Qualifications (as JSON)
+        formDataToServer.append("educationQualification", JSON.stringify(formData.educationQualification));
     
-        // Send the form data to the server
+        // 🔹 Job Position Details
+        formDataToServer.append("announcementId", formData.announcementId);
+        formDataToServer.append("position", formData.position);
+        formDataToServer.append("skills", formData.skills);
+        formDataToServer.append("specialization", formData.specialization);
+        formDataToServer.append("salary", formData.salary);
+        formDataToServer.append("departmentId", formData.departmentId);
+        formDataToServer.append("department", formData.department);
+    
+        // 🔹 Work Experience
+        formDataToServer.append("lastWorkPlace", formData.lastWorkPlace);
+        formDataToServer.append("yearsOfExperience", formData.yearsOfExperience);
+        formDataToServer.append("addressOfWorkPlace", formData.addressOfWorkPlace);
+        formDataToServer.append("responsibilities", formData.responsibilities);
+        formDataToServer.append("referenceContact", formData.referenceContact);
+        formDataToServer.append("totalYearsOfExperience", formData.totalYearsOfExperience);
+    
+        // 🔹 Confirmation
+        formDataToServer.append("confirmInformation", formData.confirmInformation);
+    
+        // 🔹 Send to server
         const response = await axios.post("http://localhost:5000/api/candidates/add", formDataToServer);
-
-        enqueueSnackbar(response.data.message, { variant: "success" });
-        navigate("/PublicAnnouncement");
-        window.location.reload();
+        console.log("✅ Candidate added:", response.data);
+        setIsSuccess(true);
+        enqueueSnackbar("✅ Candidate added successfully!", { variant: "success" });
+    
       } catch (error) {
-        console.error("Error adding data:", error);
-        enqueueSnackbar(error.response?.data?.message || "Error creating user. Please try again.", { variant: "error" });
+        console.error("❌ Error adding candidate:", error);
+        enqueueSnackbar(error.response?.data?.message || "Error creating candidate. Please try again.", { variant: "error" });
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -335,6 +378,11 @@
     return (
       <div className="container mt-5 px-5 " style={{paddingBottom:"100px" } }>
         <div className="card p-4 page-box">
+
+
+          {/* Show Form if not Loading or Success */}
+        {!isLoading && !isSuccess && (
+          <>
           <h3 className="mb-3 text-center" style={{fontWeight:"bold"}}> <FaFileWaveform class="mb-2"/> Job Application Form</h3>
           <h4 className="mb-3 mt-4">Personal Information:</h4>
           <form className="custom-form" onSubmit={handleSubmit} method="POST" encType="multipart/form-data">
@@ -370,9 +418,20 @@
               </div>
               <div className="col-md-6 mb-3">
                 <label className="form-label">Date of Birth:</label>
-                <input type="date" name="dob" className="form-control" value={formData.dob} onChange={handleChange} required/>
+                <input
+                  type="date"
+                  name="dob"
+                  className="form-control"
+                  value={formData.dob}
+                  onChange={handleChange}
+                  required
+                  max={new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+                    .toISOString()
+                    .split("T")[0]} // ✅ Disables dates below 18 years
+                />
                 {ErrorMessage && <p className="text-danger">{ErrorMessage}</p>}
               </div>
+
               <div className="col-md-6 mb-3">
                 <label className="form-label">Age:</label>
                 <input type="number" name="age" disabled='true' className="form-control" min="1" value={formData.age} onChange={handleChange} required/>
@@ -661,15 +720,28 @@
                 </div>
               ))}
               <div className="container">
-                <h4 className="mb-3 mt-4">Job Position Details :</h4>
-                <div className="row">
-                  {/* Position Details Dropdown */}
+                <div class="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Position Details:</label>
-                    <select name="position" className="form-control" value={formData.position} onChange={handleChange} required>
+                    <select
+                      name="announcementId"
+                      className="form-control"
+                      value={formData.announcementId}
+                      onChange={(e) => {
+                        const selectedAnnouncement = positions.find(job => job.announcementId === e.target.value);
+                        setFormData({
+                          ...formData,
+                          announcementId: e.target.value,
+                          position: selectedAnnouncement ? selectedAnnouncement.position : "",
+                          departmentId: selectedAnnouncement ? selectedAnnouncement.departmentId : "", // ✅ Store departmentId for server
+                          department: selectedAnnouncement ? selectedAnnouncement.departmentName : "" // ✅ Show departmentName to user
+                        });
+                      }}
+                      required
+                    >
                       <option value="">Select Position</option>
-                      {positions.map((job, index) => (
-                        <option key={index} value={job.position}>
+                      {positions.map((job) => (
+                        <option key={job.announcementId} value={job.announcementId}>
                           {job.position}
                         </option>
                       ))}
@@ -681,25 +753,24 @@
                     <label className="form-label">Department:</label>
                     <input type="text" name="department" className="form-control" value={formData.department} disabled />
                   </div>
-                  
-                  {/* Skills & Expertise (Textbox) */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Skills & Expertise:</label>
-                    <input type="text" name="skills" className="form-control" value={formData.skills} onChange={handleChange} required />
-                  </div>
+                    {/* Skills & Expertise (Textbox) */}
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Skills & Expertise:</label>
+                      <input type="text" name="skills" className="form-control" value={formData.skills} onChange={handleChange} required />
+                    </div>
 
-                  {/* Specialization (Textbox) */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Specialization:</label>
-                    <input type="text" name="specialization" className="form-control" value={formData.specialization} onChange={handleChange} required />
-                  </div>
+                    {/* Specialization (Textbox) */}
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Specialization:</label>
+                      <input type="text" name="specialization" className="form-control" value={formData.specialization} onChange={handleChange} required />
+                    </div>
 
-                  {/* Availability & Expected Salary (Number Textbox) */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Expected Salary:</label>
-                    <input type="number" name="salary" className="form-control" value={formData.salary} onChange={handleChange} required />
+                    {/* Availability & Expected Salary (Number Textbox) */}
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Expected Salary:</label>
+                      <input type="number" name="salary" className="form-control" value={formData.salary} onChange={handleChange} required />
+                    </div>
                   </div>
-                </div>
               </div>
 
               <h4 className="mb-3 mt-4">Other Information: [Optional]</h4>
@@ -714,18 +785,45 @@
                   onChange={handleChange}
                 />
               </div>
-
+              
+              {/* Reference Contact */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">Reference Contact:</label>
+                <input
+                  type="text"
+                  name="referenceContact"
+                  className="form-control"
+                  value={formData.referenceContact}
+                  onChange={handleChange}
+                />
+              </div>
+              {/* Total Years of Experience */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">Total Years of Experience:</label>
+                <input
+                  type="number"
+                  name="totalYearsOfExperience"
+                  className="form-control"
+                  value={formData.totalYearsOfExperience}
+                  min="0"
+                  onChange={handleChange}
+                />
+              </div>
               {/* Years of Experience */}
               <div className="col-md-6 mb-3">
-                <label className="form-label">Years of Experience:</label>
+                <label className="form-label">Years at Last Workplace:</label>
                 <input
                   type="number"
                   name="yearsOfExperience"
                   className="form-control"
                   value={formData.yearsOfExperience}
+                  min="0"
                   onChange={handleChange}
                 />
               </div>
+
+                {/* Display error message */}
+                {TotalYearError && <p className="text-danger">{TotalYearError}</p>}
 
               {/* addressOfWorkPlace */}
               <div className="col-md-6 mb-3">
@@ -750,30 +848,6 @@
                   onChange={handleChange}
                 ></textarea>
               </div>
-
-              {/* Reference Contact */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Reference Contact:</label>
-                <input
-                  type="text"
-                  name="referenceContact"
-                  className="form-control"
-                  value={formData.referenceContact}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Total Years of Experience */}
-              <div className="col-md-6 mb-3">
-                <label className="form-label">Total Years of Experience:</label>
-                <input
-                  type="number"
-                  name="totalYearsOfExperience"
-                  className="form-control"
-                  value={formData.totalYearsOfExperience}
-                  onChange={handleChange}
-                />
-              </div>
             </div>
             
             {/* Confirmation Checkbox */}
@@ -784,7 +858,7 @@
               </label>
             </div>
             <div className="d-flex justify-content-between w-100 mt-5">
-              <button type="submit" className="btn btn-primary px-4">
+              <button type="submit" className="btn btn-primary px-4" disabled={isLoading}>
                 Submit
               </button>
               <button
@@ -814,6 +888,7 @@
                     educationQualification: [],
 
                   // Job Position Details :
+                    announcementId:"",
                     position: "",
                     department: "", // Default value
                     skills: "",
@@ -852,8 +927,30 @@
               </button>
             </div>
           </form>
+          </>
+          )}
+          {/* Show Loader */}
+          {isLoading && (
+            <div className="text-center my-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3">Submitting your application...</p>
+            </div>
+          )}
+
+          {/* Show Success Message */}
+          {isSuccess && (
+            <div className="text-center my-5">
+              <h3 className="text-success fw-bold">Successfully Added as Candidate</h3>
+              <p>Check your email for further instructions.</p>
+              <button className="btn btn-primary" onClick={() => navigate('/PublicAnnouncement')}>
+                Go to Announcements
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+     </div>
     );
   };
 

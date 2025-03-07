@@ -1,31 +1,118 @@
+import axios from "axios";
+import FormData from "form-data";
 import Candidate from "../models/candidateModel.js";
+import Announcement from "../models/announcementModel.js";
+import sendEmail from "../utils/sendEmail.js"; // Adjust the path if needed
+import { fastApiUrl } from '../config.js';
+import Department from "../models/departmentsModel.js";
 
 export const createCandidate = async (req, res) => {
   try {
-    // Validate if the files are received
+    // 🔹 Validate required files
     if (!req.files || !req.files.candidateDocuments || !req.files.candidatePicture) {
       return res.status(400).json({ message: "Both identity proof and picture are required." });
     }
 
-    // Ensure the email is present
-    if (!req.body.email) {
-      return res.status(400).json({ message: "Email is required" });
+    // 🔹 Validate required fields
+    const requiredFields = [
+      "email", "firstName", "surName", "dob", "age", "phone",
+      "nationality", "gender", "maritalStatus", "languagesKnown",
+      "position", "departmentId",
+      "announcementId", "skills", "specialization"
+    ];
+
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ message: `${field} is required.` });
+      }
     }
-    // Extract file paths
+
+    // 🔹 Check if candidate has already applied for this announcement
+    const existingCandidate = await Candidate.findOne({
+      email: req.body.email,
+      announcementId: req.body.announcementId,
+    });
+
+    if (existingCandidate) {
+      return res.status(400).json({
+        message: "You have already applied for this job announcement.",
+      });
+    }
+
     const candidateDocuments = req.files?.candidateDocuments?.[0]?.path || null;
     const candidatePicture = req.files?.candidatePicture?.[0]?.path || null;
 
-    // Validate files existence
     if (!candidateDocuments || !candidatePicture) {
       return res.status(400).json({ message: "Both identity proof and picture are required." });
     }
 
-    // Parse and validate JSON fields (if any)
-    const educationQualification = req.body.educationQualification
-      ? JSON.parse(req.body.educationQualification)
-      : [];
+    // 🔹 Fetch Job Details from Announcement Model
+    const announcement = await Announcement.findOne({ announcementId: req.body.announcementId });
 
+    if (!announcement) {
+      return res.status(400).json({ message: "Invalid job announcement." });
+    }
+
+    // 🔹 Parse education qualifications safely
+    let educationQualification = req.body.educationQualification;
+    if (typeof educationQualification === "string") {
+      try {
+        educationQualification = JSON.parse(educationQualification);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid education qualification format." });
+      }
+    }
+
+    if (!Array.isArray(educationQualification)) {
+      return res.status(400).json({ message: "Education qualification should be an array." });
+    }
+
+    // ✅ Format educationQualification into a readable string
+    const formattedEducation = educationQualification
+      .map((edu) => {
+        const field = edu.field || "Unknown Field";
+        const fieldOfStudy = edu.fieldOfStudy || "N/A";
+        const schoolOrCollege = edu.schoolName || edu.collegeName || "Unknown Institution";
+        const year = edu.yearOfPassing || "N/A";
+        return `${field} in ${fieldOfStudy} (${schoolOrCollege}, ${year})`;
+      })
+      .join(", ");
+    // 🔹 Prepare data for FastAPI analysis
+    const formData = new FormData(); // ✅ Correctly create FormData instance
+
+    formData.append("job_position", req.body.position);
+    formData.append("job_description", announcement.jobDescription);
+    formData.append("candidate_email", req.body.email);
+    formData.append("skills", req.body.skills);
+    formData.append("specialization", req.body.specialization);
+    formData.append("responsibilities", req.body.responsibilities || "Not Specified");
+    formData.append("totalYearsOfExperience", req.body.totalYearsOfExperience || "0");    
+    formData.append("educationQualification", formattedEducation);
+    formData.append("requiredExperience", announcement.requiredExperience || "Not Specified");
+    formData.append("skillsRequired", JSON.stringify(announcement.skillsRequired || []));
+    formData.append("educationQualificationRequired", announcement.educationQualification || "Not Specified");
+
+
+    
+    const fastApiResponse = await axios.post(fastApiUrl, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    const candidateEvaluation = fastApiResponse.data.candidateEvaluation;
+
+    // 🔹 Generate Candidate ID
+    const lastCandidate = await Candidate.findOne().sort({ _id: -1 });
+    let nextCandidateId = "CA1";
+
+    if (lastCandidate && lastCandidate.candidateId) {
+      const lastNumber = parseInt(lastCandidate.candidateId.replace("CA", ""), 10);
+      nextCandidateId = `CA${lastNumber + 1}`;
+    }
+    console.log(candidateEvaluation);
+
+    // 🔹 Create Candidate with Evaluation Score
     const candidate = new Candidate({
+      candidateId: nextCandidateId,
       firstName: req.body.firstName,
       fatherName: req.body.fatherName,
       surName: req.body.surName,
@@ -45,23 +132,90 @@ export const createCandidate = async (req, res) => {
       educationQualification,
       position: req.body.position,
       departmentId: req.body.departmentId,
+      announcementId: req.body.announcementId,
       skills: req.body.skills,
       specialization: req.body.specialization,
       salary: req.body.salary,
-      lastWorkPlace: req.body.lastWorkPlace,
-      yearsOfExperience: req.body.yearsOfExperience,
-      addressOfWorkPlace: req.body.addressOfWorkPlace,
-      responsibilities: req.body.responsibilities,
-      referenceContact: req.body.referenceContact,
+      lastWorkPlace: req.body.lastWorkPlace || "",
+      yearsOfExperience: req.body.yearsOfExperience || "0",
+      addressOfWorkPlace: req.body.addressOfWorkPlace || "",
+      responsibilities: req.body.responsibilities || "",
+      referenceContact: req.body.referenceContact || "",
       totalYearsOfExperience: req.body.totalYearsOfExperience,
       confirmInformation: req.body.confirmInformation === "true",
+      candidateEvaluation: candidateEvaluation, // ✅ Store evaluation score
     });
 
-    // Save the candidate data
     await candidate.save();
-    res.status(201).json({ message: "Candidate added successfully" });
+
+    // 🔹 Send email notification
+    const emailSubject = "Job Application Successfully Sent";
+    const emailMessage = `Dear ${req.body.firstName},\n\nYour job application has been successfully submitted.\n\nCandidate ID: ${nextCandidateId}\nEvaluation Score: ${candidateEvaluation}%\n\nThank you for applying!\n\nBest Regards,\nRecruitment Team`;
+
+    await sendEmail(req.body.email, emailSubject, emailMessage);
+
+    res.status(201).json({
+      message: "Candidate added successfully",
+      candidateId: candidate.candidateId,
+      candidateEvaluation,
+    });
+
   } catch (error) {
     console.error("❌ Error adding candidate:", error);
     res.status(500).json({ message: "Error adding candidate", error });
+  }
+};
+
+export const getCandidateList = async (req, res) => {
+  try {
+    const { announcementId } = req.body;
+
+    if (!announcementId) {
+      return res.status(400).json({ error: "announcementId is required" });
+    }
+
+    // Find announcement details using announcementId
+    const announcement = await Announcement.findOne({ announcementId });
+
+    if (!announcement) {
+      return res.status(404).json({ error: "Announcement not found" });
+    }
+
+    const { jobPosition, departmentId } = announcement;
+
+    const departmentInfo = await Department.findOne({ departmentid: departmentId });
+    const departmentName = departmentInfo ? departmentInfo.departmentName : "Unknown Department";
+
+    if (!jobPosition || !departmentId || !departmentName) {
+      return res.status(400).json({ error: "Job position or departmentId is missing in announcement" });
+    }
+
+    // Find candidates matching job position and department
+    const candidates = await Candidate.find(
+      { position: jobPosition, departmentId: departmentId },
+      "candidateId firstName fatherName surName email phone dob age nativePlace nationality gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation selected result candidateEvaluation"
+    );
+
+    // Convert file paths to URLs
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const formattedCandidates = candidates.map(candidate => ({
+      ...candidate._doc,
+      departmentId,
+      departmentName, // Include departmentName in the candidate data
+      candidatePicture: candidate.candidatePicture 
+        ? `${baseUrl}/${candidate.candidatePicture}`.replace(/\\/g, "/") 
+        : null,
+      candidateDocuments: candidate.candidateDocuments 
+        ? `${baseUrl}/${candidate.candidateDocuments}`.replace(/\\/g, "/") 
+        : null
+    }));
+    
+    console.log("Candidates:", formattedCandidates);
+    
+    res.status(200).json(formattedCandidates);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ error: "Failed to fetch candidates" });
   }
 };

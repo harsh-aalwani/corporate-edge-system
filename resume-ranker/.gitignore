@@ -1,0 +1,25 @@
+# Ignore the models directory
+models/
+
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment
+venv/
+.env/
+
+# Ignore FastAPI and Uvicorn logs
+logs/
+*.log
+
+# Ignore uploads (if needed)
+uploads/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+.DS_Store

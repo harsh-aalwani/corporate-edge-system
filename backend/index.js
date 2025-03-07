@@ -15,9 +15,12 @@ import employeeAppraisalRoutes from "./routes/EmployeeAppraisalRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import { sessionMiddleware } from './middleware/sessionMiddleware.js';
 import initializeSocket from './socket/socketHandler.js'; // Import socket handler
+import { fileURLToPath } from "url";
 
 const app = express();
 const server = createServer(app); // Create HTTP server
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware setup
 app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001'], credentials: true }));
@@ -36,6 +39,9 @@ app.use("/api/employee-appraisal", employeeAppraisalRoutes);
 app.use("/api/candidates",candidateRoutes);
 // Initialize Socket.IO
 initializeSocket(server);
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 // Database connection
 mongoose

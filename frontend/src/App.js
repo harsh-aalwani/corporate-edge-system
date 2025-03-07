@@ -402,7 +402,7 @@ const App = () => {
                 }
               }
             } />} />
-            <Route path="/CandidateList" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
+            <Route path="/CandidateList/:announcementId" element={<ProtectedRoute requiredRoles={['R1','R2','R3']} Component={
               () => {
                 const userRole = getUserRoleCookie();
                 switch (userRole) {

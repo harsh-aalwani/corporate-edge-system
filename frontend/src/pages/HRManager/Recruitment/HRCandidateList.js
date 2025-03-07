@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import HRTemplate from "../../../components/HRManager/HRTemplate";
-import JobListing from "../../../components/Main/Recruitment/JobListing";
+import CandidateList from "../../../components/Main/Recruitment/CandidateList";
 
 const MngEmployee = () => {
 
   return (
     <HRTemplate>
-      <JobListing />
+      <CandidateList />
     </HRTemplate>
   );
 };

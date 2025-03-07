@@ -62,7 +62,7 @@ const AddAnnouncement = () => {
       jobPosition: "",
       jobType: "",
       departmentId: "",
-      salaryRange: { currency: "", min: "", max: "" },
+      salaryRange: { currency: "INR", min: "", max: "" },
       requiredExperience: "",
       skillsRequired: "",
       educationQualification: "",
@@ -453,6 +453,33 @@ const AddAnnouncement = () => {
                       <option value="Remote">Remote</option>
                     </select>
                   </div>
+
+                  <div className="form-group full-width">
+                    <label className="form-label">Job Description:</label>
+                    <textarea
+                      name="jobDescription"
+                      className="form-control"
+                      placeholder="Enter Job Description"
+                      value={formData.jobDetails.jobDescription}
+                      onChange={handleChange}
+                      rows="4" 
+                    ></textarea>
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label className="form-label">Skills Required:</label>
+                    <input type="text" name="skillsRequired" className="form-control" placeholder="Enter Skills" value={formData.jobDetails.skillsRequired} onChange={handleChange} />
+                  </div>
+                  <div className="form-group full-width">
+                    <label className="form-label">Required Experience:</label>
+                    <input type="text" name="requiredExperience" className="form-control" placeholder="Experience required" value={formData.jobDetails.requiredExperience} onChange={handleChange} />
+                  </div>
+                  <div className="form-group full-width">
+                    <label className="form-label">Education Qualification:</label>
+                    <input type="text" name="educationQualification" className="form-control" placeholder="Enter Qualification" value={formData.jobDetails.educationQualification} onChange={handleChange} />
+                  </div>
+
+
                   <div className="form-group full-width">
                     <label className="form-label">Salary Range Per Annum:</label>
                     <div className="d-flex gap-2">
@@ -513,19 +540,6 @@ const AddAnnouncement = () => {
                     </select>
                   </div>
 
-
-                  <div className="form-group full-width">
-                    <label className="form-label">Education Qualification:</label>
-                    <input type="text" name="educationQualification" className="form-control" placeholder="Enter Qualification" value={formData.jobDetails.educationQualification} onChange={handleChange} />
-                  </div>
-                  <div className="form-group full-width">
-                    <label className="form-label">Required Experience:</label>
-                    <input type="text" name="requiredExperience" className="form-control" placeholder="Experience required" value={formData.jobDetails.requiredExperience} onChange={handleChange} />
-                  </div>
-                  <div className="form-group full-width">
-                    <label className="form-label">Skills Required:</label>
-                    <input type="text" name="skillsRequired" className="form-control" placeholder="Enter Skills" value={formData.jobDetails.skillsRequired} onChange={handleChange} />
-                  </div>
                   <div className="form-group full-width">
                     <label className="form-label">Total Vacancy:</label>
                     <input type="number" name="totalVacancy" className="form-control" placeholder="Total Vacancy" value={formData.jobDetails.totalVacancy} onChange={handleChange} />

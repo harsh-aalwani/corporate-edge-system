@@ -11,7 +11,7 @@ export const createAnnouncement = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized: Please log in to create an announcement." });
     }
 
-    // Destructure fields from req.body, including departmentId
+    // Destructure fields from req.body, including jobDescription
     const {
       announcementTitle,
       announcementDescription,
@@ -22,13 +22,14 @@ export const createAnnouncement = async (req, res) => {
       sendEmail = false,
       jobPosition,
       jobType,
+      jobDescription,  // ✅ New field
       salaryRange,
       requiredExperience,
       skillsRequired,
       educationQualification,
       totalVacancy,
       applicationDeadline,
-      departmentId // ✅ Ensure departmentId is included
+      departmentId
     } = req.body;
 
     // Validate required fields
@@ -60,6 +61,7 @@ export const createAnnouncement = async (req, res) => {
     if (isPublic) {
       newAnnouncement.jobPosition = jobPosition || null;
       newAnnouncement.jobType = jobType || null;
+      newAnnouncement.jobDescription = jobDescription || null; // ✅ Store job description
       newAnnouncement.salaryRange = salaryRange || { currency: null, min: null, max: null };
       newAnnouncement.requiredExperience = requiredExperience || null;
       newAnnouncement.skillsRequired = skillsRequired 
@@ -70,7 +72,7 @@ export const createAnnouncement = async (req, res) => {
       newAnnouncement.applicationDeadline = applicationDeadline 
         ? new Date(applicationDeadline).toISOString() 
         : null;
-      newAnnouncement.departmentId = departmentId || null; // ✅ Store departmentId correctly
+      newAnnouncement.departmentId = departmentId || null;
     }
 
     // Save to the database
@@ -82,7 +84,6 @@ export const createAnnouncement = async (req, res) => {
     res.status(500).json({ error: "Error creating announcement" });
   }
 };
-
 
 // ✅ Fetch Announcements with User Data
 export const getAnnouncements = async (req, res) => {
@@ -276,19 +277,19 @@ export const getJobData = async (req, res) => {
   try {
     // Fetch only announcements with a valid jobPosition and departmentId
     const announcements = await Announcement.find({
-      jobPosition: { $exists: true, $nin: [null, ""] },  // Exclude null, empty strings
-      departmentId: { $exists: true, $nin: [null, ""] }  // Ensure departmentId is valid
+      jobPosition: { $exists: true, $nin: [null, ""] },
+      departmentId: { $exists: true, $nin: [null, ""] }
     }).sort({ createdAt: -1 });
-
 
     const enrichedAnnouncements = await Promise.all(
       announcements.map(async (announcement) => {
         const department = await Department.findOne({ departmentid: announcement.departmentId });
 
         return {
+          announcementId: announcement.announcementId, // ✅ Added announcementId
           position: announcement.jobPosition,
-          departmentId: announcement.departmentId,
-          departmentName: department ? department.departmentName : "Unknown",
+          departmentId: announcement.departmentId, // ✅ Send to server
+          departmentName: department ? department.departmentName : "Unknown", // ✅ Show to user
         };
       })
     );
@@ -300,37 +301,88 @@ export const getJobData = async (req, res) => {
   }
 };
 
+
 export const getJobListings = async (req, res) => {
   try {
     // Fetch job announcements with valid jobPosition and departmentId
     const announcements = await Announcement.find({
       jobPosition: { $exists: true, $nin: [null, ""] },
-      departmentId: { $exists: true, $nin: [null, ""] }
+      departmentId: { $exists: true, $nin: [null, ""] } // Department ID is stored as a string
     }).sort({ createdAt: -1 });
 
-    const jobListings = await Promise.all(
-      announcements.map(async (announcement) => {
-        const department = await Department.findOne({ departmentid: announcement.departmentId });
+    // Extract unique department IDs and announcement IDs
+    const departmentIds = [...new Set(announcements.map(a => a.departmentId))];
+    const announcementIds = announcements.map(a => a.announcementId);
 
-        // Count selected candidates for this job position and department
-        const selectedCandidatesCount = await Candidate.countDocuments({
-          position: announcement.jobPosition,
-          departmentId: announcement.departmentId,
+    // Fetch department details
+    const departments = await Department.find({ departmentid: { $in: departmentIds } }, "departmentid departmentName");
+
+    // Create a lookup map for department names
+    const departmentMap = {};
+    departments.forEach(dept => {
+      departmentMap[dept.departmentid] = dept.departmentName;
+    });
+
+    // Extract unique job positions
+    const jobPositions = [...new Set(announcements.map(a => a.jobPosition))];
+
+    // Count total candidates for each announcementId
+    const candidateCounts = await Candidate.aggregate([
+      { $match: { announcementId: { $in: announcementIds } } },
+      {
+        $group: {
+          _id: "$announcementId",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Convert candidate counts into a lookup object
+    const candidateCountMap = {};
+    candidateCounts.forEach(({ _id, count }) => {
+      candidateCountMap[_id] = count;
+    });
+
+    // Count selected candidates for each job position and department
+    const selectedCounts = await Candidate.aggregate([
+      {
+        $match: {
+          position: { $in: jobPositions },
+          departmentId: { $in: departmentIds },
           selected: true
-        });
+        }
+      },
+      {
+        $group: {
+          _id: { position: "$position", departmentId: "$departmentId" },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
 
-        console.log("Processing job position:", announcement.jobPosition); // Debugging log
+    // Convert selected counts into a lookup object
+    const selectedCountMap = {};
+    selectedCounts.forEach(({ _id, count }) => {
+      selectedCountMap[`${_id.position}_${_id.departmentId}`] = count;
+    });
 
-        return {
-          position: announcement.jobPosition,
-          departmentId: announcement.departmentId,
-          departmentName: department ? department.departmentName : "Unknown",
-          totalVacancy: announcement.totalVacancy || 0,
-          totalSelected: selectedCandidatesCount,
-          salaryRange: announcement.salaryRange || { currency: null, min: null, max: null }
-        };
-      })
-    );
+    // Process job listings
+    const jobListings = announcements.map((announcement) => {
+      const departmentName = departmentMap[announcement.departmentId] || "Unknown";
+      const selectedCount = selectedCountMap[`${announcement.jobPosition}_${announcement.departmentId}`] || 0;
+      const totalCandidates = candidateCountMap[announcement.announcementId] || 0;
+
+      return {
+        announcementId: announcement.announcementId,
+        position: announcement.jobPosition,
+        departmentId: announcement.departmentId, // Stored as string
+        departmentName,
+        totalVacancy: announcement.totalVacancy || 0,
+        totalSelected: selectedCount,
+        totalCandidates, // New field for total candidates count
+        salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 }
+      };
+    });
 
     res.status(200).json(jobListings);
   } catch (error) {

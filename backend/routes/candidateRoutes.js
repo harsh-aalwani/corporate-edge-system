@@ -1,5 +1,5 @@
 import express from "express";
-import { createCandidate } from "../controllers/candidateController.js";
+import { createCandidate,getCandidateList } from "../controllers/candidateController.js";
 import upload from "../middleware/multerConfig.js";
 
 const router = express.Router();
@@ -11,5 +11,7 @@ router.post(
   ]),
   createCandidate
 );
+
+router.post("/List",getCandidateList);
 
 export default router;

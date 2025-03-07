@@ -9,7 +9,7 @@ import {
   getPublicAnnouncements,
   getPrivateAnnouncements,
   getJobData,
-  getJobListings
+  getJobListings,
 
 } from "../controllers/announcementController.js";
 
@@ -42,5 +42,6 @@ router.get("/private", getPrivateAnnouncements);
 router.get("/jobdata", getJobData);
 
 router.get("/jobListing",getJobListings);
+
 
 export default router;

@@ -1,144 +1,99 @@
 import React, { useState, useEffect } from "react";
-import {Link} from 'react-router-dom';
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { generatePDF } from "./resumeGenerator"; // ✅ Import the function
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
-import axios from 'axios';  // Import axios for making HTTP requests
 
-const HRManager = () => {
-  const [hrManagers, setHrManagers] = useState([]);  // Store HR Managers' data
-  const [checkedRows, setCheckedRows] = useState([]);  // Track checked rows
-  const [checkAll, setCheckAll] = useState(false);  // Handle check-all checkbox
+const CandidateList = () => {
+  const { announcementId } = useParams();
+  const [candidates, setCandidates] = useState([]);
+  const [checkedRows, setCheckedRows] = useState([]);
+  const [checkAll, setCheckAll] = useState(false);
 
   useEffect(() => {
-    // Fetch HR Managers' data from the backend
-    const fetchHRManagers = async () => {
+    const fetchCandidates = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/manage/hr-managers');  // Full API URL
-        setHrManagers(response.data.hrManagers);  // Store HR Managers data in state
+        const response = await axios.post("http://localhost:5000/api/candidates/List", {
+          announcementId,
+        });
+        console.log("Candidates:",typeof response.data.candidatePicture);
+        setCandidates(response.data);
       } catch (error) {
-        console.error('Error fetching HR Managers:', error.message);
+        console.error("Error fetching candidates:", error.message);
       }
-    };    
-  
-    fetchHRManagers();  // Fetch HR Managers when component mounts
-  }, []);
+    };
+
+    fetchCandidates();
+  }, [announcementId]);
 
   const handleCheckAll = (e) => {
-    const isChecked = e.target.checked;
-    setCheckAll(isChecked);
-
-    if (isChecked) {
-      const allRows = Array.from(document.querySelectorAll("tbody tr")).map(
-        (row) => row.dataset.id
-      );
-      setCheckedRows(allRows);
-    } else {
-      setCheckedRows([]);
-    }
+    setCheckAll(e.target.checked);
+    setCheckedRows(e.target.checked ? candidates.map((c) => c.candidateId) : []);
   };
 
-  const handleRowCheck = (e, rowId) => {
-    const isChecked = e.target.checked;
+  const handleRowCheck = (e, candidateId) => {
     setCheckedRows((prev) =>
-      isChecked ? [...prev, rowId] : prev.filter((id) => id !== rowId)
+      e.target.checked ? [...prev, candidateId] : prev.filter((id) => id !== candidateId)
     );
   };
-
-  const isRowChecked = (rowId) => checkedRows.includes(rowId);
 
   return (
     <div className="page-inner page-box page-start mt-5">
       <div className="d-flex align-items-center flex-column flex-md-row pt-2 pb-4">
-        <div>
-          <h4 className="fw-bold mb-3">Manage HR-Manager</h4>
-          <h6 className="op-7 mb-2">Add, Change, and Delete Departments</h6>
-        </div>
-        <div className="ms-md-auto py-2 py-md-0">
-          <Link to="/EditUser" className="btn btn-label-info btn-round me-2">
-            Edit
-          </Link>
-          <Link to="/AddUser" className="btn btn-primary btn-round me-2">
-            Add
-          </Link>
-          <button className="btn btn-dark btn-round">Remove</button>
-        </div>
+        <h4 className="fw-bold mb-3">Candidate List</h4>
       </div>
-      <div className="input-group">
-        <input type="text" placeholder="Search ..." className="form-control" />
-      </div>
-      <hr id="title-line" data-symbol="✈" />
-      <div className="content-area">
-        <div className="table-responsive" style={{ border: "" }}>
+      <div className="table-responsive">
         <table className="table custom-table">
           <thead>
             <tr>
-              <th scope="col">Status</th>
-              <th scope="col">ID</th>
-              <th scope="col">Name</th>
-              <th scope="col">Email</th>
-              <th scope="col">Mobile Number</th>
-              <th scope="col">
+              <th>Candidate ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Score (%)</th>
+              <th>Resume</th>
+              <th>
                 <label className="control control--checkbox">
-                  <input
-                    type="checkbox"
-                    className="js-check-all"
-                    checked={checkAll}
-                    onChange={handleCheckAll}
-                  />
+                  <input type="checkbox" checked={checkAll} onChange={handleCheckAll} />
                   <div className="control__indicator"></div>
                 </label>
               </th>
             </tr>
           </thead>
           <tbody>
-            {hrManagers.length > 0 ? (
-              hrManagers.map((manager) => (
-                <tr
-                  key={manager.userId}
-                  data-id={manager.userId}
-                  className={isRowChecked(manager.userId) ? "active" : ""}
-                >
-                  <th scope="row">
-                    <span
-                      style={{
-                        display: "inline-block",
-                        width: "10px",
-                        height: "10px",
-                        borderRadius: "50%",
-                        backgroundColor: manager.userStatus ? "green" : "red",
-                      }}
-                    ></span>
-                  </th>
-                  <td>{manager.userId}</td>
-                  <td>{manager.fullName}</td>
-                  <td>{manager.userEmail}</td>
-                  <td>{manager.userMobileNumber}</td>
-                  <th scope="row">
+            {candidates.length > 0 ? (
+              candidates.map((candidate) => (
+                <tr key={candidate.candidateId} className={checkedRows.includes(candidate.candidateId) ? "active" : ""}>
+                  <td>{candidate.candidateId}</td>
+                  <td>{`${candidate.firstName} ${candidate.surName}`}</td>
+                  <td>{candidate.email}</td>
+                  <td>{candidate.phone}</td>
+                  <td>{candidate.candidateEvaluation ? `${candidate.candidateEvaluation}%` : "N/A"}</td>
+
+                  <td>
+                    <button className="btn btn-success btn-sm" onClick={() => generatePDF(candidate)}>
+                      Generate Resume
+                    </button>
+                  </td>
+                  <td>
                     <label className="control control--checkbox">
-                      <input
-                        type="checkbox"
-                        checked={isRowChecked(manager.userId)}
-                        onChange={(e) => handleRowCheck(e, manager.userId)}
-                      />
+                      <input type="checkbox" checked={checkedRows.includes(candidate.candidateId)} onChange={(e) => handleRowCheck(e, candidate.candidateId)} />
                       <div className="control__indicator"></div>
                     </label>
-                  </th>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center">
-                  No HR Managers found
-                </td>
+                <td colSpan="8" className="text-center">No candidates found</td>
               </tr>
             )}
           </tbody>
         </table>
-
-        </div>
       </div>
     </div>
   );
 };
 
-export default HRManager;
+export default CandidateList;
