@@ -1,13 +1,22 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
+
+const WEIGHTS = {
+    "skills": 0.40,
+    "specialization": 0.20,
+    "educationQualification": 0.15,
+    "responsibilities": 0.10,
+    "totalYearsOfExperience": 0.15
+};
+
 // ✅ Main Function to Generate a Well-Designed Resume PDF
 function generatePDF(formData) {
     if (!formData) {
         console.error("❌ Error: formData is undefined");
         return;
     }
-
+    
     const doc = new jsPDF("p", "mm", "a4");
 
     // ✅ Add Border for a Professional Look
@@ -87,7 +96,7 @@ function addResumeContent(doc, formData, textX, textY) {
     };
 
     // ✅ Personal Information
-    sectionTitle("Personal Information", 80);
+    sectionTitle("Personal Information", 70);
     const personalInfo = [
         ["Date of Birth", formatDate(formData.dob) || "N/A"],  // Use formatDate here
         ["Age", formData.age || "N/A"],
@@ -100,7 +109,7 @@ function addResumeContent(doc, formData, textX, textY) {
         ["Permanent Address", formData.permanentAddress || "N/A"],
     ];
     autoTable(doc, {
-        startY: 85,
+        startY: 75,
         head: [["Field", "Value"]],
         body: personalInfo,
         theme: "striped",
@@ -108,22 +117,36 @@ function addResumeContent(doc, formData, textX, textY) {
         headStyles: { fillColor: [0, 122, 204], textColor: 255, fontStyle: "bold" },
     });
 
-    // ✅ Job Details
-    sectionTitle("Job Details", doc.lastAutoTable.finalY + 15);
-    const jobDetails = [
-        ["Position Applied", formData.position || "N/A"],
-        ["Department", `${formData.departmentId || "N/A"} - ${formData.departmentName || "N/A"}`], // Show both departmentId and departmentName
-        ["Skills", formData.skills || "N/A"],
-        ["Specialization", formData.specialization || "N/A"],
-        ["Expected Salary", formData.salary || "N/A"],
-    ];
+    // ✅ Evaluation Scores Table
+    sectionTitle("Evaluation Breakdown", doc.lastAutoTable.finalY + 12);
+    const detailedEvaluation = formData.detailedEvaluation || [];
+    const evaluationData = detailedEvaluation.map((item, index) => [
+        index + 1,
+        item.criteria
+            .replace(/_/g, " ") // Replace underscores with spaces
+            .replace(/([a-z])([A-Z])/g, "$1 $2") // Add space before capital letters in camelCase
+            .replace(/\b\w/g, (char) => char.toUpperCase()), // Capitalize first letter of each word
+        `${item.weightedScore}%`,
+        `${(WEIGHTS[item.criteria] * 100).toFixed(2)}%` // Max obtainable percentage
+    ]);
+
+    // ✅ Add Total Evaluation row
+    evaluationData.push([
+        "",
+        "Total Evaluation", 
+        `${formData.candidateEvaluation || "N/A"}%`,
+        "100%" // Maximum obtainable percentage
+    ]);
+
     autoTable(doc, {
-        startY: doc.lastAutoTable.finalY + 20,
-        head: [["Field", "Value"]],
-        body: jobDetails,
+        startY: doc.lastAutoTable.finalY + 17,
+        head: [["#", "Category", "Score", "Max Score"]],
+        body: evaluationData.length ? evaluationData : [["N/A", "No data available", "N/A", "N/A"]],
         theme: "striped",
         styles: { fontSize: 10, cellPadding: 3 },
         headStyles: { fillColor: [0, 122, 204], textColor: 255, fontStyle: "bold" },
+        bodyStyles: { fontSize: 10 },
+        footStyles: { fillColor: [0, 122, 204], textColor: 255, fontStyle: "bold" },
     });
 
     // ✅ Add Page Break After Job Details
@@ -153,29 +176,63 @@ function addResumeContent(doc, formData, textX, textY) {
         headStyles: { fillColor: [0, 122, 204], textColor: 255, fontStyle: "bold" },
     });
 
+    // ✅ Job Details
+    sectionTitle("Job Details", doc.lastAutoTable.finalY + 12);
+    const jobDetails = [
+        ["Position Applied", formData.position || "N/A"],
+        ["Department", `${formData.departmentId || "N/A"} - ${formData.departmentName || "N/A"}`], // Show both departmentId and departmentName
+        ["Skills", formData.skills || "N/A"],
+        ["Specialization", formData.specialization || "N/A"],
+        ["Expected Salary", formData.salary || "N/A"],
+    ];
+    autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 17,
+        head: [["Field", "Value"]],
+        body: jobDetails,
+        theme: "striped",
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [0, 122, 204], textColor: 255, fontStyle: "bold" },
+    });
+
     // ✅ Work Experience
     if (formData.lastWorkPlace || formData.yearsOfExperience || formData.totalYearsOfExperience || formData.addressOfWorkPlace || formData.responsibilities || formData.referenceContact) {
-        sectionTitle("Work Experience", doc.lastAutoTable.finalY + 15);
+        sectionTitle("Work Experience", doc.lastAutoTable.finalY + 12);
         const workExperience = [
-            ["Last Workplace", formData.lastWorkPlace || "N/A"],
-            ["Years of Experience", formData.yearsOfExperience || "N/A"],
-            ["Total Experience", formData.totalYearsOfExperience || "N/A"],
-            ["Work Address", formData.addressOfWorkPlace || "N/A"],
-            ["Responsibilities", formData.responsibilities || "N/A"],
-            ["Reference Contact", formData.referenceContact || "N/A"],
+            ["Last Workplace", formData.lastWorkPlace || "None"],
+            ["Years of Experience", formData.yearsOfExperience || "None"],
+            ["Total Experience", formData.totalYearsOfExperience || "None"],
+            ["Work Address", formData.addressOfWorkPlace || "None"],
+            ["Responsibilities", formData.responsibilities || "None"],
+            ["Reference Contact", formData.referenceContact || "None"],
         ];
         autoTable(doc, {
-            startY: doc.lastAutoTable.finalY + 20,
+            startY: doc.lastAutoTable.finalY + 17,
             head: [["Field", "Value"]],
             body: workExperience,
             theme: "striped",
             styles: { fontSize: 10, cellPadding: 3 },
             headStyles: { fillColor: [0, 122, 204], textColor: 255, fontStyle: "bold" },
         });
-    }
 
+        // ✅ Add Page Break After Job Details
+        doc.addPage();
+
+        // ✅ Add Border for Page 2
+        doc.setDrawColor(0, 122, 204);
+        doc.rect(5, 5, 200, 287);
+
+        // ✅ Documents Section (Clickable Link)
+        if (formData.candidateDocuments) {
+            sectionTitle("Documents", 20);
+            doc.setTextColor(0, 0, 255);
+            doc.textWithLink("Click here to view documents", 15, 30, {
+                url: formData.candidateDocuments,
+            });
+            doc.setTextColor(0, 0, 0);
+        }
+    }
     // ✅ Save PDF with Candidate Name
-    doc.save(`Resume_${formData.firstName || "Candidate"}.pdf`);
+    doc.save(`Resume_${formData.candidateId || "Unknown"}_Candidate.pdf`);
 }
 
 

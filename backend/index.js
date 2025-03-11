@@ -13,6 +13,8 @@ import announcementRoutes from "./routes/announcementRoutes.js";
 import employeeConcernRoutes from "./routes/employeeConcernRoutes.js";
 import employeeAppraisalRoutes from "./routes/EmployeeAppraisalRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
+import emailRoutes from "./routes/emailRoutes.js";
+import candidatePerformanceRoutes from './routes/candidatePerformanceRoutes.js';
 import { sessionMiddleware } from './middleware/sessionMiddleware.js';
 import initializeSocket from './socket/socketHandler.js'; // Import socket handler
 import { fileURLToPath } from "url";
@@ -35,6 +37,9 @@ app.use('/api/authuser', authUserRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/employee-concerns", employeeConcernRoutes);
 app.use("/api/employee-appraisal", employeeAppraisalRoutes);
+app.use("/api/emails", emailRoutes);
+app.use("/api/candPerformance", candidatePerformanceRoutes);
+
 // Use Routes
 app.use("/api/candidates",candidateRoutes);
 // Initialize Socket.IO

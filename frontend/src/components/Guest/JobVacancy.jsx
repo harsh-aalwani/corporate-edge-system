@@ -943,7 +943,7 @@
           {isSuccess && (
             <div className="text-center my-5">
               <h3 className="text-success fw-bold">Successfully Added as Candidate</h3>
-              <p>Check your email for further instructions.</p>
+              <p>Check your email for further information.</p>
               <button className="btn btn-primary" onClick={() => navigate('/PublicAnnouncement')}>
                 Go to Announcements
               </button>

@@ -110,3 +110,9 @@
     flex: 1;
   }
   
+  .animated-line {
+    height: 3px;
+    background-color: #007bff;
+    margin-top: 10px;
+  }
+  

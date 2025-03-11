@@ -62,38 +62,41 @@ def match_education(candidate_education: str, required_education: str) -> float:
     return (match_count / max(1, len(required_list))) * 100
 
 # Function to compare candidate data with job requirements
-def compare_candidate_to_job(job_position: str, job_description: str, candidate_data: Dict[str, str]) -> float:
+def compare_candidate_to_job(job_position: str, job_description: str, candidate_data: Dict[str, str]) -> Dict:
     job_text = f"{job_position} {job_description}".lower()
+    detailed_scores = []
     overall_score = 0.0
+
     for field, weight in WEIGHTS.items():
         if field == "educationQualification":
             education_score = match_education(candidate_data["educationQualification"], candidate_data["educationQualificationRequired"])
-            overall_score += education_score * weight
-            continue
-        text = candidate_data.get(field, "").lower()
-        if not text:
-            continue  
-        job_embedding = model.encode([job_text], convert_to_tensor=True)
-        candidate_embedding = model.encode([text], convert_to_tensor=True)
-        similarity_score = cosine_similarity(
-            job_embedding.cpu().detach().numpy(),
-            candidate_embedding.cpu().detach().numpy()
-        )[0][0] * 100
-        overall_score += similarity_score * weight
-    return round(overall_score, 2)
+            weighted_score = round(education_score * weight, 2)
+        else:
+            text = candidate_data.get(field, "").lower()
+            if not text:
+                weighted_score = 0.0
+            else:
+                job_embedding = model.encode([job_text], convert_to_tensor=True)
+                candidate_embedding = model.encode([text], convert_to_tensor=True)
+                similarity_score = cosine_similarity(
+                    job_embedding.cpu().detach().numpy(),
+                    candidate_embedding.cpu().detach().numpy()
+                )[0][0] * 100
+                weighted_score = round(similarity_score * weight, 2)
 
-# Save candidate evaluation results
-def save_evaluation_data(candidate_email: str, evaluation_data: Dict[str, str]):
-    eval_file_path = os.path.join(UPLOAD_DIR, f"{candidate_email}_evaluation.json")
-    with open(eval_file_path, "w") as f:
-        json.dump(evaluation_data, f, indent=4)
+        detailed_scores.append({"criteria": field, "weightedScore": weighted_score})
+        overall_score += weighted_score
 
-# Endpoint for FormData (for example, used by your frontend)
+    return {
+        "candidateEvaluation": round(overall_score, 2),
+        "detailedEvaluation": detailed_scores
+    }
+
+# Update API Endpoint to return detailed evaluation and exclude email
 @app.post("/rank_candidate/")
 async def rank_candidate(
     job_position: str = Form(...),
     job_description: str = Form(...),
-    candidate_email: str = Form(...),
     skills: str = Form(...),
     specialization: str = Form(...),
     responsibilities: Optional[str] = Form("Not Specified"),
@@ -103,23 +106,7 @@ async def rank_candidate(
     educationQualificationRequired: Optional[str] = Form("Not Specified"),
     educationQualification: str = Form("Not Specified")
 ):
-    # Debug: Log all incoming form fields
-    print("----- Received Form Data -----")
-    print("job_position:", job_position)
-    print("job_description:", job_description)
-    print("candidate_email:", candidate_email)
-    print("skills:", skills)
-    print("specialization:", specialization)
-    print("responsibilities:", responsibilities)
-    print("totalYearsOfExperience:", totalYearsOfExperience)
-    print("requiredExperience:", requiredExperience)
-    print("skillsRequired:", skillsRequired)
-    print("educationQualificationRequired:", educationQualificationRequired)
-    print("educationQualification:", educationQualification)
-    print("----- End Received Form Data -----")
-    
     candidate_data = {
-        "email": candidate_email,
         "skills": skills,
         "specialization": specialization,
         "educationQualification": educationQualification,
@@ -129,47 +116,15 @@ async def rank_candidate(
         "skillsRequired": skillsRequired,
         "educationQualificationRequired": educationQualificationRequired
     }
-    candidate_evaluation = compare_candidate_to_job(job_position, job_description, candidate_data)
-    evaluation_result = {
-        "email": candidate_email,
-        "job_position": job_position,
-        "similarity_score": candidate_evaluation
-    }
-    save_evaluation_data(candidate_email, evaluation_result)
-    return {"candidateEvaluation": candidate_evaluation, "educationQualification": educationQualification}
+    evaluation_results = compare_candidate_to_job(job_position, job_description, candidate_data)
 
-# Endpoint for JSON-based input (if needed)
-@app.post("/rank_candidate_json/")
-async def rank_candidate_json(
-    job_position: str,
-    job_description: str,
-    candidate_email: str,
-    skills: str,
-    specialization: str,
-    responsibilities: Optional[str] = "Not Specified",
-    totalYearsOfExperience: Optional[str] = "Not Specified",
-    requiredExperience: Optional[str] = "Not Specified",
-    skillsRequired: Optional[str] = "Not Specified",
-    educationQualificationRequired: Optional[str] = "Not Specified",
-    educationQualification: List[Dict[str, str]] = Body([])
-):
-    formatted_education = ", ".join([
-        f"{edu['field']} in {edu.get('fieldOfStudy', 'N/A')} ({edu['schoolName']}, {edu['yearOfPassing']})"
-        for edu in educationQualification
-    ])
-    candidate_data = {
-        "email": candidate_email,
-        "skills": skills,
-        "specialization": specialization,
-        "educationQualification": formatted_education,
-        "responsibilities": responsibilities,
-        "totalYearsOfExperience": totalYearsOfExperience,
-        "requiredExperience": requiredExperience,
-        "skillsRequired": skillsRequired,
-        "educationQualificationRequired": educationQualificationRequired
+    evaluation_result = {
+        "job_position": job_position,
+        "candidateEvaluation": evaluation_results["candidateEvaluation"],
+        "detailedEvaluation": evaluation_results["detailedEvaluation"]
     }
-    candidate_evaluation = compare_candidate_to_job(job_position, job_description, candidate_data)
-    return {"candidateEvaluation": candidate_evaluation, "formattedEducation": formatted_education}
+    
+    return evaluation_result
 
 # Run FastAPI
 if __name__ == "__main__":

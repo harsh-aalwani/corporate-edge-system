@@ -40,6 +40,19 @@ const candidateSchema = new mongoose.Schema({
     min: 0, // Cannot be below 0%
     max: 100 // Cannot exceed 100%
   },
+
+  // ✅ Store detailed evaluation breakdown
+  detailedEvaluation: { 
+    type: Object, 
+    default: {} // Store per-field evaluation scores (skills, specialization, etc.)
+  },
+
+  // ✅ New: Candidate Performance Data
+  candidatePerformance: { 
+    type: Object, 
+    default: {} // ✅ Stores custom performance-related data
+  },
+
   selected: { type: Boolean, default: false },
   result: { type: Boolean, default: false }
 });

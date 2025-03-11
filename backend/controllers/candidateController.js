@@ -93,12 +93,12 @@ export const createCandidate = async (req, res) => {
     formData.append("educationQualificationRequired", announcement.educationQualification || "Not Specified");
 
 
-    
     const fastApiResponse = await axios.post(fastApiUrl, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
     const candidateEvaluation = fastApiResponse.data.candidateEvaluation;
+    const detailedEvaluation = fastApiResponse.data.detailedEvaluation; 
 
     // 🔹 Generate Candidate ID
     const lastCandidate = await Candidate.findOne().sort({ _id: -1 });
@@ -108,9 +108,8 @@ export const createCandidate = async (req, res) => {
       const lastNumber = parseInt(lastCandidate.candidateId.replace("CA", ""), 10);
       nextCandidateId = `CA${lastNumber + 1}`;
     }
-    console.log(candidateEvaluation);
-
-    // 🔹 Create Candidate with Evaluation Score
+  
+    // 🔹 Create Candidate with Full Evaluation (Including Education in DB)
     const candidate = new Candidate({
       candidateId: nextCandidateId,
       firstName: req.body.firstName,
@@ -143,17 +142,28 @@ export const createCandidate = async (req, res) => {
       referenceContact: req.body.referenceContact || "",
       totalYearsOfExperience: req.body.totalYearsOfExperience,
       confirmInformation: req.body.confirmInformation === "true",
-      candidateEvaluation: candidateEvaluation, // ✅ Store evaluation score
+      candidateEvaluation, // ✅ Store total evaluation score
+      detailedEvaluation, // ✅ Store full detailed evaluation (including education) in DB
     });
-
+    
     await candidate.save();
-
-    // 🔹 Send email notification
+  
+    // 🔹 Send email notification with evaluation breakdown (excluding education)
     const emailSubject = "Job Application Successfully Sent";
-    const emailMessage = `Dear ${req.body.firstName},\n\nYour job application has been successfully submitted.\n\nCandidate ID: ${nextCandidateId}\nEvaluation Score: ${candidateEvaluation}%\n\nThank you for applying!\n\nBest Regards,\nRecruitment Team`;
+    const emailMessage = `Dear ${req.body.firstName},
+    
+    Your job application has been successfully submitted.
+    
+    Candidate ID: ${nextCandidateId}
+    Evaluation Score: ${candidateEvaluation}%
 
-    await sendEmail(req.body.email, emailSubject, emailMessage);
-
+    Thank you for applying!
+    
+    Best Regards,
+    Recruitment Team`;
+    
+    await sendEmail(req.body.email, emailSubject, emailMessage);    
+    
     res.status(201).json({
       message: "Candidate added successfully",
       candidateId: candidate.candidateId,
@@ -193,7 +203,7 @@ export const getCandidateList = async (req, res) => {
     // Find candidates matching job position and department
     const candidates = await Candidate.find(
       { position: jobPosition, departmentId: departmentId },
-      "candidateId firstName fatherName surName email phone dob age nativePlace nationality gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation selected result candidateEvaluation"
+      "candidateId firstName fatherName surName email phone dob age nativePlace nationality gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation selected result candidateEvaluation detailedEvaluation"
     );
 
     // Convert file paths to URLs
@@ -210,12 +220,60 @@ export const getCandidateList = async (req, res) => {
         ? `${baseUrl}/${candidate.candidateDocuments}`.replace(/\\/g, "/") 
         : null
     }));
-    
-    console.log("Candidates:", formattedCandidates);
-    
+
     res.status(200).json(formattedCandidates);
   } catch (error) {
     console.error("Error fetching candidates:", error);
     res.status(500).json({ error: "Failed to fetch candidates" });
   }
 };
+
+export const selectCandidatesUpdate = async (req, res) => {
+  try {
+    const { candidateIds, selected } = req.body;
+
+    if (!candidateIds || !Array.isArray(candidateIds) || candidateIds.length === 0) {
+      return res.status(400).json({ message: "No candidates selected" });
+    }
+
+    // Update selection state
+    const updatedCandidates = await Candidate.updateMany(
+      { candidateId: { $in: candidateIds } }, // Match candidates by ID
+      { $set: { selected: selected } } // Toggle selected state
+    );
+
+    if (updatedCandidates.modifiedCount === 0) {
+      return res.status(404).json({ message: "Candidates not found" });
+    }
+
+    res.status(200).json({ message: `Candidates ${selected ? "selected" : "deselected"} successfully` });
+  } catch (error) {
+    console.error("Error updating candidates:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Fetch candidate details by ID (POST method)
+export const getCandidateById = async (req, res) => {
+  try {
+    const { candidateId } = req.body; // Get candidateId from request body
+
+    if (!candidateId) {
+      return res.status(400).json({ message: "Candidate ID is required" });
+    }
+
+    // Find candidate in the database
+    const candidate = await Candidate.findOne({ candidateId });
+
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+    
+    console.log(candidate);
+    res.status(200).json(candidate); // Send candidate data as response
+  } catch (error) {
+    console.error("Error fetching candidate:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
