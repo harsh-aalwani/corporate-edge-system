@@ -1,74 +1,15 @@
-import React, { useState, useEffect,useRef} from "react";
-import {FaCalendarAlt, FaCheckCircle, FaChartBar, FaTasks, FaHistory, FaCommentDots, FaFileAlt, FaExclamationCircle} from "react-icons/fa";
+import React, { useState, useEffect,useRef ,useCallback} from "react";
+import { FaPlus , FaTimes, FaChevronDown, FaChevronUp , FaUserPlus, FaUndo ,FaCheck, FaCalendarAlt, FaCheckCircle, FaChartBar, FaTasks, FaHistory, FaCommentDots, FaFileAlt} from "react-icons/fa";
 import styled from "styled-components";
 import { useSnackbar } from "notistack";
 import placeholderData from '../../data/data.json';
 import { AddUserForm } from "./AddUserForm";
-import axios from "axios";
-import ApprovalModal from "./ApprovalModal";
 
 const OptionModal = ({ show, onClose, candidates = [], setCandidates }) => {
-
-// Manage Users & Departments
-
-// Static Department Data
-const [departments, setDepartments] = useState([]);
-
-const [selectedDepartment, setSelectedDepartment] = useState("");
-const [allUsers, setAllUsers] = useState([]);
-
-// Static User Data (Users Available for Assignment)
-const [availableUsers, setAvailableUsers] = useState([]);
-
-// Users Assigned to Departments
-const [assignedUsers, setAssignedUsers] = useState([]);
-
-const [userSearchTerm, setUserSearchTerm] = useState("");
-const [currentPage, setCurrentPage] = useState(1);
-const recordsPerPage = 4;
-const [isFull, setIsFull] = useState(false);
-
-// ✅ Update user list when department changes
-useEffect(() => {
-  if (selectedDepartment) {
-    const filteredUsers = allUsers.filter((user) => user.userDepartment === selectedDepartment);
-    setAvailableUsers(filteredUsers);
-  } else {
-    setAvailableUsers([]);
-  }
-}, [selectedDepartment, allUsers]);
-
-// ✅ Search Filtering
-const filteredUsers = availableUsers.filter((user) =>
-  user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase())
-);
-
-const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
-
-// Get users for the current page
-const paginatedUsers = filteredUsers.slice(
-  (currentPage - 1) * recordsPerPage,
-  currentPage * recordsPerPage
-);
-
-// ✅ Assign User to Department (With Limit)
-const assignUserToDepartment = (user) => {
-  if (!assignedUsers.some((u) => u.userId === user.userId)) {
-    setAssignedUsers([...assignedUsers, user]);
-  }
-};
-
-
-// ✅ Remove User from Department
-const removeUserFromDepartment = (user) => {
-  setAssignedUsers(assignedUsers.filter((u) => u.userId !== user.userId));
-};
-
   const [activeTab, setActiveTab] = useState("Check List");
   const [localCandidates, setLocalCandidates] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
-  const [announcementConcluded, setAnnouncementConcluded] = useState(false);
 
   //Add as New User
   const [selectedNewCandidateId,setSelectedNewCandidateId] = useState('');
@@ -79,61 +20,73 @@ const removeUserFromDepartment = (user) => {
 
   // Candidate Performance
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
+  const [candidatePerformance, setCandidatePerformance] = useState({});
+  const [collapsedEntries, setCollapsedEntries] = useState({});
   const [previousPerformanceData, setPreviousCandidatePerformance] = useState({});
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-  const [approvalAction, setApprovalAction] = useState(null);
-  const [approvalText, setApprovalText] = useState("");
 
-
-  useEffect(() => {
-    if (show) {
-      setLocalCandidates(candidates.filter((c) => c.selected)); // Load selected candidates
+  const submitPerformance = useCallback(async (perfId) => {
+    if (!selectedCandidateId) {
+        enqueueSnackbar("⚠️ No candidate selected.", { variant: "warning" });
+        return;
     }
-  }, [show, candidates]);
-  
 
-  const handleApproval = async () => {
-    if (!selectedCandidateId) return;
+    // ✅ Find the performance entry by ID
+    const updatedPerformance = candidatePerformance[selectedCandidateId]?.find(p => p.id === perfId);
+
+    if (!updatedPerformance) {
+        enqueueSnackbar("⚠️ Performance entry not found.", { variant: "error" });
+        return;
+    }
+
+    // ✅ Ensure criteria is an array
+    const criteriaArray = Array.isArray(updatedPerformance.criteria) ? updatedPerformance.criteria : [];
+
+    // ✅ Prepare data to send
+    const performanceData = {
+        recordName: updatedPerformance.recordName,
+        criteria: criteriaArray,
+        remarks: updatedPerformance.remarks || "",
+        candidateAssessment: updatedPerformance.assessment,
+        candidateId: selectedCandidateId,
+    };
+
+    console.log("📤 Submitting Performance Data:", performanceData);
 
     try {
-        const response = await axios.post("http://localhost:5000/api/candidates/toggleApproval", {
-            candidateId: selectedCandidateId
+      const response = await fetch("http://localhost:5000/api/candPerformance/addRecord", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(performanceData),
+            credentials: "include", // ✅ Ensures authentication
         });
 
-        if (response.status === 200) {
-            enqueueSnackbar(`Candidate ${response.data.newStatus ? "approved" : "rescinded"} successfully!`, { variant: "success" });
+        const data = await response.json();
 
-            // ✅ Update frontend UI
-            setCandidates((prevCandidates) =>
-                prevCandidates.map((candidate) =>
-                    candidate.candidateId === selectedCandidateId ? { ...candidate, result: response.data.newStatus } : candidate
-                )
-            );
-
-            // ✅ Update frontend UI
-            setLocalCandidates((prevCandidates) =>
-              prevCandidates.map((candidate) =>
-                  candidate.candidateId === selectedCandidateId ? { ...candidate, result: response.data.newStatus } : candidate
-              )
-            );
-
-            setIsApprovalModalOpen(false); // Close modal
-        } else {
-            enqueueSnackbar("Failed to update candidate status.", { variant: "error" });
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to save performance data.");
         }
-    } catch (error) {
-        console.error("Error updating candidate status:", error);
-        enqueueSnackbar("An error occurred while updating candidate status.", { variant: "error" });
-      }
-  };
 
-  // ✅ Open Confirmation Modal
-  const handleOpenApprovalModal = () => {
-      const isApproved = candidates.find(c => c.candidateId === selectedCandidateId)?.result;
-      setApprovalText(isApproved ? "rescind approval for" : "approve");
-      setApprovalAction(() => handleApproval);
-      setIsApprovalModalOpen(true);
+        console.log("✅ Performance saved successfully:", data);
+        enqueueSnackbar("✅ Performance data submitted successfully!", { variant: "success" });
+        fetchCandidatePerformanceData(selectedCandidateId);
+        // ✅ Collapse the entry after submission
+        setCollapsedEntries(prev => ({ ...prev, [perfId]: true }));
+
+    } catch (error) {
+        console.error("❌ Error saving performance:", error);
+        enqueueSnackbar("❌ Failed to save performance data. Please try again.", { variant: "error" });
+    }
+}, [selectedCandidateId, candidatePerformance]); // ✅ Dependencies  
+
+  const clearPerformanceData = (perfId) => {
+    setCandidatePerformance(prevPerformance => ({
+      ...prevPerformance,
+      [selectedCandidateId]: prevPerformance[selectedCandidateId].map(perf =>
+        perf.id === perfId ? { ...perf, criteria: [], assessment: "", remarks: "" } : perf
+      )
+    }));
   };
+  
 
 
 // ✅ Fetch candidate performance data when a candidate is selected
@@ -166,11 +119,104 @@ const fetchCandidatePerformanceData = async (candidateId) => {
           [candidateId]: data.performanceRecords, // Ensure backend returns `performanceRecords`
       }));
 
+      enqueueSnackbar("✅ Candidate performance data loaded successfully!", { variant: "success" });
   } catch (error) {
-    return;
+      enqueueSnackbar("No Data Exist.", { variant: "error" });
   }
 };
 
+
+// ✅ Add a new performance entry
+const addPerformanceEntry = () => {
+  if (!selectedCandidateId) return; // ✅ Ensure a candidate is selected
+
+  setCandidatePerformance((prev) => ({
+    ...prev,
+    [selectedCandidateId]: [
+      ...(prev[selectedCandidateId] || []),
+      {
+        id: Date.now().toString(), // ✅ Unique ID
+        recordName: "",
+        criteria: [{ type: "", score: "", assessment: "", remarks: "" }], // ✅ Default criteria entry
+      },
+    ],
+  }));
+};
+
+
+const addCriteria = (entryId) => {
+  setCandidatePerformance((prev) => ({
+    ...prev,
+    [selectedCandidateId]: prev[selectedCandidateId].map((entry) =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            criteria: [
+              ...entry.criteria,
+              { type: "", score: "", assessment: "", remarks: "" }, // ✅ Empty new criteria
+            ],
+          }
+        : entry
+    ),
+  }));
+};
+
+// ✅ Remove Criteria
+const removeCriteria = (entryId, index) => {
+  setCandidatePerformance((prev) => ({
+    ...prev,
+    [selectedCandidateId]: prev[selectedCandidateId].map((entry) =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            criteria: entry.criteria.filter((_, idx) => idx !== index)
+          }
+        : entry
+    )
+  }));
+};
+
+const handleCriteriaChange = (entryId, index, field, value) => {
+  setCandidatePerformance((prev) => ({
+    ...prev,
+    [selectedCandidateId]: prev[selectedCandidateId].map((entry) =>
+      entry.id === entryId
+        ? {
+            ...entry,
+            criteria: entry.criteria.map((criterion, idx) =>
+              idx === index ? { ...criterion, [field]: value } : criterion
+            ),
+          }
+        : entry
+    ),
+  }));
+};
+
+
+// ✅ Remove performance entry
+const removePerformanceEntry = (entryId) => {
+  setCandidatePerformance((prev) => ({
+    ...prev,
+    [selectedCandidateId]: prev[selectedCandidateId].filter((entry) => entry.id !== entryId),
+  }));
+};
+
+const handlePerformanceChange = (entryId, field, value) => {
+  setCandidatePerformance((prev) => ({
+    ...prev,
+    [selectedCandidateId]: prev[selectedCandidateId].map((entry) =>
+      entry.id === entryId ? { ...entry, [field]: value } : entry
+    ),
+  }));
+};
+
+// ✅ Toggle expand/collapse
+const toggleCollapse = (entryId) => {
+  setCollapsedEntries((prev) => ({
+    ...prev,
+    [entryId]: !prev[entryId],
+  }));
+};
   // Email
   const [subject, setSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
@@ -208,58 +254,13 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       const filteredPlaceholders = allPlaceholders.filter(
         (tag) => !(tag in placeholderMappings) || placeholderMappings[tag] !== ""
       );
+  
       setPlaceholders(filteredPlaceholders);
     }
-  }, [show, candidates, placeholderData]);  
+  }, [show, candidates, placeholderData]);
+
   
-  useEffect(() => {
-    if (!candidates.length) return; // ✅ Ensure candidates exist
-  
-    const announcementIdFromCandidate = candidates[0]?.announcementId;
-    if (!announcementIdFromCandidate) return; // ✅ Prevent fetching if ID is missing
-  
-    const fetchAnnouncement = async () => {
-      try {
-        const response = await axios.post(
-          "http://localhost:5000/api/announcements/getAnnouncementInfoById",
-          { announcementId: announcementIdFromCandidate }
-        );
-        setAnnouncementConcluded(response.data.concluded);
-        setSelectedDepartment(response.data.departmentd);
-      } catch (error) {
-        console.error("Error fetching announcement:", error);
-      }
-    };
-  
-    const fetchDepartments = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/departments/list");
-        setDepartments(
-          response.data.map((dept) => ({
-            id: dept.departmentid,
-            name: dept.departmentName,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-      }
-    };
-  
-    const fetchUsers = async () => {
-      try {
-        // ✅ Corrected to POST request
-        const response = await axios.post("http://localhost:5000/api/users/getUserInfoAndExperience");
-        setAllUsers(response.data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-  
-    fetchAnnouncement();
-    fetchDepartments();
-    fetchUsers();
-  }, [candidates]); // ✅ Only runs when candidates change
-  
+
   const handleFileChange = (e) => {
     const allowedTypes = ["application/pdf", "application/msword", "image/png", "image/jpeg"];
     const files = Array.from(e.target.files);
@@ -284,6 +285,15 @@ const fetchCandidatePerformanceData = async (candidateId) => {
   
     setDocuments(prevDocs => [...prevDocs, ...filesWithMeta]);
   };
+  
+  const updateFileName = (index, newName) => {
+    setDocuments(prevDocs => {
+      const updatedDocs = [...prevDocs];
+      updatedDocs[index] = { ...updatedDocs[index], customName: newName };
+      return updatedDocs;
+    });
+  };
+  
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -303,6 +313,12 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       return;
     }
     setDocuments([...documents, ...files]);
+  };
+
+
+  // Function to remove a candidate from the modal's local list
+  const handleRemoveCandidate = (candidateId) => {
+    setLocalCandidates((prev) => prev.filter((c) => c.candidateId !== candidateId));
   };
 
   const handleTemplateSelect = (templateKey) => {
@@ -398,6 +414,10 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     setDocuments([]); // Clear uploaded files
   };
   
+  const replacePlaceholders = (text, placeholders) => {
+    return text.replace(/\[\[(.*?)\]\]/g, (_, key) => placeholders[key] || `[${key} Missing]`);
+  };
+  
   const handleSendMail = async () => {
     setLoading(true);
 
@@ -453,9 +473,6 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     }
   };
 
-  const handleRemoveCandidate = (candidateId) => {
-    setLocalCandidates((prev) => prev.filter((c) => c.candidateId !== candidateId));
-  };
   
   if (!show) return null;
   return (
@@ -463,26 +480,25 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       <ModalContent>
         <CloseButtonTop onClick={onClose}>&times;</CloseButtonTop>
         <TabsContainer>
-        {["Check List", "Send Email", "Manage Evaluator", "Candidate Performance", ...(announcementConcluded ? ["Add as User"] : [])].map(
-          (tab) => (
+          {["Check List", "Send Email", "Candidate Performance", "Add as User"].map((tab) => (
             <Tab key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
               {tab}
             </Tab>
-          )
-        )}
+          ))}
         </TabsContainer>
         <ContentContainer>
           {activeTab === "Check List" && (
             <CandidateList>
               <Heading>CHECK LIST</Heading>
               <hr id="title-line" className="mb-4" data-symbol="✈" />
+
               {localCandidates.length > 0 ? (
                 <>
                   <CandidateHeader>
                     <span>ID</span>
                     <span>Name</span>
                     <span>Email</span>
-                    <span>Approved</span>
+                    <span>Phone</span>
                     <span>Action</span>
                   </CandidateHeader>
                   {localCandidates.map((candidate) => (
@@ -490,9 +506,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                       <span>{candidate.candidateId || "N/A"}</span>
                       <span>{`${candidate.firstName || ""} ${candidate.surName || ""}`}</span>
                       <span>{candidate.email || "N/A"}</span>
-                      <span className="fw-semibold text-dark">
-                        {candidate.result ? "Yes" : "No"}
-                      </span>
+                      <span>{candidate.phone || "N/A"}</span>
                       <RemoveButton onClick={() => handleRemoveCandidate(candidate.candidateId)}>
                         Remove
                       </RemoveButton>
@@ -625,256 +639,180 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               )}
             </div>
           )}    
-          {activeTab === "Manage Evaluator" && (
-            <div>
-              {/* 🔹 Centered Title */}
-              <div className="text-center mb-3">
-                <Heading>MANAGE EVALUATOR</Heading>
-                <hr id="title-line" className="mb-4" data-symbol="✈" />
-              </div>
-
-              <div className="row align-items-start">
-                {/* ✅ Available Users List */}
-                <div className="col-md-5 pe-3 border-4">
-                  <div className="pb-4 border-bottom">
-                    <h5 className="fw-bold">Select Department:</h5>
-                    <select
-                      className="form-control"
-                      style={{ width: "380px" }}
-                      value={selectedDepartment}
-                      onChange={(e) => setSelectedDepartment(e.target.value)}
-                    >
-                      <option value="">-- Select Department --</option>
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.name}> {/* ✅ Store `dept.name` instead of `dept.id` */}
-                          {dept.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h5 className={`fw-bold m-0 mt-4 ${isFull ? "vibrate text-danger" : ""}`}>
-                      Assigned Evaluators [{availableUsers.length}/5]
-                    </h5>
-                  </div>
-
-                  <ul className="list-group mt-2" style={{ width: "380px" }}>
-                    {assignedUsers.length > 0 ? (
-                      assignedUsers.map((user) => (
-                        <li
-                          key={user.userId}
-                          className="d-flex justify-content-between align-items-center list-group-item p-2"
-                          style={{ fontWeight: "600", color: "#212529" }}
-                        >
-                          <span>{user.userId}: {user.fullName}</span>
-                          <button className="btn btn-danger btn-sm" onClick={() => removeUserFromDepartment(user)}>
-                            <i className="fas fa-trash"></i> {/* ✅ Remove button */}
-                          </button>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="text-muted text-center list-group-item p-2">No assigned users.</li>
-                    )}
-                  </ul>
-                  <button className="btn btn-success px-4 mt-4">Save</button>
-                </div>
-
-                {/* ✅ Table: Current Users with Pagination */}
-                <div className="col-md-7 ps-3 border-start border-4">
-                  <h5 className="fw-bold">Available Users</h5>
-
-                  {/* 🔹 Search Bar */}
-                  <div className="mb-3">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search Users..."
-                      value={userSearchTerm}
-                      onChange={(e) => setUserSearchTerm(e.target.value)}
-                    />
-                  </div>
-
-                    {/* 🔹 User Table */}
-                      <div className="table-responsive">
-                      <table className="table table-bordered table-striped">
-                        <thead className="table-dark text-center">
-                          <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Experience</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUsers.length > 0 ? (
-                            filteredUsers.map((user) => {
-                              const nameParts = user.fullName.split(" ");
-                              const firstName = nameParts[0] || "";
-                              const lastName = nameParts[nameParts.length - 1] || "";
-                              const middleInitial = nameParts.length > 2 ? `${nameParts[1][0]}.` : "";
-                              const isAssigned = assignedUsers.some((u) => u.userId === user.userId); // ✅ Check if assigned
-
-                              return (
-                                <tr key={user.userId}>
-                                  <td>{user.userId}</td>
-                                  <td>{`${firstName} ${middleInitial} ${lastName}`.trim()}</td>
-                                  <td>{Math.floor(user.totalExperience)} years</td>
-                                  <td className="text-center">
-                                    <button
-                                      className={`btn btn-${isAssigned ? "secondary" : "success"} btn-sm`}
-                                      onClick={() => assignUserToDepartment(user)}
-                                    >
-                                      <i className={`fas fa-${isAssigned ? "check" : "plus"}`}></i> {/* ✅ Change icon dynamically */}
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          ) : (
-                            <tr>
-                              <td colSpan="4" className="text-center text-muted">No users found.</td>
-                            </tr>
-                          )}
-                        </tbody>
-                    </table>
-                  </div>
-
-                  {/* ✅ Pagination Controls */}
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                    >
-                      Prev
-                    </button>
-                    <span>
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           {activeTab === "Candidate Performance" && (
             <div>
               <Heading>CANDIDATE PERFORMANCE</Heading>
               <hr id="title-line" className="mb-4" data-symbol="✈" />
-              {/* ✅ Select Candidate & Approve Button in Same Row */}
-              <div className="d-flex align-items-center gap-3 mb-4">
-                <div className="form-group flex-grow-1">
-                    <label className="form-label">Select Candidate:</label>
-                    <div className="d-flex align-items-center gap-2">
-                      <select className="form-control w-100" value={selectedCandidateId} onChange={handleCandidateSelect} style={{ height: "42px" }}>
-                          <option value="">-- Select Candidate --</option>
-                          {localCandidates.map((candidate) => (
-                              <option 
-                                  key={candidate.candidateId} 
-                                  value={candidate.candidateId} 
-                              >
-                                  {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}
-                                  {candidate.result && " ✅"} 
-                              </option>
-                          ))}
-                      </select>
-                      <button
-                          className={`btn ${selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "btn-danger" : "btn-primary"} px-4`}
-                          style={{ height: "42px", minWidth: "120px" }}
-                          onClick={handleOpenApprovalModal}
-                          disabled={!selectedCandidateId}
-                      >
-                          {selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "Rescind" : "Approve"}
-                      </button>
-                    </div>
-                </div>
+
+              {/* ✅ Select Candidate */}
+              <div className="form-group full-width">
+                <label className="form-label">Select Candidate:</label>
+                <select className="form-control" value={selectedCandidateId} onChange={handleCandidateSelect}>
+                  <option value="">-- Select Candidate --</option>
+                  {candidates.map((candidate) => (
+                    <option key={candidate.candidateId} value={candidate.candidateId}>
+                      {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-            
-            {/* ✅ Custom Confirmation Modal */}
-            <ApprovalModal
-                isOpen={isApprovalModalOpen}
-                onClose={() => setIsApprovalModalOpen(false)}
-                onConfirm={approvalAction}
-                actionText={approvalText}
-            />
-              {/* ✅ Show Previous Performance Records */}
-              <div className="mt-5 p-3 border rounded bg-light shadow-sm record-container">
-                <h4 className="text-dark fw-bold mb-3 d-flex align-items-center">
-                  <FaHistory className="me-2 text-secondary" size={20} /> Previous Performance Records
-                </h4>
+              {/* ✅ Add Performance Entry Button */}
+              <button type="button" className="btn btn-primary mb-3" onClick={addPerformanceEntry} disabled={!selectedCandidateId}>
+                <FaPlus /> Add Performance Entry
+              </button>
 
-                {previousPerformanceData[selectedCandidateId]?.length > 0 ? (
-                  <div className="d-flex flex-column gap-2">
-                    {previousPerformanceData[selectedCandidateId]
-                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // 🔹 Sort by Date (Newest First)
-                      .map((record, index) => (
-                        <div className="card p-3 shadow-sm border rounded bg-white" key={index}>
+              {/* ✅ Show Performance Cards When Candidate is Selected */}
+              {selectedCandidateId && candidatePerformance[selectedCandidateId] && (
+                <>
+                  {candidatePerformance[selectedCandidateId].map((perf) => (
+                    <div key={perf.id} className="p-3 mb-3 rounded border border-secondary shadow-sm position-relative" style={{ backgroundColor: "#f8f9fa" }}>
+                      {/* Expand/Collapse Button */}
+                      <button type="button" className="btn btn-light btn-sm position-absolute top-0 start-0 m-1" onClick={() => toggleCollapse(perf.id)}>
+                        {collapsedEntries[perf.id] ? <FaChevronDown /> : <FaChevronUp />}
+                      </button>
+
+                      {/* Remove Performance Entry Button */}
+                      <button type="button" className="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onClick={() => removePerformanceEntry(perf.id)}>
+                        <FaTimes />
+                      </button>
+
+                      {/* Collapsed View */}
+                      {collapsedEntries[perf.id] && <p className="mt-3 fw-bold text-center">{perf.recordName || "Unnamed Record"}</p>}
+
+                      {/* Expanded View */}
+                      {!collapsedEntries[perf.id] && (
+                        <>
+                          <div className="row p-1">
+                            {/* Record Name Input */}
+                            <div className="col-md-12 mb-3 mt-4">
+                              <label className="form-label">Performance Record Name:</label>
+                              <input type="text" className="form-control" value={perf.recordName} required onChange={(e) => handlePerformanceChange(perf.id, "recordName", e.target.value)} />
+                            </div>
+                          </div>
+
+                          {/* ✅ Add Criteria Button */}
+                          <button type="button" className="btn btn-secondary btn-sm mb-2" onClick={() => addCriteria(perf.id)}>
+                            <FaPlus /> Add Criteria
+                          </button>
+
+                          {/* ✅ Performance Criteria - Aligned Layout */}
+                          {perf.criteria.map((criterion, index) => (
+                            <div key={index} className="row align-items-center mb-2">
+                              {/* Criteria Name (Wider Field) */}
+                              <div className="col-md-6">
+                                <input type="text" className="form-control text-center" placeholder="Enter Criteria" value={criterion.type} required onChange={(e) => handleCriteriaChange(perf.id, index, "type", e.target.value)} />
+                              </div>
+
+                              {/* Score Input */}
+                              <div className="col-md-3">
+                                <input type="number" className="form-control text-center" placeholder="Score (0-100)" value={criterion.score} min="0" max="100" required onChange={(e) => handleCriteriaChange(perf.id, index, "score", e.target.value)} />
+                              </div>
+
+                              {/* ✅ Remove Criteria Button */}
+                              <div className="col-md-3">
+                                <button type="button" className="btn btn-danger btn-sm" onClick={() => removeCriteria(perf.id, index)}>
+                                  <FaTimes /> Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* ✅ Assessment & Remarks - Separate Fields */}
+                          <div className="row mt-4">
+                            {/* Assessment Dropdown */}
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">Overall Assessment:</label>
+                              <select className="form-control" value={perf.assessment} required onChange={(e) => handlePerformanceChange(perf.id, "assessment", e.target.value)}>
+                                <option value="">Select Assessment</option>
+                                <option value="Good">Good</option>
+                                <option value="Above Average">Above Average</option>
+                                <option value="Average">Average</option>
+                                <option value="Below Average">Below Average</option>
+                                <option value="Bad">Bad</option>
+                              </select>
+                            </div>
+
+                            {/* Remarks Input */}
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label">Remarks:</label>
+                              <input type="text" className="form-control" value={perf.remarks} required onChange={(e) => handlePerformanceChange(perf.id, "remarks", e.target.value)} />
+                            </div>
+                          </div>
+
+                          {/* ✅ Submit & Clear Data Buttons */}
+                          <div className="d-flex justify-content-between mt-3">
+                            <button type="button" className="btn btn-success" onClick={() => submitPerformance(perf.id)}>
+                              <FaCheck /> Submit
+                            </button>
+                            <button type="button" className="btn btn-danger" onClick={() => clearPerformanceData(perf.id)}>
+                              <FaUndo /> Clear Data
+                            </button>
+                          </div>
+                        </>
+                      )}``
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* ✅ Show Previous Performance Records (Read-Only, Sorted by Date) */}
+              {previousPerformanceData[selectedCandidateId]?.length > 0 && (
+                <div className="mt-4 p-4 border rounded bg-white record-container">
+                  <h5 className="text-primary fw-bold mb-3">
+                    <FaHistory className="me-2" size={20} /> Previous Performance Records
+                  </h5>
+                  {previousPerformanceData[selectedCandidateId]
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // 🔹 Sort by Date (Newest First)
+                    .map((record, index) => (
+                      <div key={index} className="card mb-3 border-0 shadow-lg record-card">
+                        <div className="card-body p-4">
                           {/* 📌 Record Name & Date */}
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <h5 className="card-title text-dark fw-bold m-0">
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h6 className="card-title text-dark fw-semibold m-0">
                               <FaFileAlt className="me-2 text-secondary" size={16} /> {record.recordName}
-                            </h5>
-                            <span className="text-muted fs-6">
-                              <FaCalendarAlt className="me-1 text-secondary" size={14} /> {new Date(record.createdAt).toLocaleString()}
+                            </h6>
+                            <span className="text-muted small">
+                              <FaCalendarAlt className="me-1" size={14} /> {new Date(record.createdAt).toLocaleString()}
                             </span>
                           </div>
                           <hr className="my-2" />
 
-                          {/* 📊 Assessment */}
-                          <div className="mb-1">
-                            <p className="mb-1 fs-5 d-flex align-items-center">
-                              <strong className="text-primary d-flex align-items-center">
-                                <FaChartBar className="me-2 text-primary" size={18} /> Assessment:
-                              </strong> 
-                              <span className="fw-semibold ms-2 text-dark">{record.candidateAssessment}</span>
+                          {/* 📊 Assessment & Remarks */}
+                          <div className="mb-3">
+                            <p className="mb-2 fs-6">
+                              <strong className="text-success">
+                                <FaChartBar className="me-1" size={16} /> Assessment:
+                              </strong> <span className="fw-medium">{record.candidateAssessment}</span>
+                            </p>
+                            <p className="mb-2 fs-6">
+                              <strong className="text-warning">
+                                <FaCommentDots className="me-1" size={16} /> Remarks:
+                              </strong> <span className="fw-medium">{record.remarks}</span>
                             </p>
                           </div>
 
-                          {/* 📜 Remarks */}
-                          <div className="mb-2">
-                            <p className="mb-1 fs-5 d-flex align-items-center">
-                              <strong className="text-muted d-flex align-items-center">
-                                <FaCommentDots className="me-2 text-muted" size={18} /> Remarks:
-                              </strong> 
-                              <span className="fw-semibold ms-2 text-dark">{record.remarks}</span>
-                            </p>
-                          </div>
-
-                          {/* ✅ Performance Criteria */}
-                          <div className="mt-2">
-                            <h5 className="text-dark fw-bold d-flex align-items-center">
-                              <FaTasks className="me-2 text-secondary" size={16} /> Evaluation Criteria
-                            </h5>
-                            <ul className="list-group list-group-flush mt-1 criteria-list">
+                          {/* ✅ Performance Criteria (Styled List with Shadow) */}
+                          <div className="mt-3">
+                            <h6 className="text-info fw-bold">
+                              <FaTasks className="me-2" size={16} /> Evaluation Criteria
+                            </h6>
+                            <ul className="list-group list-group-flush mt-2 criteria-list">
                               {record.criteria.map((crit, idx) => (
-                                <li key={idx} className="list-group-item d-flex justify-content-between align-items-center px-3 py-2 bg-light border rounded shadow-sm">
-                                  <span className="fs-6 fw-semibold d-flex align-items-center text-dark">
+                                <li key={idx} className="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-light criteria-item">
+                                  <span className="fs-6 fw-medium">
                                     <FaCheckCircle className="me-2 text-success" size={18} /> {crit.type}
                                   </span>
-                                  <span className="badge bg-secondary rounded-pill fs-6 px-3 py-1">{crit.score}/100</span>
+                                  <span className="badge bg-primary rounded-pill fs-6 px-3 py-2">{crit.score}/100</span>
                                 </li>
                               ))}
                             </ul>
                           </div>
                         </div>
-                      ))}
-                  </div>
-                ) : (
-                  <p className="text-muted text-center fs-5 fw-bold mt-3">
-                    <FaExclamationCircle className="me-2 text-danger" size={18} /> No data available for candidate
-                  </p>
-                )}
-              </div>
+                      </div>
+                    ))}
+                </div>
+              )}
 
             </div>
           )}
@@ -883,23 +821,20 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               <Heading>ADD AS USER</Heading>
               {/* ✅ Select Candidate */}
               <div className="form-group full-width">
-                <label className="form-label">Choose Approved Candidate:</label>
+                <label className="form-label">Choose New Candidate:</label>
                 <select
                   className="form-control"
                   value={selectedNewCandidateId}
                   onChange={handleNewCandidateSelect}
                 >
                   <option value="">-- Choose New Candidate --</option>
-                  {localCandidates
-                    .filter(candidate => candidate.result) // ✅ Show only approved candidates
-                    .map((candidate) => (
-                      <option key={candidate.candidateId} value={candidate.candidateId}>
-                        {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}
-                      </option>
-                    ))}
+                  {candidates.map((candidate) => (
+                    <option key={candidate.candidateId} value={candidate.candidateId}>
+                      {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}
+                    </option>
+                  ))}
                 </select>
               </div>
-
               {/* ✅ Pass Updated Selected Candidate to Form */}
               <AddUserForm 
                 selectedNewCandidateId={selectedNewCandidateId} 

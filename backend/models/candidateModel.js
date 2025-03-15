@@ -54,7 +54,10 @@ const candidateSchema = new mongoose.Schema({
   },
 
   selected: { type: Boolean, default: false },
-  result: { type: Boolean, default: false }
+  result: { type: Boolean, default: false },
+
+  // ✅ New: Recruited Field
+  recruited: { type: Boolean, default: false } // Indicates if the candidate is officially recruited
 });
 
 const Candidate = mongoose.model("tableCandidate", candidateSchema);

@@ -390,3 +390,74 @@ export const getJobListings = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch job listings" });
   }
 };
+
+export const getAnnouncementInfoById = async (req, res) => {
+  try {
+    const { announcementId } = req.body; // ✅ Extract from request body
+
+    if (!announcementId) {
+      return res.status(400).json({ message: "announcementId is required." });
+    }
+
+    const announcement = await Announcement.findOne({ announcementId });
+
+    if (!announcement) {
+      return res.status(404).json({ message: "Announcement not found." });
+    }
+
+    res.status(200).json(announcement);
+  } catch (error) {
+    console.error("Error fetching announcement:", error);
+    res.status(500).json({ message: "Failed to fetch announcement." });
+  }
+};
+
+export const concludeJob = async (req, res) => {
+  try {
+    const { announcementId } = req.params; // ✅ Extract from URL params
+
+    if (!announcementId) {
+      return res.status(400).json({ message: "announcementId is required." });
+    }
+
+    const updatedAnnouncement = await Announcement.findOneAndUpdate(
+      { announcementId },
+      { $set: { concluded: true } },
+      { new: true }
+    );
+
+    if (!updatedAnnouncement) {
+      return res.status(404).json({ message: "Announcement not found." });
+    }
+
+    res.status(200).json({ message: "Announcement concluded successfully!", updatedAnnouncement });
+  } catch (error) {
+    console.error("Error concluding announcement:", error);
+    res.status(500).json({ message: "Failed to conclude announcement." });
+  }
+};
+
+export const reopenJob = async (req, res) => {
+  try {
+    const { announcementId } = req.params; // ✅ Extract from URL params
+
+    if (!announcementId) {
+      return res.status(400).json({ message: "announcementId is required." });
+    }
+
+    const updatedAnnouncement = await Announcement.findOneAndUpdate(
+      { announcementId },
+      { $set: { concluded: false } },
+      { new: true }
+    );
+
+    if (!updatedAnnouncement) {
+      return res.status(404).json({ message: "Announcement not found." });
+    }
+
+    res.status(200).json({ message: "Announcement reopened successfully!", updatedAnnouncement });
+  } catch (error) {
+    console.error("Error reopening announcement:", error);
+    res.status(500).json({ message: "Failed to reopen announcement." });
+  }
+};

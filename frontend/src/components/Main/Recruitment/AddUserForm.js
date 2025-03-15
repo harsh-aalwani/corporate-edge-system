@@ -1,6 +1,6 @@
 import { useEffect ,useState } from "react";
 import { enqueueSnackbar } from "notistack"; 
-import { FaPlus , FaTimes, FaChevronDown, FaChevronUp , FaUserPlus, FaUndo ,FaCheck, FaCalendarAlt, FaCheckCircle, FaChartBar, FaTasks, FaHistory, FaCommentDots, FaFileAlt} from "react-icons/fa";
+import { FaPlus , FaTimes, FaChevronDown, FaChevronUp, FaExclamationCircle } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -10,7 +10,6 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
     const [userRoles, setUserRoles] = useState([]);
     const [systemAdminExtra, setSystemAdminExtra] = useState(false); 
     const [userFormData, setUserFormData] = useState({
-      // Personal Information
       firstName: "",
       fatherName: "",
       surName: "",
@@ -23,36 +22,29 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
       gender: "",
       maritalStatus: "",
       languagesKnown: "",
-      identityProof: null,
-      picture: null,
+      candidateDocuments: null,
+      candidatePicture: null,
       presentAddress: "",
       permanentAddress: "",
-    
-      // Education Qualifications (Array)
       educationQualification: [],
-    
-      // In-Organization Information
       userRoleid: "",
       extraPermissions: false,
-      department: "",
+      departmentId: "",
+      departmentName: "", // Store department name separately
       specialization: "",
       userDesignation: "",
-    
-      // Other Information
       lastWorkPlace: "",
       yearsOfExperience: "",
       addressOfWorkPlace: "",
       responsibilities: "",
       referenceContact: "",
       totalYearsOfExperience: "",
-    
-      // Confirmation
       confirmInformation: false
     });
     const navigate = useNavigate();
-  
     const [ErrorMessage, setError] = useState('');
     const [collapsedEntries, setCollapsedEntries] = useState({});
+
     const toggleCollapse = (id) => {
       setCollapsedEntries((prev) => ({
         ...prev,
@@ -155,7 +147,7 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
       // ✅ Store the actual file object in userFormData for upload
       setUserFormData((prev) => ({
         ...prev,
-        picture: file, // File object
+        candidatePicture: file, // File object
       }));
     };
   
@@ -189,7 +181,7 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
       }
     
       // ✅ Store the actual file in userFormData instead of Base64
-      setUserFormData((prev) => ({ ...prev, identityProof: file }));
+      setUserFormData((prev) => ({ ...prev, candidateDocuments: file }));
     };
     
     const handleChange = (e) => {
@@ -241,19 +233,18 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
         userFormDataToServer.append('userMobileNumber', userFormData.phone);
         userFormDataToServer.append('userStatus', false);
         userFormDataToServer.append('userRoleid', userFormData.userRoleid);
-        userFormDataToServer.append('userDepartment', userFormData.department);
+        userFormDataToServer.append('userDepartment', userFormData.departmentId);
         userFormDataToServer.append('userPermissions[SystemAdminExtra]', userFormData.extraPermissions || false);
         userFormDataToServer.append('createdAt', new Date().toISOString());
       
         userFormDataToServer.append('dob', userFormData.dob);
-        userFormDataToServer.append('age', userFormData.age);
         userFormDataToServer.append('nativePlace', userFormData.nativePlace);
         userFormDataToServer.append('nationality', userFormData.nationality);
         userFormDataToServer.append('gender', userFormData.gender);
         userFormDataToServer.append('maritalStatus', userFormData.maritalStatus);
         userFormDataToServer.append('languagesKnown', userFormData.languagesKnown);  // Store as plain text
-        userFormDataToServer.append('identityProof', userFormData.identityProof);
-        userFormDataToServer.append('picture', userFormData.picture);
+        userFormDataToServer.append('identityProof', userFormData.candidateDocuments);
+        userFormDataToServer.append('picture', userFormData.candidatePicture);
         userFormDataToServer.append('presentAddress', userFormData.presentAddress);
         userFormDataToServer.append('permanentAddress', userFormData.permanentAddress);
         userFormDataToServer.append('educationQualification', JSON.stringify(userFormData.educationQualification));
@@ -291,61 +282,77 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
     };
     
     useEffect(() => {
-      const fetchDepartments = async () => {
-        try {
-          const response = await axios.get("http://localhost:5000/api/departments/list");
-          setUserDepartments(response.data);
-        } catch (error) {
-          console.error("Error fetching departments:", error);
-        }
-      };
-      const fetchUserRoles = async () => {
-        try {
-          const response = await axios.get("http://localhost:5000/api/users/rolesList", {
-            withCredentials: true, // Ensure session is sent
-          });
-          setUserRoles(response.data.roles);
-          setSystemAdminExtra(response.data.systemAdminExtra);
-        } catch (error) {
-          console.error("Error fetching user roles:", error);
-        }
-      };
+        const fetchDepartments = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/departments/list");
+                setUserDepartments(response.data);
+            } catch (error) {
+                console.error("Error fetching departments:", error);
+            }
+        };
     
-      fetchDepartments();
-      fetchUserRoles();
+        const fetchUserRoles = async () => {
+            try {
+                const response = await axios.get("http://localhost:5000/api/users/rolesList", {
+                    withCredentials: true, // Ensure session is sent
+                });
+                setUserRoles(response.data.roles);
+                setSystemAdminExtra(response.data.systemAdminExtra);
+            } catch (error) {
+                console.error("Error fetching user roles:", error);
+            }
+        };
+    
+        fetchDepartments();
+        fetchUserRoles();
     }, []);
-  
+    
     useEffect(() => {
         if (selectedNewCandidateId) {
-          axios
-            .post("http://localhost:5000/api/candidates/getCandidate", { candidateId: selectedNewCandidateId })
-            .then((response) => {
-              setUserFormData(response.data);
-            })
-            .catch((error) => {
-              console.error("Error fetching candidate details:", error);
-            });
+            axios
+                .post("http://localhost:5000/api/candidates/getCandidate", { candidateId: selectedNewCandidateId })
+                .then((response) => {
+                    const candidateData = response.data;
+                    setUserFormData((prev) => ({
+                        ...prev,
+                        ...candidateData,
+                        candidateDepartmentId: candidateData.departmentId,
+                        departmentId: prev.departmentId && prev.departmentId !== prev.candidateDepartmentId
+                            ? prev.departmentId
+                            : candidateData.departmentId,
+                    }));
+    
+                    // ✅ Convert backslashes to forward slashes and set preview
+                    if (candidateData.candidatePicture) {
+                        setImagePreview(`http://localhost:5000/${candidateData.candidatePicture.replace(/\\\\/g, "/")}`);
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching candidate details:", error);
+                });
         }
-      }, [selectedNewCandidateId]);
-      
-      useEffect(() => {
+    }, [selectedNewCandidateId]);
+    
+    
+    useEffect(() => {
         if (userFormData.departmentId && departments.length > 0) {
-          const selectedDepartment = departments.find(dept => String(dept.id) === String(userFormData.departmentId));
-      
-          if (selectedDepartment) {
-            setUserFormData(prev => ({
-              ...prev,
-              department: selectedDepartment.departmentName
-            }));
-          }
+            const selectedDepartment = departments.find(dept => String(dept.departmentid) === String(userFormData.departmentId));
+    
+            if (selectedDepartment) {
+                setUserFormData(prev => ({
+                    ...prev,
+                    departmentName: selectedDepartment.departmentName, // Store department name correctly
+                }));
+            }
         }
-      }, [userFormData.departmentId, departments]); // Runs when `departmentId` or `departments` change
-      
-
+    }, [userFormData.departmentId, departments]);
+    
     return (
         <div className="container mt-5">
             {!selectedNewCandidateId ? (
-                <p>Select Candidate to fetch data</p>
+                  <p className="text-muted text-center fs-5 fw-semibold mt-3">
+                    <FaExclamationCircle className="me-2 text-danger" size={18} /> No data available for candidate
+                  </p>
             ) : (
                 <>
             <h4 className="mb-1 mt-4">Personal Information:</h4>
@@ -429,44 +436,35 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                     <label className="form-label">Permanent Address:</label>
                     <textarea name="permanentAddress" className="form-control" value={userFormData.permanentAddress} onChange={handleChange} required></textarea>
                 </div>
+
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Picture:</label>
-                    <input
-                    type="file"
-                    name="picture"
-                    className="form-control"
-                    accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
-                    onChange={handleImageChange}
-                    required
-                    />
+                    {imagePreview && (
+                        <div className="col-md-6 mt-4 mb-3">
+                            <label className="form-label mb-2">Current Image:</label>
+                            <img
+                                src={imagePreview}
+                                alt="Candidate"
+                                className="img-fluid rounded"
+                                style={{ maxWidth: "150px", maxHeight: "150px", border: "1px solid #ccc" }}
+                            />
+                        </div>
+                    )}
                 </div>
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Identity Proof: [Any Government Document]</label>
-                    <input
-                    type="file"
-                    name="identityProof"
-                    className="form-control"
-                    accept="image/png, image/jpeg, image/jpg, application/pdf"
-                    onChange={handleFileChange}  // Use a different handler if necessary
-                    required
-                    />
+                    {userFormData.candidateDocuments && (
+                        <div className="col-md-6 mt-4 mb-3">
+                            <label className="form-label mb-2">Uploaded Document:</label>
+                            <a
+                                href={`http://localhost:5000/${userFormData.candidateDocuments.replace(/\\/g, "/")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-info mt-2"
+                            >
+                                View Document
+                            </a>
+                        </div>
+                    )}
                 </div>
-                {/* Show Image Preview */}
-                {imagePreview && (
-                    <>
-                    <div className="col-md-2 mt-5 text-center">
-                        <label className="form-label">Preview:</label>
-                    </div>
-                    <div className="col-md-6 mt-2">
-                        <img
-                        src={imagePreview} // ✅ Uses preview URL, not file object
-                        alt="Selected"
-                        className="img-fluid rounded"
-                        style={{ maxWidth: "150px", maxHeight: "150px", border: "1px solid #ccc" }}
-                        />
-                    </div>
-                    </>
-                )}
                 <h4 className="mb-1 mt-4">Education Qualifications: </h4>
                 <hr id="title-line" className="mb-4" data-symbol="✈" />
     
@@ -683,71 +681,91 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                 ))}
                 <h4 className="mb-1 mt-4">In-organization Information:</h4>
                 <hr id="title-line" className="mb-4" data-symbol="✈" />
-    
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">User Role: <span style={{color:"red"}}>*</span></label>
+                    <label className="form-label">
+                        User Role: <span style={{ color: "red" }}>*</span>
+                    </label>
                     <select
-                    name="userRoleid"
-                    className="form-control"
-                    value={userFormData.userRoleid}
-                    onChange={(e) => {
-                        const selectedRole = e.target.value;
-                        setUserFormData((prev) => ({
-                        ...prev,
-                        userRoleid: selectedRole,
-                        department: selectedRole === "Department-Manager" || selectedRole === "Employee"
-                            ? prev.department // Keep the selected department if applicable
-                            : selectedRole === "HR"
-                            ? "HRManager"
-                            : "SystemAdmin", 
-                        }));
-                    }}
-                    required
+                        name="userRoleid"
+                        className="form-control"
+                        value={userFormData.userRoleid}
+                        onChange={(e) => {
+                            const selectedRole = e.target.value;
+
+                            setUserFormData((prev) => {
+                                const isDeptRole = selectedRole === "Department-Manager" || selectedRole === "Employee";
+
+                                return {
+                                    ...prev,
+                                    userRoleid: selectedRole,
+                                    departmentId: isDeptRole 
+                                        ? prev.departmentId || prev.candidateDepartmentId  // Set candidateDepartmentId if departmentId is empty
+                                        : "", // Clear departmentId for other roles
+                                    department: isDeptRole
+                                        ? prev.department || ""  // Keep department name if available
+                                        : "", // Clear department name for other roles
+                                };
+                            });
+                        }}
+                        required
                     >
-                    <option value="">Select Role</option>
-                    {userRoles.map((role) => (
-                        <option key={role} value={role}>
-                        {role}
-                        </option>
-                    ))}
+                        <option value="">Select Role</option>
+                        {userRoles.map((role) => (
+                            <option key={role} value={role}>
+                                {role}
+                            </option>
+                        ))}
                     </select>
+
                 </div>
+
                 {/* Conditionally Show "Give Permission to Add System-Admin" Dropdown */}
                 {systemAdminExtra && userFormData.userRoleid === "System-Admin" && (
                     <div className="col-md-6 mb-3">
-                    <label className="form-label">Give Permission to Add System-Admin:</label>
-                    <select
-                        className="form-control"
-                        value={userFormData.extraPermissions}
-                        onChange={(e) => setUserFormData((prev) => ({ ...prev, extraPermissions: e.target.value === "true" }))}
-                    >
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                    </select>
+                        <label className="form-label">Give Permission to Add System-Admin:</label>
+                        <select
+                            className="form-control"
+                            value={userFormData.extraPermissions}
+                            onChange={(e) =>
+                                setUserFormData((prev) => ({ ...prev, extraPermissions: e.target.value === "true" }))
+                            }
+                        >
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
                     </div>
                 )}
-    
-                {/* Conditionally show department dropdown only for Department-Manager & Employee */}
                 {(userFormData.userRoleid === "Department-Manager" || userFormData.userRoleid === "Employee") && (
-                    <div className="col-md-6 mb-3">
+
+                <div className="col-md-6 mb-3">
                     <label className="form-label">Department:</label>
                     <select
-                        name="department"
+                        name="departmentId"
                         className="form-control"
-                        value={userFormData.department}
-                        onChange={handleChange}
+                        value={userFormData.departmentId}
+                        onChange={(e) => {
+                            const selectedDeptId = e.target.value;
+                            const selectedDept = departments.find(dept => String(dept.departmentid) === String(selectedDeptId));
+                            setUserFormData((prev) => ({
+                                ...prev,
+                                departmentId: selectedDeptId,
+                                departmentName: selectedDept ? selectedDept.departmentName : "",
+                            }));
+                        }}
                         required
                     >
                         <option value="">Select Department</option>
                         {departments.map((dept) => (
-                        <option key={dept._id} value={dept.departmentName}>
-                            {dept.departmentName}
-                        </option>
+                            <option key={dept.departmentid} value={dept.departmentid}
+                                selected={dept.departmentid === userFormData.departmentId}
+                                >
+                                {dept.departmentName}
+                            </option>
                         ))}
                     </select>
-                    </div>
-                )}
-    
+                </div>
+                 )}
+
                 <div className="col-md-6 mb-3">
                     <label className="form-label">Specialization:</label>
                     <input type="text" name="specialization" className="form-control" value={userFormData.specialization} onChange={handleChange} required/>
@@ -851,6 +869,7 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                     type="button"
                     className="btn btn-dark px-4"
                     onClick={() => {
+                    setImagePreview("");
                     setUserFormData({
                         // Personal Information
                         firstName: "",
@@ -865,8 +884,8 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                         gender: "",
                         maritalStatus: "",
                         languagesKnown: "",
-                        identityProof: "",
-                        picture: "",
+                        candidateDocuments: "",
+                        candidatePicture: "",
                         presentAddress: "",
                         permanentAddress: "",
     
@@ -876,7 +895,7 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                         // In-Organization Information
                         userRoleid: "",
                         extraPermissions: false, // Reset extraPermissions
-                        department: "",
+                        departmentId: "",
                         specialization: "",
                         userDesignation: "",
     

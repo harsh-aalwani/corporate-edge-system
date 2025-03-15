@@ -1,16 +1,17 @@
 import React from "react";
 import styled from "styled-components";
 
-const Checkbox = ({ checked, onChange }) => {
+const Checkbox = ({ checked, onChange, disabled }) => {
   return (
-    <StyledWrapper>
-      <div className="checkbox-wrapper-46">
+    <StyledWrapper disabled={disabled}>
+      <div className={`checkbox-wrapper-46 ${disabled ? "disabled" : ""}`}>
         <input
           type="checkbox"
           id="cbx-46"
           className="inp-cbx"
           checked={checked}
           onChange={onChange}
+          disabled={disabled} // ✅ Disable checkbox when needed
         />
         <label htmlFor="cbx-46" className="cbx">
           <span>
@@ -36,6 +37,7 @@ const StyledWrapper = styled.div`
     -webkit-user-select: none;
     user-select: none;
     cursor: pointer;
+    color: #333; /* Default text color */
   }
 
   .checkbox-wrapper-46 .cbx span {
@@ -53,6 +55,7 @@ const StyledWrapper = styled.div`
     vertical-align: middle;
     border: 1px solid #9098a9;
     transition: all 0.2s ease;
+    background: #fff;
   }
 
   .checkbox-wrapper-46 .cbx span:first-child svg {
@@ -105,7 +108,20 @@ const StyledWrapper = styled.div`
     opacity: 0;
     transition: all 0.6s ease;
   }
+  .checkbox-wrapper-46.disabled {
+    opacity: 0.5; /* ✅ Lighten when disabled */
+    pointer-events: none; /* ✅ Prevent clicking */
+  }
 
+  .checkbox-wrapper-46.disabled .cbx {
+    cursor: not-allowed; /* ✅ Show disabled cursor */
+  }
+
+  .checkbox-wrapper-46.disabled .cbx span:first-child {
+    background: #ddd; /* ✅ Lighten box */
+    border-color: #bbb; /* ✅ Lighten border */
+  }
+    
   @keyframes wave-46 {
     50% {
       transform: scale(0.9);

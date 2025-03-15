@@ -203,7 +203,7 @@ export const getCandidateList = async (req, res) => {
     // Find candidates matching job position and department
     const candidates = await Candidate.find(
       { position: jobPosition, departmentId: departmentId },
-      "candidateId firstName fatherName surName email phone dob age nativePlace nationality gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation selected result candidateEvaluation detailedEvaluation"
+      "candidateId firstName fatherName surName email phone dob age nativePlace nationality gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result candidateEvaluation detailedEvaluation"
     );
 
     // Convert file paths to URLs
@@ -236,10 +236,18 @@ export const selectCandidatesUpdate = async (req, res) => {
       return res.status(400).json({ message: "No candidates selected" });
     }
 
-    // Update selection state
+    // Build update query
+    const updateQuery = { $set: { selected } };
+
+    // ✅ If deselecting candidates, explicitly set result to false
+    if (!selected) {
+      updateQuery.$set.result = false; 
+    }
+
+    // ✅ Update selection state
     const updatedCandidates = await Candidate.updateMany(
       { candidateId: { $in: candidateIds } }, // Match candidates by ID
-      { $set: { selected: selected } } // Toggle selected state
+      updateQuery
     );
 
     if (updatedCandidates.modifiedCount === 0) {
@@ -277,3 +285,58 @@ export const getCandidateById = async (req, res) => {
   }
 };
 
+export const getCandidateByIdAndDepartment = async (req, res) => {
+  try {
+    const { candidateId } = req.body; // Get candidateId from request body
+
+    if (!candidateId) {
+      return res.status(400).json({ message: "Candidate ID is required" });
+    }
+
+    // Find candidate in the database
+    const candidate = await Candidate.findOne({ candidateId }).lean();
+
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    // Fetch department name using departmentId
+    const department = await Department.findOne({ departmentId: candidate.departmentId }).select("departmentName").lean();
+
+    // Attach department name without modifying departmentId
+    res.status(200).json({
+      ...candidate,
+      departmentName: department ? department.departmentName : "Unknown Department",
+    });
+  } catch (error) {
+    console.error("Error fetching candidate:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const toggleApproval = async (req, res) => {
+  try {
+    const { candidateId } = req.body;
+    if (!candidateId) {
+        return res.status(400).json({ message: "Candidate ID is required" });
+    }
+
+    // ✅ Find candidate
+    const candidate = await Candidate.findOne({ candidateId });
+    if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    // ✅ Toggle `result` field (Approve/Rescind)
+    candidate.result = !candidate.result;
+    await candidate.save();
+
+    res.status(200).json({
+        message: `Candidate ${candidate.result ? "approved" : "rescinded"} successfully`,
+        newStatus: candidate.result
+    });
+  } catch (error) {
+      console.error("Error updating candidate status:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+};

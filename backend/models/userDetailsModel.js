@@ -4,7 +4,7 @@ const userDetailsSchema = new mongoose.Schema({
     userdetailsId: { type: String, unique: true, required: true },
     userId: { type: String, required: true, ref: "User" }, // Foreign key linking to tableUser
     dob: { type: Date, required: true },
-    age: { type: Number, required: true },
+    age: { type: Number, required: false },
     nativePlace: { type: String, required: true },
     nationality: { type: String, required: true },
     gender: { type: String, required: true, enum: ["Male", "Female", "Other"] },

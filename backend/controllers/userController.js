@@ -326,3 +326,49 @@ export const createUserWithDetails = async (req, res) => {
     res.status(500).json({ message: "Server error. Please try again later.", error });
   }
 };
+
+export const getUserInfoAndExperience = async (req, res) => {
+  try {
+    const users = await User.aggregate([
+      { $match: { activateAccount: true } }, // ✅ Only active users
+      {
+        $lookup: {
+          from: "tableUserDetails",
+          localField: "userId",
+          foreignField: "userId",
+          as: "userDetails",
+        },
+      },
+      { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          yearsSinceCreation: {
+            $divide: [{ $subtract: [new Date(), "$createdAt"] }, 1000 * 60 * 60 * 24 * 365],
+          },
+          totalExperience: {
+            $add: [
+              { $divide: [{ $subtract: [new Date(), "$createdAt"] }, 1000 * 60 * 60 * 24 * 365] },
+              { $ifNull: ["$userDetails.totalYearsOfExperience", 0] },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: 1,
+          fullName: 1,
+          userDepartment: 1,
+          createdAt: 1,
+          totalYearsOfExperience: "$userDetails.totalYearsOfExperience",
+          totalExperience: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

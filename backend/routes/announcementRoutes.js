@@ -10,7 +10,9 @@ import {
   getPrivateAnnouncements,
   getJobData,
   getJobListings,
-
+  getAnnouncementInfoById,
+  concludeJob,
+  reopenJob,
 } from "../controllers/announcementController.js";
 
 const router = express.Router();
@@ -42,6 +44,12 @@ router.get("/private", getPrivateAnnouncements);
 router.get("/jobdata", getJobData);
 
 router.get("/jobListing",getJobListings);
+
+router.post("/getAnnouncementInfoById", getAnnouncementInfoById);
+
+router.put("/conclude/:announcementId", concludeJob);
+
+router.put("/reopen/:announcementId", reopenJob);
 
 
 export default router;

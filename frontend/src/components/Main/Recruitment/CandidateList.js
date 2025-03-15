@@ -9,13 +9,14 @@ import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
 import { useNavigate } from "react-router-dom"; 
 import OptionModal from "./OptionModal";
-
+import ConcludeModal from "./ConcludeModal";
 const CandidateList = () => {
   const { announcementId } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar(); // ✅ Use Snackbar
   const [searchQuery, setSearchQuery] = useState("");
   const [candidates, setCandidates] = useState([]);
+  const [announcement, setAnnouncement] = useState(null);
   const [checkedRows, setCheckedRows] = useState([]);
   const [checkAll, setCheckAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: "candidateId", direction: "asc" });
@@ -27,23 +28,72 @@ const CandidateList = () => {
   const [lineVisible, setLineVisible] = useState(false);
   const [showOptionModal, setOptionModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
-
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [actionText, setActionText] = useState("");
+  
   useEffect(() => {
-    const fetchCandidates = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.post("http://localhost:5000/api/candidates/List", {
-          announcementId,
-        });
-        setCandidates(response.data);
+        const [candidatesResponse, announcementResponse] = await Promise.all([
+          axios.post("http://localhost:5000/api/candidates/List", { announcementId }),
+          axios.post("http://localhost:5000/api/announcements/getAnnouncementInfoById", { announcementId })
+        ]);
+        setCandidates(candidatesResponse.data);
+        setAnnouncement(announcementResponse.data);
       } catch (error) {
-        enqueueSnackbar("Failed to fetch candidates. Please try again.", { variant: "error" });
+        enqueueSnackbar("Failed to fetch data. Please try again.", { variant: "error" });
       }
     };
-    fetchCandidates();
+    fetchData();
   }, [announcementId]);
+
+
+  useEffect(() => {
+    if (announcement?.concluded) {
+      setShowSelected(true); // ✅ Ensure "Show Selected" is enabled when concluded
+    }
+  }, [announcement?.concluded]);
+
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
+  };
+
+  const handleConfirmAction = async () => {
+    if (confirmAction) {
+      await confirmAction();  // ✅ Execute the stored function
+    }
+    setIsConfirmModalOpen(false); // ✅ Close modal after execution
+  };
+  
+  
+  const handleConclude = () => {
+    setActionText("conclude this announcement");
+    setConfirmAction(() => async () => {  // ✅ Wrap in function so it executes later
+      try {
+        await axios.put(`http://localhost:5000/api/announcements/conclude/${announcement.announcementId}`);
+        setAnnouncement((prev) => ({ ...prev, concluded: true }));
+        enqueueSnackbar("Announcement concluded successfully!", { variant: "success" });
+      } catch (error) {
+        enqueueSnackbar("Failed to conclude announcement.", { variant: "error" });
+      }
+    });
+    setIsConfirmModalOpen(true);
+  };
+  
+  const handleReopen = () => {
+    setActionText("reopen this announcement");
+    setConfirmAction(() => async () => {  // ✅ Wrap in function so it executes later
+      try {
+        await axios.put(`http://localhost:5000/api/announcements/reopen/${announcement.announcementId}`);
+        setAnnouncement((prev) => ({ ...prev, concluded: false }));
+        enqueueSnackbar("Announcement reopened successfully!", { variant: "success" });
+      } catch (error) {
+        enqueueSnackbar("Failed to reopen announcement.", { variant: "error" });
+      }
+    });
+    setIsConfirmModalOpen(true);
   };
   
   const handleOptionClick = () => {
@@ -89,17 +139,31 @@ const CandidateList = () => {
 
   const handleSelectCandidates = async () => {
     try {
-      const newSelectedState = !showSelected; // Toggle selection state
+      const newSelectedState = !showSelected; // ✅ Toggle selection state
   
-      await axios.put("http://localhost:5000/api/candidates/select", {
+      // ✅ Prepare the candidate update payload
+      const updatePayload = {
         candidateIds: checkedRows,
-        selected: newSelectedState, // Send the new state to backend
-      });
+        selected: newSelectedState,
+      };
   
+      // ✅ If deselecting, explicitly set result to false
+      if (!newSelectedState) {
+        updatePayload.removeResult = true; // Backend should handle setting `result: false`
+      }
+  
+      // ✅ Send update to backend
+      await axios.put("http://localhost:5000/api/candidates/select", updatePayload);
+  
+      // ✅ Update candidates in frontend
       setCandidates((prevCandidates) =>
         prevCandidates.map((candidate) =>
           checkedRows.includes(candidate.candidateId)
-            ? { ...candidate, selected: newSelectedState } // Toggle selected state
+            ? {
+                ...candidate,
+                selected: newSelectedState,
+                result: newSelectedState ? candidate.result : false, // ✅ Set result to false when deselecting
+              }
             : candidate
         )
       );
@@ -117,7 +181,6 @@ const CandidateList = () => {
     }
   };
   
-
   // ✅ Sorting Function
   const handleSort = (key) => {
     let direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
@@ -129,6 +192,12 @@ const CandidateList = () => {
     let valueA = a[key];
     let valueB = b[key];
 
+    if (key === "result") {
+      return sortConfig.direction === "asc" 
+        ? Number(valueA) - Number(valueB) 
+        : Number(valueB) - Number(valueA);
+    }
+    
     if (key === "candidateEvaluation") {
       valueA = valueA ? parseFloat(valueA) : 0;
       valueB = valueB ? parseFloat(valueB) : 0;
@@ -145,11 +214,15 @@ const CandidateList = () => {
   });
 
   const filteredCandidates = sortedCandidates.filter((candidate) => {
-    // Ensure filtering by selection state
+    // ✅ If concluded, force showing only selected candidates
+    if (announcement?.concluded) {
+      return candidate.selected; 
+    }
+
+    // ✅ If not concluded, apply "Show Selected Candidates" filter
     if (showSelected && !candidate.selected) return false;
-    if (!showSelected && candidate.selected) return false;
-  
-    // Search query filtering
+
+    // ✅ Apply search query filtering
     const query = searchQuery.toLowerCase();
     return (
       candidate.candidateId.toLowerCase().includes(query) ||
@@ -159,7 +232,6 @@ const CandidateList = () => {
       candidate.phone.toLowerCase().includes(query)
     );
   });
-  
 
   // ✅ Pagination Logic
   const indexOfLastCandidate = currentPage * itemsPerPage;
@@ -179,15 +251,24 @@ const CandidateList = () => {
       <div className="d-flex align-items-center justify-content-between pt-2 pb-4">
         <div className="d-flex align-items-center">
           <h4 className="fw-bold mb-0 me-3">Candidate List</h4>
-          <Checkbox
-            checked={showSelected}
-            onChange={() => {
-              setShowSelected((prev) => !prev);
-              setLineVisible((prev) => !prev);
-              setCheckedRows([]); // ✅ Clear selected checkboxes when toggling selection filter
-              setCheckAll(false); // ✅ Ensure "Select All" is also unchecked
-            }}
-          />
+          {announcement?.concluded ? (
+            <Checkbox checked={true} disabled /> // ✅ Always checked & disabled when concluded
+          ) : (
+            <Checkbox
+              checked={announcement?.concluded || showSelected} // ✅ Always checked when concluded
+              onChange={() => {
+                if (!announcement?.concluded) { // ✅ Only allow toggling when not concluded
+                  setShowSelected((prev) => !prev);
+                  setLineVisible((prev) => !prev);
+                  setCheckedRows([]);
+                  setCheckAll(false);
+                }
+              }}
+              disabled={announcement?.concluded} // ✅ Disable when concluded
+            />
+
+          )}
+
         </div>
         <div className="ms-md-auto py-2 py-md-0">
         {showSelected && (
@@ -226,57 +307,105 @@ const CandidateList = () => {
         <table className="table custom-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort("candidateId")}>Candidate ID {getSortIcon("candidateId")}</th>
+              <th onClick={() => handleSort("candidateId")}>ID {getSortIcon("candidateId")}</th>
               <th onClick={() => handleSort("firstName")}>Name {getSortIcon("firstName")}</th>
               <th onClick={() => handleSort("email")}>Email {getSortIcon("email")}</th>
               <th onClick={() => handleSort("phone")}>Phone {getSortIcon("phone")}</th>
-              <th onClick={() => handleSort("candidateEvaluation")}>Score (%) {getSortIcon("candidateEvaluation")}</th>
+              <th onClick={() => handleSort("candidateEvaluation")}>Score{getSortIcon("candidateEvaluation")}</th>
+              {showSelected && <th onClick={() => handleSort("result")}>
+                Approved {getSortIcon("result")}
+              </th>} {/* ✅ Hide column when showSelected is false */}
               <th>Resume</th>
               <th><input type="checkbox" checked={checkAll} onChange={handleCheckAll} /></th>
             </tr>
           </thead>
+
           <tbody>
-            {currentCandidates.map((candidate) => (
-              <tr key={candidate.candidateId} className={checkedRows.includes(candidate.candidateId) ? "active" : ""}>
-                <td>{candidate.candidateId}</td>
-                <td>{`${candidate.firstName} ${candidate.surName}`}</td>
-                <td>{candidate.email}</td>
-                <td>{candidate.phone}</td>
-                <td>{candidate.candidateEvaluation ? `${candidate.candidateEvaluation}%` : "N/A"}</td>
-                <td><button className="btn btn-success btn-sm" onClick={() => generatePDF(candidate)}>Download</button></td>
-                <td><input type="checkbox" checked={checkedRows.includes(candidate.candidateId)} onChange={(e) => handleRowCheck(e, candidate.candidateId)} /></td>
+            {currentCandidates.length > 0 ? (
+              currentCandidates.map((candidate) => (
+                <tr key={candidate.candidateId} className={checkedRows.includes(candidate.candidateId) ? "active" : ""}>
+                  <td>{candidate.candidateId}</td>
+                  <td>{`${candidate.firstName} ${candidate.surName}`}</td>
+                  <td>{candidate.email}</td>
+                  <td>{candidate.phone}</td>
+                  <td>{candidate.candidateEvaluation ? `${candidate.candidateEvaluation}%` : "N/A"}</td>
+                  {showSelected && (
+                    <td className={candidate.result ? "text-success fw-bold" : "text-danger fw-bold"}>
+                      {candidate.result ? "Yes" : "No"}
+                    </td>
+                  )} {/* ✅ Hide row content when showSelected is false */}
+                  <td>
+                    <button className="btn btn-success btn-sm" onClick={() => generatePDF(candidate)}>Download</button>
+                  </td>
+                  <td>
+                    <input type="checkbox" checked={checkedRows.includes(candidate.candidateId)} onChange={(e) => handleRowCheck(e, candidate.candidateId)} />
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" className="text-center text-muted">
+                  No candidates found.
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
+
       {/* Pagination Controls - Centered */}
       <div className="d-flex flex-column align-items-center mt-3">
-        <div className="d-flex justify-content-center">
-          <button className="btn btn-outline-secondary me-2" onClick={prevPage} disabled={currentPage === 1}>
-            ◀ Previous
+        <div className="d-flex align-items-center">
+          <button 
+            className="btn btn-secondary me-2 px-3 py-2 rounded-pill" 
+            onClick={prevPage} 
+            disabled={currentPage === 1}
+          >
+            &larr; Previous
           </button>
-          <button className="btn btn-outline-secondary" onClick={nextPage} disabled={currentPage === totalPages}>
-            Next ▶
+
+          <span className="fw-bold mx-3">Page {currentPage} of {totalPages}</span>
+
+          <button 
+            className="btn btn-secondary px-3 py-2 rounded-pill" 
+            onClick={nextPage} 
+            disabled={currentPage === totalPages}
+          >
+            Next &rarr;
           </button>
         </div>
 
         {/* Items per page dropdown */}
         <div className="mt-2">
           <span>Show: </span>
-          <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
+          <select value={itemsPerPage} className="rounded" onChange={(e) => setItemsPerPage(Number(e.target.value))}>
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={20}>20</option>
           </select> Candidates per page
         </div>
       </div>
-      {/* Go Back Button */}
-      <div className="d-flex justify-content-start mb-1">
-        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-          ← Go Back
-        </button>
-      </div>
+    {/* Go Back & Conclude/Reopen Button */}
+    <div className="d-flex justify-content-between align-items-center mt-4">
+      <button className="btn btn-primary" onClick={() => navigate(-1)}>← Go Back</button>
+      {announcement && (
+        announcement.concluded ? (
+          <button className="btn btn-dark px-4" onClick={handleReopen}>
+            Reopen
+          </button>
+        ) : (
+          <button className="btn btn-danger px-4" onClick={handleConclude}>
+            Conclude
+          </button>
+        )
+      )}
+    </div>
+    <ConcludeModal
+      isOpen={isConfirmModalOpen}
+      onClose={() => setIsConfirmModalOpen(false)}
+      onConfirm={handleConfirmAction} // ✅ Executes and closes modal
+      actionText={actionText}
+    />
 
       {/* Confirmation Modal */}
       {showModal && (
@@ -296,6 +425,7 @@ const CandidateList = () => {
         <OptionModal
           show={showOptionModal}
           candidates={selectedCandidate || []} // ✅ Ensure it's always an array
+          setCandidates={setCandidates} 
           onClose={() => setOptionModal(false)}
         />
       )}

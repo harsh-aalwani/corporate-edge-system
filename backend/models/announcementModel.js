@@ -31,6 +31,9 @@ const announcementSchema = new mongoose.Schema({
 
   // Department ID (stored as a string, not a reference)
   departmentId: { type: String, default: null },
+
+  // ✅ New: Indicates if a user has been added based on this announcement
+  concluded: { type: Boolean, default: false }
 });
 
 // Pre-save hook: Ensure schedule time is at least 1 minute in the future

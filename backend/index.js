@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import path from 'path';
-import multer from "multer";
 import { createServer } from 'http';
 import { PORT, mongoURI } from './config.js';
 import userRoutes from './routes/userRoutes.js';
