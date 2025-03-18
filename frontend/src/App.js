@@ -59,6 +59,13 @@ import DepartmentManagerDashboard from './pages/DepartmentManager/Dashboard';
 import EmployeeDashboard from './pages/Employee/Dashboard';
 import {getUserRoleCookie, removeUserRoleCookie } from './utils/cookieHelper';
 
+
+// Candidate Evaluator Modules
+import CandidateEvaluatorLogin from './pages/CandidateEvaluator/Login';
+import CandidateEvaluatorDashboard from './pages/CandidateEvaluator/dashboard';
+import CandidateEvaluation from './pages/CandidateEvaluator/CandidateEvaluation';
+
+
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [landingPageData, setLandingPageData] = useState({});
@@ -75,9 +82,7 @@ const App = () => {
     <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
       <Router>
         <Routes>
-
-
-          {/* Guest Routes */}
+        {/* Guest Routes */}
         <Route element={<MainLayout />}>
           <Route
             path="/"
@@ -101,6 +106,7 @@ const App = () => {
           <Route path="/JobApplicationForm" element={<JobVacancy />} />
         </Route>
           <Route path="/login" element={<Login />} />
+          <Route path="/EvaluatorLogin" element={<CandidateEvaluatorLogin />} />
 
           {/* Role-Based Dashboards */}
           <Route path="/dashboard" element={<ProtectedRoute requiredRoles={['R1', 'R2', 'R3', 'R4', 'R5']} Component={
@@ -410,7 +416,33 @@ const App = () => {
                   default: return <Navigate to="/login" />;
                 }
               }
-            } />} />                
+            } />} />     
+            <Route
+              path="/EvaluatorDashboard"
+              element={
+                <ProtectedRoute
+                  requiredRoles={['R1', 'R2', 'R3', 'R4', 'R5']}
+                  Component={() => {
+                    return ['R1', 'R2', 'R3', 'R4', 'R5'].includes(getUserRoleCookie()) 
+                      ? <CandidateEvaluatorDashboard />
+                      : <Navigate to="/EvaluatorLogin" />;
+                  }}
+                />
+              }
+            />
+            <Route
+              path="/CandidateEvaluation/:announcementId"
+              element={
+                <ProtectedRoute
+                  requiredRoles={['R1', 'R2', 'R3', 'R4', 'R5']}
+                  Component={() => {
+                    return ['R1', 'R2', 'R3', 'R4', 'R5'].includes(getUserRoleCookie()) 
+                      ? <CandidateEvaluation/>
+                      : <Navigate to="/EvaluatorLogin" />;
+                  }}
+                />
+              }
+            />
         </Routes>
       </Router>
     </SnackbarProvider>

@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion"; 
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useSnackbar } from "notistack"; // ✅ Import Snackbar
 import Checkbox from "./Checkbox";
 import { generatePDF } from "./resumeGenerator";
-import "../../../assets/css/TableCss/TableManage.css";
-import "../../../assets/css/TableCss/TableIcon.css";
+import "../../assets/css/TableCss/TableManage.css";
+import "../../assets/css/TableCss/TableIcon.css";
 import { useNavigate } from "react-router-dom"; 
 import OptionModal from "./OptionModal";
-import ConcludeModal from "./ConcludeModal";
+
 const CandidateList = () => {
   const { announcementId } = useParams();
   const navigate = useNavigate();
@@ -20,18 +20,16 @@ const CandidateList = () => {
   const [checkedRows, setCheckedRows] = useState([]);
   const [checkAll, setCheckAll] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: "candidateId", direction: "asc" });
-  const [showModal, setShowModal] = useState(false);
-  const [showSelected, setShowSelected] = useState(false)
+  const [showSelected, setShowSelected] = useState(true)
   // ✅ Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5); // Default: Show 5 candidates per page
   const [lineVisible, setLineVisible] = useState(false);
   const [showOptionModal, setOptionModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
-  const [actionText, setActionText] = useState("");
-  
+  const hasRedirected = useRef(false); // Prevent duplicate redirects
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,61 +37,30 @@ const CandidateList = () => {
           axios.post("http://localhost:5000/api/candidates/List", { announcementId }),
           axios.post("http://localhost:5000/api/announcements/getAnnouncementInfoById", { announcementId })
         ]);
+  
         setCandidates(candidatesResponse.data);
         setAnnouncement(announcementResponse.data);
+  
+        // ✅ Redirect if announcement is concluded, only if it hasn't already triggered
+        if (announcementResponse.data?.concluded && !hasRedirected.current) {
+          hasRedirected.current = true; // Set flag to prevent duplicate execution
+          enqueueSnackbar("⚠️ This evaluation has been concluded.", { variant: "warning" });
+          navigate("/EvaluatorDashboard");
+        }
+        
       } catch (error) {
         enqueueSnackbar("Failed to fetch data. Please try again.", { variant: "error" });
       }
     };
+  
     fetchData();
-  }, [announcementId]);
-
-
-  useEffect(() => {
-    if (announcement?.concluded) {
-      setShowSelected(true); // ✅ Ensure "Show Selected" is enabled when concluded
-    }
-  }, [announcement?.concluded]);
+  }, [announcementId, navigate, enqueueSnackbar]); // Dependencies
+  
+  
 
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-  };
-
-  const handleConfirmAction = async () => {
-    if (confirmAction) {
-      await confirmAction();  // ✅ Execute the stored function
-    }
-    setIsConfirmModalOpen(false); // ✅ Close modal after execution
-  };
-  
-  
-  const handleConclude = () => {
-    setActionText("conclude this announcement");
-    setConfirmAction(() => async () => {  // ✅ Wrap in function so it executes later
-      try {
-        await axios.put(`http://localhost:5000/api/announcements/conclude/${announcement.announcementId}`);
-        setAnnouncement((prev) => ({ ...prev, concluded: true }));
-        enqueueSnackbar("Announcement concluded successfully!", { variant: "success" });
-      } catch (error) {
-        enqueueSnackbar("Failed to conclude announcement.", { variant: "error" });
-      }
-    });
-    setIsConfirmModalOpen(true);
-  };
-  
-  const handleReopen = () => {
-    setActionText("reopen this announcement");
-    setConfirmAction(() => async () => {  // ✅ Wrap in function so it executes later
-      try {
-        await axios.put(`http://localhost:5000/api/announcements/reopen/${announcement.announcementId}`);
-        setAnnouncement((prev) => ({ ...prev, concluded: false }));
-        enqueueSnackbar("Announcement reopened successfully!", { variant: "success" });
-      } catch (error) {
-        enqueueSnackbar("Failed to reopen announcement.", { variant: "error" });
-      }
-    });
-    setIsConfirmModalOpen(true);
   };
   
   const handleOptionClick = () => {
@@ -134,50 +101,6 @@ const CandidateList = () => {
     });
   };
 
-  const handleSelectCandidates = async () => {
-    try {
-      const newSelectedState = !showSelected; // ✅ Toggle selection state
-  
-      // ✅ Prepare the candidate update payload
-      const updatePayload = {
-        candidateIds: checkedRows,
-        selected: newSelectedState,
-      };
-  
-      // ✅ If deselecting, explicitly set result to false
-      if (!newSelectedState) {
-        updatePayload.removeResult = true; // Backend should handle setting `result: false`
-      }
-  
-      // ✅ Send update to backend
-      await axios.put("http://localhost:5000/api/candidates/select", updatePayload);
-  
-      // ✅ Update candidates in frontend
-      setCandidates((prevCandidates) =>
-        prevCandidates.map((candidate) =>
-          checkedRows.includes(candidate.candidateId)
-            ? {
-                ...candidate,
-                selected: newSelectedState,
-                result: newSelectedState ? candidate.result : false, // ✅ Set result to false when deselecting
-              }
-            : candidate
-        )
-      );
-  
-      setCheckedRows([]); // ✅ Clear selection
-      setCheckAll(false); // ✅ Uncheck "Select All"
-      setShowModal(false);
-  
-      enqueueSnackbar(
-        newSelectedState ? "Candidates selected successfully!" : "Candidates deselected successfully!",
-        { variant: "success" }
-      );
-    } catch (error) {
-      console.error("Error updating candidates:", error.message);
-    }
-  };
-  
   // ✅ Sorting Function
   const handleSort = (key) => {
     let direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
@@ -225,8 +148,7 @@ const CandidateList = () => {
       candidate.candidateId.toLowerCase().includes(query) ||
       candidate.firstName.toLowerCase().includes(query) ||
       candidate.surName.toLowerCase().includes(query) ||
-      candidate.email.toLowerCase().includes(query) ||
-      candidate.phone.toLowerCase().includes(query)
+      candidate.email.toLowerCase().includes(query)
     );
   });
 
@@ -270,16 +192,13 @@ const CandidateList = () => {
         <div className="ms-md-auto py-2 py-md-0">
         {showSelected && (
             <button 
-              className="btn btn-label-info btn-round me-2"
+              className="btn btn-primary btn-round me-2"
               disabled={checkedRows.length === 0}
               onClick={() => handleOptionClick(candidates.find(candidate => checkedRows.includes(candidate.candidateId)))}
             >
-              Options
+              Evaluate
             </button>
           )}
-          <button className="btn btn-primary btn-round me-2" onClick={() => setShowModal(true)} disabled={checkedRows.length === 0}>
-            {showSelected ? "Deselect Candidates" : "Select Candidates"}
-          </button>
           <button className="btn btn-dark btn-round" onClick={handleDownloadSelected} disabled={checkedRows.length === 0}>
             Download Resumes
           </button>
@@ -302,17 +221,14 @@ const CandidateList = () => {
       {/* Table */}
       <div className="table-responsive">
         <table className="table custom-table">
-          <thead>
+        <thead>
             <tr>
               <th onClick={() => handleSort("candidateId")}>ID {getSortIcon("candidateId")}</th>
               <th onClick={() => handleSort("firstName")}>Name {getSortIcon("firstName")}</th>
               <th onClick={() => handleSort("email")}>Email {getSortIcon("email")}</th>
-              <th onClick={() => handleSort("phone")}>Phone {getSortIcon("phone")}</th>
-              <th onClick={() => handleSort("candidateEvaluation")}>Score{getSortIcon("candidateEvaluation")}</th>
+              <th onClick={() => handleSort("candidateEvaluation")}>Score {getSortIcon("candidateEvaluation")}</th>
               {showSelected && <th onClick={() => handleSort("candidatePerformance")}>Performance {getSortIcon("candidatePerformance")}</th>} 
-              {showSelected && <th onClick={() => handleSort("result")}>
-                Hire {getSortIcon("result")}
-              </th>} {/* ✅ Hide column when showSelected is false */}
+              {showSelected && <th onClick={() => handleSort("result")}>Hire {getSortIcon("result")}</th>} 
               <th>Resume</th>
               <th><input type="checkbox" checked={checkAll} onChange={handleCheckAll} /></th>
             </tr>
@@ -325,8 +241,8 @@ const CandidateList = () => {
                   <td>{candidate.candidateId}</td>
                   <td>{`${candidate.firstName} ${candidate.surName}`}</td>
                   <td>{candidate.email}</td>
-                  <td>{candidate.phone}</td>
                   <td>{candidate.candidateEvaluation ? `${candidate.candidateEvaluation}%` : "N/A"}</td>
+
                   {/* ✅ Show Performance Score Only When `showSelected` is Enabled */}
                   {showSelected && (
                     <td>
@@ -335,11 +251,13 @@ const CandidateList = () => {
                         : "N/A"}
                     </td>
                   )}
+
                   {showSelected && (
                     <td className={candidate.result ? "text-success fw-bold" : "text-danger fw-bold"}>
                       {candidate.result ? "Yes" : "No"}
                     </td>
-                  )} {/* ✅ Hide row content when showSelected is false */}
+                  )}
+
                   <td>
                     <button className="btn btn-success btn-sm" onClick={() => generatePDF(candidate)}>Download</button>
                   </td>
@@ -350,7 +268,7 @@ const CandidateList = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="text-center text-muted">
+                <td colSpan="8" className="text-center text-muted">
                   No candidates found.
                 </td>
               </tr>
@@ -394,39 +312,7 @@ const CandidateList = () => {
     {/* Go Back & Conclude/Reopen Button */}
     <div className="d-flex justify-content-between align-items-center mt-4">
       <button className="btn btn-primary" onClick={() => navigate(-1)}>← Go Back</button>
-      {announcement && (
-        announcement.concluded ? (
-          <button className="btn btn-dark px-4" onClick={handleReopen}>
-            Reopen
-          </button>
-        ) : (
-          <button className="btn btn-danger px-4" onClick={handleConclude}>
-            Conclude
-          </button>
-        )
-      )}
     </div>
-    <ConcludeModal
-      isOpen={isConfirmModalOpen}
-      onClose={() => setIsConfirmModalOpen(false)}
-      onConfirm={handleConfirmAction} // ✅ Executes and closes modal
-      actionText={actionText}
-    />
-
-      {/* Confirmation Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h5>Confirm Selection</h5>
-            <p>Are you sure you want to {showSelected ? "deselect" : "select"} the chosen candidates?</p>
-            <div className="modal-actions">
-              <button className="btn btn-danger" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-success" onClick={handleSelectCandidates}>Confirm</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showOptionModal && (
         <OptionModal
           show={showOptionModal}

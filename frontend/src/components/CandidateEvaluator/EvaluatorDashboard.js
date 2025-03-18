@@ -3,29 +3,31 @@ import styled from "styled-components";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
-const JobListing = () => {
+const EvaluatorDashboard = () => {
   const [jobListings, setJobListings] = useState([]);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/announcements/jobListing");
+        const response = await axios.get("http://localhost:5000/api/announcements/assignedJobs", {
+          withCredentials: true, // Ensure session cookies are sent
+        });
         setJobListings(response.data);
       } catch (error) {
         console.error("Error fetching job listings:", error);
       }
     };
-
+  
     fetchJobs();
   }, []);
-
+  
   return (
     <StyledWrapper>
       <h2 className="title">Job Listings</h2>
       <div className="card-container">
         {jobListings.length > 0 ? (
           jobListings.map((job) => (
-            <Link to={`/CandidateList/${job.announcementId}`} key={job.announcementId} className="card-link">
+            <Link to={`/CandidateEvaluation/${job.announcementId}`} key={job.announcementId} className="card-link">
               <div className="card">
                 {/* Total Candidates on Top Right Corner */}
                 <div className="card__total-candidates">
@@ -165,4 +167,4 @@ const StyledWrapper = styled.div`
   }
 `;
 
-export default JobListing;
+export default EvaluatorDashboard;

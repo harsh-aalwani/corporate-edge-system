@@ -1,0 +1,46 @@
+/* General Styling for Candidate ID Box */
+.performance-box {
+    position: relative;
+    display: inline-block;
+    padding: 5px 10px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  /* High Performance (80%+) */
+  .high-performance {
+    background-color: #006b92;
+    color: #fff;
+  }
+  
+  /* Mid-High Performance (60%+) */
+  .mid-high-performance {
+    background-color: #4fa3c6;
+    color: #fff;
+  }
+  
+  /* Neutral (40%+) - No Styling */
+  .neutral-performance {
+    background-color: transparent;
+    color: inherit;
+  }
+  
+  /* Low Performance (20%+) */
+  .low-performance {
+    background-color: #ffb3b3;
+    color: #333;
+  }
+  
+  /* Very Low Performance (0 < x < 20%) */
+  .very-low-performance {
+    background-color: #ff4d4d;
+    color: #fff;
+  }
+  
+  /* No Performance (0% or "N/A") */
+  .no-performance {
+    background-color: #cc0000;
+    color: #fff;
+  }
+  

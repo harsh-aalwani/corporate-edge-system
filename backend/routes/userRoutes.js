@@ -1,7 +1,7 @@
 // routes/userRoutes.js
 import express from 'express';
 import upload from "../middleware/multerConfig.js";
-import { loginUser, logoutUser,getUserProfile, getUserAccess,getUserRoles,createUserWithDetails, getUserInfoAndExperience } from '../controllers/userController.js';
+import { loginUser, logoutUser,getUserProfile, getUserAccess,getUserRoles,createUserWithDetails, getUserInfoAndExperience, evaluatorsLogin } from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -17,5 +17,6 @@ router.post("/createUserWithDetails",
     ]), 
     createUserWithDetails);
 router.post("/getUserInfoAndExperience", getUserInfoAndExperience);
+router.post('/evaluatorsLogin', evaluatorsLogin);
 
 export default router;

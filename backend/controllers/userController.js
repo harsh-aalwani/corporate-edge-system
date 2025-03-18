@@ -2,6 +2,7 @@
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import User from '../models/userModel.js';
+import Announcement from '../models/announcementModel.js';
 import UserDetails from "../models/userDetailsModel.js";
 import CryptoJS from 'crypto-js';
 import { COOKIE_SECRET_KEY } from '../config.js';
@@ -370,5 +371,55 @@ export const getUserInfoAndExperience = async (req, res) => {
   } catch (error) {
     console.error("Error fetching user info:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+export const evaluatorsLogin = async (req, res) => {
+  const { userEmail, userPassword } = req.body;
+
+  // Validate email and password
+  if (!userEmail || !userPassword || !validator.isEmail(userEmail)) {
+    return res.status(400).json({ message: "Invalid input" });
+  }
+
+  const sanitizedEmail = validator.normalizeEmail(userEmail);
+
+  try {
+    // ✅ Step 1: Check User Details
+    const user = await User.findOne({ userEmail: sanitizedEmail });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isPasswordValid = await bcrypt.compare(userPassword, user.userPassword);
+    if (!isPasswordValid) return res.status(401).json({ message: "Invalid credentials" });
+
+    console.log("Checking for userId:", user.userId); // Debugging
+
+    // ✅ Step 2: Check If User is Assigned to Any Active Announcements
+    const isAssigned = await Announcement.exists({
+      concluded: false,
+      assignedEvaluators: { $in: [user.userId] }, // ✅ Ensures `userId` is matched in the array
+    });
+
+    if (!isAssigned) {
+      return res.status(403).json({ message: "Not assigned to any evaluation" });
+    }
+
+    // ✅ Step 3: Create Session for Evaluator
+    req.session.userId = user.userId;
+    req.session.userRoleid = user.userRoleid;
+
+    // ✅ Step 4: Encrypt Role
+    const encryptedRole = CryptoJS.AES.encrypt(user.userRoleid.toString(), COOKIE_SECRET_KEY).toString();
+
+    // ✅ Step 5: Update User Status & Save
+    user.userStatus = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Login successful",
+      encryptedRole: encryptedRole,
+    });
+  } catch (error) {
+    console.error("Error during evaluator login:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

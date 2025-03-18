@@ -203,7 +203,7 @@ export const getCandidateList = async (req, res) => {
     // Find candidates matching job position and department
     const candidates = await Candidate.find(
       { position: jobPosition, departmentId: departmentId },
-      "candidateId firstName fatherName surName email phone dob age nativePlace nationality gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result candidateEvaluation detailedEvaluation"
+      "candidateId firstName fatherName surName email phone dob age nativePlace nationality candidatePerformance gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result candidateEvaluation detailedEvaluation"
     );
 
     // Convert file paths to URLs

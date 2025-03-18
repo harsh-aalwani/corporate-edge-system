@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useRef} from "react";
+import React, { useState, useEffect,useRef, useMemo} from "react";
 import {FaCalendarAlt, FaCheckCircle, FaChartBar, FaTasks, FaHistory, FaCommentDots, FaFileAlt, FaExclamationCircle} from "react-icons/fa";
 import styled from "styled-components";
 import { useSnackbar } from "notistack";
@@ -9,61 +9,122 @@ import ApprovalModal from "./ApprovalModal";
 
 const OptionModal = ({ show, onClose, candidates = [], setCandidates }) => {
 
-// Manage Users & Departments
+  // Static Department Data
+  const [departments, setDepartments] = useState([]);
 
-// Static Department Data
-const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [allUsers, setAllUsers] = useState([]);
+  const [removedUsers, setRemovedUsers] = useState([]);
 
-const [selectedDepartment, setSelectedDepartment] = useState("");
-const [allUsers, setAllUsers] = useState([]);
+  // Static User Data (Users Available for Assignment)
+  const [availableUsers, setAvailableUsers] = useState([]);
 
-// Static User Data (Users Available for Assignment)
-const [availableUsers, setAvailableUsers] = useState([]);
+  // Users Assigned to Departments
+  const [assignedUsers, setAssignedUsers] = useState([]);
 
-// Users Assigned to Departments
-const [assignedUsers, setAssignedUsers] = useState([]);
-
-const [userSearchTerm, setUserSearchTerm] = useState("");
-const [currentPage, setCurrentPage] = useState(1);
-const recordsPerPage = 4;
-const [isFull, setIsFull] = useState(false);
-
-// ✅ Update user list when department changes
-useEffect(() => {
-  if (selectedDepartment) {
-    const filteredUsers = allUsers.filter((user) => user.userDepartment === selectedDepartment);
-    setAvailableUsers(filteredUsers);
-  } else {
-    setAvailableUsers([]);
-  }
-}, [selectedDepartment, allUsers]);
-
-// ✅ Search Filtering
-const filteredUsers = availableUsers.filter((user) =>
-  user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase())
-);
-
-const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
-
-// Get users for the current page
-const paginatedUsers = filteredUsers.slice(
-  (currentPage - 1) * recordsPerPage,
-  currentPage * recordsPerPage
-);
-
-// ✅ Assign User to Department (With Limit)
-const assignUserToDepartment = (user) => {
-  if (!assignedUsers.some((u) => u.userId === user.userId)) {
-    setAssignedUsers([...assignedUsers, user]);
-  }
-};
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 4;
+  const [isFull, setIsFull] = useState(false);
 
 
-// ✅ Remove User from Department
-const removeUserFromDepartment = (user) => {
-  setAssignedUsers(assignedUsers.filter((u) => u.userId !== user.userId));
-};
+    const fetchAnnouncement = async () => {
+      if (!candidates.length || !allUsers.length) return;
+    
+      const announcementIdFromCandidate = candidates[0]?.announcementId;
+      if (!announcementIdFromCandidate) return;
+    
+      try {
+        const response = await axios.post(
+          "http://localhost:5000/api/announcements/getAnnouncementInfoById",
+          { announcementId: announcementIdFromCandidate }
+        );
+    
+        const assignedEvaluatorIds = response.data.assignedEvaluators || [];
+    
+        // ✅ Filter multiple users from `allUsers`
+        const assignedUsersData = allUsers.filter(user => assignedEvaluatorIds.includes(user.userId));
+    
+        setAssignedUsers(assignedUsersData);
+        console.log(assignedUsers);
+      } catch (error) {
+        console.error("Error fetching announcement:", error);
+      }
+    };    
+    
+  // Effect triggers fetching when candidates change
+  useEffect(() => {
+    fetchAnnouncement();
+  }, [allUsers]);
 
+  useEffect(() => {
+    if (selectedDepartment) {
+      setAvailableUsers(
+        allUsers.filter((user) => user.userDepartment === selectedDepartment)
+      );
+    } else {
+      setAvailableUsers([]);
+    }
+  }, [selectedDepartment, allUsers]);
+  
+
+  // Manage Users & Departments
+  const handleSaveEvaluators = async () => {
+    if (!candidates.length) return; // ✅ Ensure candidates exist
+  
+    const announcementIdFromCandidate = candidates[0]?.announcementId;
+    if (!announcementIdFromCandidate) return; // ✅ Prevent saving if ID is missing
+  
+    try {
+      await axios.post("http://localhost:5000/api/announcements/updateAssignedEvaluators", {
+        announcementId: announcementIdFromCandidate,
+        assignedEvaluators: assignedUsers.map((user) => user.userId), // ✅ Send only user IDs
+      });
+  
+      enqueueSnackbar("Assigned evaluators saved successfully!", { variant: "success" }); // ✅ Success Snackbar
+    } catch (error) {
+      console.error("Error saving assigned evaluators:", error);
+  
+      enqueueSnackbar("Failed to save evaluators. Please try again.", { variant: "error" }); // ✅ Error Snackbar
+    }
+  };
+
+  // ✅ Search Filtering
+  const filteredUsers = availableUsers.filter((user) =>
+    user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.userId.toLowerCase().includes(userSearchTerm.toLowerCase()) // ✅ Allow searching by ID
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
+
+  // ✅ Sort users by total experience before pagination
+  const sortedUsers = [...filteredUsers].sort((a, b) => b.totalExperience - a.totalExperience);
+
+  const paginatedUsers = sortedUsers.slice(
+    (currentPage - 1) * recordsPerPage,
+    currentPage * recordsPerPage
+  );
+
+  const assignUserToDepartment = (user) => {
+    setAssignedUsers((prevAssignedUsers) => {
+      if (prevAssignedUsers.length >= 5) {
+        enqueueSnackbar("Maximum 5 evaluators allowed.", { variant: "warning" });
+        return prevAssignedUsers;
+      }
+      if (!prevAssignedUsers.some((u) => u.userId === user.userId)) {
+        return [...prevAssignedUsers, user];
+      }
+      return prevAssignedUsers;
+    });
+  };
+  
+  const removeUserFromDepartment = (user) => {
+    setAssignedUsers((prevAssignedUsers) =>
+      prevAssignedUsers.filter((u) => u.userId !== user.userId)
+    );
+  };
+  
+  
   const [activeTab, setActiveTab] = useState("Check List");
   const [localCandidates, setLocalCandidates] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
@@ -101,7 +162,7 @@ const removeUserFromDepartment = (user) => {
         });
 
         if (response.status === 200) {
-            enqueueSnackbar(`Candidate ${response.data.newStatus ? "approved" : "rescinded"} successfully!`, { variant: "success" });
+            enqueueSnackbar(`Candidate ${response.data.newStatus ? "Hire" : "Declined"} successfully!`, { variant: "success" });
 
             // ✅ Update frontend UI
             setCandidates((prevCandidates) =>
@@ -130,7 +191,7 @@ const removeUserFromDepartment = (user) => {
   // ✅ Open Confirmation Modal
   const handleOpenApprovalModal = () => {
       const isApproved = candidates.find(c => c.candidateId === selectedCandidateId)?.result;
-      setApprovalText(isApproved ? "rescind approval for" : "approve");
+      setApprovalText(isApproved ? "declined approval for" : "hire");
       setApprovalAction(() => handleApproval);
       setIsApprovalModalOpen(true);
   };
@@ -224,13 +285,14 @@ const fetchCandidatePerformanceData = async (candidateId) => {
           "http://localhost:5000/api/announcements/getAnnouncementInfoById",
           { announcementId: announcementIdFromCandidate }
         );
+    
         setAnnouncementConcluded(response.data.concluded);
         setSelectedDepartment(response.data.departmentd);
       } catch (error) {
         console.error("Error fetching announcement:", error);
       }
     };
-  
+    
     const fetchDepartments = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/departments/list");
@@ -247,7 +309,6 @@ const fetchCandidatePerformanceData = async (candidateId) => {
   
     const fetchUsers = async () => {
       try {
-        // ✅ Corrected to POST request
         const response = await axios.post("http://localhost:5000/api/users/getUserInfoAndExperience");
         setAllUsers(response.data);
       } catch (error) {
@@ -255,10 +316,11 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       }
     };
   
+    fetchUsers();
     fetchAnnouncement();
     fetchDepartments();
-    fetchUsers();
-  }, [candidates]); // ✅ Only runs when candidates change
+  }, [candidates]);  // ✅ Runs when candidates or allUsers change
+  
   
   const handleFileChange = (e) => {
     const allowedTypes = ["application/pdf", "application/msword", "image/png", "image/jpeg"];
@@ -482,7 +544,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                     <span>ID</span>
                     <span>Name</span>
                     <span>Email</span>
-                    <span>Approved</span>
+                    <span>Hire</span>
                     <span>Action</span>
                   </CandidateHeader>
                   {localCandidates.map((candidate) => (
@@ -627,14 +689,14 @@ const fetchCandidatePerformanceData = async (candidateId) => {
           )}    
           {activeTab === "Manage Evaluator" && (
             <div>
-              {/* 🔹 Centered Title */}
+              {/* Centered Title */}
               <div className="text-center mb-3">
                 <Heading>MANAGE EVALUATOR</Heading>
                 <hr id="title-line" className="mb-4" data-symbol="✈" />
               </div>
 
               <div className="row align-items-start">
-                {/* ✅ Available Users List */}
+                {/* Assigned Evaluators List */}
                 <div className="col-md-5 pe-3 border-4">
                   <div className="pb-4 border-bottom">
                     <h5 className="fw-bold">Select Department:</h5>
@@ -646,7 +708,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                     >
                       <option value="">-- Select Department --</option>
                       {departments.map((dept) => (
-                        <option key={dept.id} value={dept.name}> {/* ✅ Store `dept.name` instead of `dept.id` */}
+                        <option key={dept.id} value={dept.name}>
                           {dept.name}
                         </option>
                       ))}
@@ -654,8 +716,8 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   </div>
 
                   <div className="d-flex justify-content-between align-items-center">
-                    <h5 className={`fw-bold m-0 mt-4 ${isFull ? "vibrate text-danger" : ""}`}>
-                      Assigned Evaluators [{availableUsers.length}/5]
+                    <h5 className={`fw-bold m-0 mt-4 ${assignedUsers.length >= 5 ? "text-danger" : ""}`}>
+                      Assigned Evaluators [{assignedUsers.length}/5]
                     </h5>
                   </div>
 
@@ -669,7 +731,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                         >
                           <span>{user.userId}: {user.fullName}</span>
                           <button className="btn btn-danger btn-sm" onClick={() => removeUserFromDepartment(user)}>
-                            <i className="fas fa-trash"></i> {/* ✅ Remove button */}
+                            <i className="fas fa-trash"></i>
                           </button>
                         </li>
                       ))
@@ -677,14 +739,17 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                       <li className="text-muted text-center list-group-item p-2">No assigned users.</li>
                     )}
                   </ul>
-                  <button className="btn btn-success px-4 mt-4">Save</button>
+
+                  <button className="btn btn-success px-4 mt-4" onClick={handleSaveEvaluators}>
+                    Save
+                  </button>
                 </div>
 
-                {/* ✅ Table: Current Users with Pagination */}
+                {/* Available Users Table with Pagination */}
                 <div className="col-md-7 ps-3 border-start border-4">
                   <h5 className="fw-bold">Available Users</h5>
 
-                  {/* 🔹 Search Bar */}
+                  {/* Search Bar */}
                   <div className="mb-3">
                     <input
                       type="text"
@@ -695,52 +760,51 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                     />
                   </div>
 
-                    {/* 🔹 User Table */}
-                      <div className="table-responsive">
-                      <table className="table table-bordered table-striped">
-                        <thead className="table-dark text-center">
+                  {/* User Table */}
+                  <div className="table-responsive">
+                    <table className="table table-bordered table-striped">
+                      <thead className="table-dark text-center">
+                        <tr>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Experience</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedUsers.length > 0 ? (
+                          paginatedUsers.map((user) => {
+                            const isAssigned = assignedUsers.some((u) => u.userId === user.userId);
+                            return (
+                              <tr key={user.userId}>
+                                <td>{user.userId}</td>
+                                <td>{user.fullName}</td>
+                                <td>{Math.floor(user.totalExperience)} years</td>
+                                <td className="text-center">
+                                  <button
+                                    className={`btn btn-${isAssigned ? "secondary" : "success"} btn-sm`}
+                                    onClick={() =>
+                                      isAssigned
+                                        ? removeUserFromDepartment(user)
+                                        : assignUserToDepartment(user)
+                                    }
+                                  >
+                                    <i className={`fas fa-${isAssigned ? "check" : "plus"}`}></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
                           <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Experience</th>
-                            <th></th>
+                            <td colSpan="4" className="text-center text-muted">No users found.</td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUsers.length > 0 ? (
-                            filteredUsers.map((user) => {
-                              const nameParts = user.fullName.split(" ");
-                              const firstName = nameParts[0] || "";
-                              const lastName = nameParts[nameParts.length - 1] || "";
-                              const middleInitial = nameParts.length > 2 ? `${nameParts[1][0]}.` : "";
-                              const isAssigned = assignedUsers.some((u) => u.userId === user.userId); // ✅ Check if assigned
-
-                              return (
-                                <tr key={user.userId}>
-                                  <td>{user.userId}</td>
-                                  <td>{`${firstName} ${middleInitial} ${lastName}`.trim()}</td>
-                                  <td>{Math.floor(user.totalExperience)} years</td>
-                                  <td className="text-center">
-                                    <button
-                                      className={`btn btn-${isAssigned ? "secondary" : "success"} btn-sm`}
-                                      onClick={() => assignUserToDepartment(user)}
-                                    >
-                                      <i className={`fas fa-${isAssigned ? "check" : "plus"}`}></i> {/* ✅ Change icon dynamically */}
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          ) : (
-                            <tr>
-                              <td colSpan="4" className="text-center text-muted">No users found.</td>
-                            </tr>
-                          )}
-                        </tbody>
+                        )}
+                      </tbody>
                     </table>
                   </div>
 
-                  {/* ✅ Pagination Controls */}
+                  {/* Pagination Controls */}
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <button
                       className="btn btn-outline-primary"
@@ -754,9 +818,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                     </span>
                     <button
                       className="btn btn-outline-primary"
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
                     >
                       Next
@@ -770,7 +832,6 @@ const fetchCandidatePerformanceData = async (candidateId) => {
             <div>
               <Heading>CANDIDATE PERFORMANCE</Heading>
               <hr id="title-line" className="mb-4" data-symbol="✈" />
-              {/* ✅ Select Candidate & Approve Button in Same Row */}
               <div className="d-flex align-items-center gap-3 mb-4">
                 <div className="form-group flex-grow-1">
                     <label className="form-label">Select Candidate:</label>
@@ -793,7 +854,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                           onClick={handleOpenApprovalModal}
                           disabled={!selectedCandidateId}
                       >
-                          {selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "Rescind" : "Approve"}
+                          {selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "Declined " : "Hire"}
                       </button>
                     </div>
                 </div>
@@ -822,7 +883,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                           {/* 📌 Record Name & Date */}
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <h5 className="card-title text-dark fw-bold m-0">
-                              <FaFileAlt className="me-2 text-secondary" size={16} /> {record.recordName}
+                              <FaFileAlt className="me-2 text-secondary" size={16} /> {record.recordName.toUpperCase()}
                             </h5>
                             <span className="text-muted fs-6">
                               <FaCalendarAlt className="me-1 text-secondary" size={14} /> {new Date(record.createdAt).toLocaleString()}
@@ -836,7 +897,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                               <strong className="text-primary d-flex align-items-center">
                                 <FaChartBar className="me-2 text-primary" size={18} /> Assessment:
                               </strong> 
-                              <span className="fw-semibold ms-2 text-dark">{record.candidateAssessment}</span>
+                              <span className="fw-semibold ms-2 text-dark">{record.candidateAssessment} [{record.averageScore}%]</span>
                             </p>
                           </div>
 
@@ -853,7 +914,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                           {/* ✅ Performance Criteria */}
                           <div className="mt-2">
                             <h5 className="text-dark fw-bold d-flex align-items-center">
-                              <FaTasks className="me-2 text-secondary" size={16} /> Evaluation Criteria
+                              <FaTasks className="me-2 text-secondary" size={16} /> EVALUATION CRITERIA
                             </h5>
                             <ul className="list-group list-group-flush mt-1 criteria-list">
                               {record.criteria.map((crit, idx) => (
@@ -883,7 +944,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               <Heading>ADD AS USER</Heading>
               {/* ✅ Select Candidate */}
               <div className="form-group full-width">
-                <label className="form-label">Choose Approved Candidate:</label>
+                <label className="form-label">Select Candidate:</label>
                 <select
                   className="form-control"
                   value={selectedNewCandidateId}
@@ -891,7 +952,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                 >
                   <option value="">-- Choose New Candidate --</option>
                   {localCandidates
-                    .filter(candidate => candidate.result) // ✅ Show only approved candidates
+                    .filter(candidate => candidate.result)
                     .map((candidate) => (
                       <option key={candidate.candidateId} value={candidate.candidateId}>
                         {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}

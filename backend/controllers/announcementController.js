@@ -2,6 +2,7 @@ import Announcement from "../models/announcementModel.js";
 import Department from "../models/departmentsModel.js";
 import User from "../models/userModel.js";
 import Candidate from "../models/candidateModel.js";
+import sendEmail from "../utils/linkTextSendEmail.js"; 
 
 export const createAnnouncement = async (req, res) => {
   try {
@@ -404,7 +405,6 @@ export const getAnnouncementInfoById = async (req, res) => {
     if (!announcement) {
       return res.status(404).json({ message: "Announcement not found." });
     }
-
     res.status(200).json(announcement);
   } catch (error) {
     console.error("Error fetching announcement:", error);
@@ -459,5 +459,171 @@ export const reopenJob = async (req, res) => {
   } catch (error) {
     console.error("Error reopening announcement:", error);
     res.status(500).json({ message: "Failed to reopen announcement." });
+  }
+};
+
+export const updateAssignedEvaluators = async (req, res) => {
+  try {
+    const { announcementId, assignedEvaluators } = req.body;
+
+    if (!announcementId) {
+      return res.status(400).json({ message: "Announcement ID is required" });
+    }
+
+    // Get the old assigned evaluators before updating
+    const existingAnnouncement = await Announcement.findOne({ announcementId });
+
+    if (!existingAnnouncement) {
+      return res.status(404).json({ message: "Announcement not found" });
+    }
+
+    const previousEvaluators = existingAnnouncement.assignedEvaluators || [];
+    
+    // Identify removed and newly assigned evaluators
+    const removedEvaluators = previousEvaluators.filter(id => !assignedEvaluators.includes(id));
+    const newEvaluators = assignedEvaluators.filter(id => !previousEvaluators.includes(id));
+
+    // Update the announcement with the new evaluators list
+    const updatedAnnouncement = await Announcement.findOneAndUpdate(
+      { announcementId },
+      { assignedEvaluators }, 
+      { new: true } 
+    );
+
+    // Fetch job position & emails of evaluators
+    const jobPosition = existingAnnouncement.jobPosition || "Not specified";
+    const newEvaluatorUsers = await User.find({ userId: { $in: newEvaluators } }).select("userEmail fullName");
+    const removedEvaluatorUsers = await User.find({ userId: { $in: removedEvaluators } }).select("userEmail fullName");
+
+    // Email Content for Assigned Evaluators
+    for (const evaluator of newEvaluatorUsers) {
+      const loginLink = `<a href="http://localhost:3000/EvaluatorLogin" style="color: blue; text-decoration: underline;">Login</a>`;
+
+      const emailContent = `
+    Dear ${evaluator.fullName},<br><br>
+
+    You have been assigned as a Candidate Evaluator for the following job post:<br><br>
+
+    <strong>Announcement ID:</strong> ${announcementId} <br>
+    <strong>Job Position:</strong> ${jobPosition} <br><br>
+
+    Please log in using the link below:<br>
+    ${loginLink} <br><br>
+
+    Best regards,<br>
+    HR Team`;
+
+      const plainTextContent = `
+    Dear ${evaluator.fullName},
+
+    You have been assigned as a Candidate Evaluator for the following job post:
+
+    Announcement ID: ${announcementId}  
+    Job Position: ${jobPosition}  
+
+    Please log in using the link below:  
+    http://localhost:3000/EvaluatorLogin  
+
+    Best regards,  
+    HR Team`;
+
+      await sendEmail(evaluator.userEmail, "Assignment as Candidate Evaluator", plainTextContent, emailContent);
+    }
+
+    // Email Content for Removed Evaluators
+    for (const evaluator of removedEvaluatorUsers) {
+      const emailContent = `
+    Dear ${evaluator.fullName},<br><br>
+
+    You have been removed as a Candidate Evaluator for the following job post:<br><br>
+
+    <strong>Announcement ID:</strong> ${announcementId} <br>
+    <strong>Job Position:</strong> ${jobPosition} <br><br>
+
+    Best regards,<br>
+    HR Team`;
+
+      const plainTextContent = `
+    Dear ${evaluator.fullName},
+
+    You have been removed as a Candidate Evaluator for the following job post:
+
+    Announcement ID: ${announcementId}  
+    Job Position: ${jobPosition}  
+
+    Best regards,  
+    HR Team`;
+
+      await sendEmail(evaluator.userEmail, "Removal from Candidate Evaluator Role", plainTextContent, emailContent);
+    }
+
+    res.status(200).json({
+      message: "Assigned evaluators updated and notifications sent successfully",
+      updatedAnnouncement,
+    });
+
+  } catch (error) {
+    console.error("Error updating evaluators and sending emails:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const assignedJobs = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized: User not logged in" });
+    }
+
+    const userId = req.session.userId; // Get logged-in user ID
+
+    // Fetch job announcements where user is an assigned evaluator
+    const announcements = await Announcement.find({
+      assignedEvaluators: userId, // Ensure user is an evaluator
+      jobPosition: { $exists: true, $nin: [null, ""] },
+      departmentId: { $exists: true, $nin: [null, ""] }
+    }).sort({ createdAt: -1 });
+
+    if (!announcements.length) {
+      return res.status(404).json({ error: "No assigned jobs found" });
+    }
+
+    // Extract department IDs & announcement IDs
+    const departmentIds = [...new Set(announcements.map(a => a.departmentId))];
+    const announcementIds = announcements.map(a => a.announcementId);
+
+    // Fetch department details
+    const departments = await Department.find({ departmentid: { $in: departmentIds } }, "departmentid departmentName");
+    const departmentMap = Object.fromEntries(departments.map(dept => [dept.departmentid, dept.departmentName]));
+
+    // Count total candidates per announcement
+    const candidateCounts = await Candidate.aggregate([
+      { $match: { announcementId: { $in: announcementIds } } },
+      { $group: { _id: "$announcementId", count: { $sum: 1 } } }
+    ]);
+    const candidateCountMap = Object.fromEntries(candidateCounts.map(({ _id, count }) => [_id, count]));
+
+    // Count selected candidates
+    const selectedCounts = await Candidate.aggregate([
+      { $match: { announcementId: { $in: announcementIds }, selected: true } },
+      { $group: { _id: "$announcementId", count: { $sum: 1 } } }
+    ]);
+    const selectedCountMap = Object.fromEntries(selectedCounts.map(({ _id, count }) => [_id, count]));
+
+    // Process job listings
+    const jobListings = announcements.map((announcement) => ({
+      announcementId: announcement.announcementId,
+      position: announcement.jobPosition,
+      departmentId: announcement.departmentId,
+      departmentName: departmentMap[announcement.departmentId] || "Unknown",
+      totalVacancy: announcement.totalVacancy || 0,
+      totalSelected: selectedCountMap[announcement.announcementId] || 0,
+      totalCandidates: candidateCountMap[announcement.announcementId] || 0,
+      salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 }
+    }));
+
+    res.status(200).json(jobListings);
+  } catch (error) {
+    console.error("Error fetching assigned job listings:", error);
+    res.status(500).json({ error: "Failed to fetch job listings" });
   }
 };

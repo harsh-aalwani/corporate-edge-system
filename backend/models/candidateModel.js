@@ -49,8 +49,8 @@ const candidateSchema = new mongoose.Schema({
 
   // ✅ New: Candidate Performance Data
   candidatePerformance: { 
-    type: Object, 
-    default: {} // ✅ Stores custom performance-related data
+    type: Number, 
+    default: 0,
   },
 
   selected: { type: Boolean, default: false },

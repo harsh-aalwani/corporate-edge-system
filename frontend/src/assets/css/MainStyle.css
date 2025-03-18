@@ -329,6 +329,12 @@ body {
   top: 0;
   height: 100vh; }
 
+.evaluator-wrapper {
+  min-height: 100vh;
+  position: relative;
+  top: 0;
+  height: 100vh; }
+
 /*    Flex-1    */
 .flex-1 {
   -ms-flex: 1;

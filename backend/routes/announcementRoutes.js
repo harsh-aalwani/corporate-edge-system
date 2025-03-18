@@ -12,7 +12,9 @@ import {
   getJobListings,
   getAnnouncementInfoById,
   concludeJob,
-  reopenJob,
+  reopenJob,  
+  updateAssignedEvaluators,
+  assignedJobs,
 } from "../controllers/announcementController.js";
 
 const router = express.Router();
@@ -51,5 +53,8 @@ router.put("/conclude/:announcementId", concludeJob);
 
 router.put("/reopen/:announcementId", reopenJob);
 
+router.post("/updateAssignedEvaluators", updateAssignedEvaluators); 
+
+router.get("/assignedJobs",assignedJobs);
 
 export default router;
