@@ -5,6 +5,7 @@ import axios from "axios";
 import { useSnackbar } from "notistack"; // ✅ Import Snackbar
 import Checkbox from "./Checkbox";
 import { generatePDF } from "./resumeGenerator";
+import { generateReport } from "./generateReport";
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
 import { useNavigate } from "react-router-dom"; 
@@ -23,6 +24,7 @@ const CandidateList = () => {
   const [showModal, setShowModal] = useState(false);
   const [showSelected, setShowSelected] = useState(false)
   // ✅ Pagination State
+  const [pinnedCandidates, setPinnedCandidates] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5); // Default: Show 5 candidates per page
   const [lineVisible, setLineVisible] = useState(false);
@@ -31,7 +33,8 @@ const CandidateList = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionText, setActionText] = useState("");
-  
+  const [modalDefaultTab, setModalDefaultTab] = useState("Check List");
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -102,6 +105,7 @@ const CandidateList = () => {
     );
   
     setSelectedCandidate(selectedCandidates);
+    setModalDefaultTab("Check List");
     setOptionModal(true);
   };
   
@@ -125,15 +129,32 @@ const CandidateList = () => {
     );
   };
 
-  const handleDownloadSelected = () => {
+  const handleDownloadSelected = async () => {
     const selectedCandidates = candidates.filter((candidate) =>
       checkedRows.includes(candidate.candidateId)
     );
-    selectedCandidates.forEach((candidate) => {
-      generatePDF(candidate);
-    });
+
+    for (const candidate of selectedCandidates) {
+        await generatePDF(candidate);  // Ensures each PDF is generated before moving to the next
+    }
   };
 
+  const handleDownloadReport = () => {
+    if (!announcement) {
+      console.error("❌ Error: Announcement data is missing.");
+      return;
+    }
+  
+    const recruitedCandidates = candidates.filter(candidate => candidate.recruited === true);
+    
+    if (recruitedCandidates.length === 0) {
+      console.warn("⚠ No recruited candidates found.");
+      return;
+    }
+  
+    generateReport(announcement, recruitedCandidates); // ✅ Pass only recruited candidates
+  };
+  
   const handleSelectCandidates = async () => {
     try {
       const newSelectedState = !showSelected; // ✅ Toggle selection state
@@ -177,6 +198,16 @@ const CandidateList = () => {
       console.error("Error updating candidates:", error.message);
     }
   };
+
+  const handlePinToggle = (candidateId) => {
+    console.log("Clicked on candidate:", candidateId); // ✅ Debugging log
+  
+    setPinnedCandidates((prevPinned) =>
+      prevPinned.includes(candidateId)
+        ? prevPinned.filter((id) => id !== candidateId)
+        : [...prevPinned, candidateId]
+    );
+  };
   
   // ✅ Sorting Function
   const handleSort = (key) => {
@@ -185,16 +216,22 @@ const CandidateList = () => {
   };
 
   const sortedCandidates = [...candidates].sort((a, b) => {
+    const isPinnedA = pinnedCandidates.includes(a.candidateId);
+    const isPinnedB = pinnedCandidates.includes(b.candidateId);
+
+    if (isPinnedA && !isPinnedB) return -1;
+    if (!isPinnedA && isPinnedB) return 1;
+
     const key = sortConfig.key;
     let valueA = a[key];
     let valueB = b[key];
 
     if (key === "result") {
-      return sortConfig.direction === "asc" 
-        ? Number(valueA) - Number(valueB) 
+      return sortConfig.direction === "asc"
+        ? Number(valueA) - Number(valueB)
         : Number(valueB) - Number(valueA);
     }
-    
+
     if (key === "candidateEvaluation") {
       valueA = valueA ? parseFloat(valueA) : 0;
       valueB = valueB ? parseFloat(valueB) : 0;
@@ -204,21 +241,20 @@ const CandidateList = () => {
     if (valueB == null) return -1;
 
     return typeof valueA === "number"
-      ? sortConfig.direction === "asc" ? valueA - valueB : valueB - valueA
+      ? sortConfig.direction === "asc"
+        ? valueA - valueB
+        : valueB - valueA
       : sortConfig.direction === "asc"
       ? valueA.localeCompare(valueB)
       : valueB.localeCompare(valueA);
   });
 
   const filteredCandidates = sortedCandidates.filter((candidate) => {
-    // ✅ If concluded, force showing only selected candidates
-    if (announcement?.concluded) {
-      return candidate.selected; 
-    }
-
-    // ✅ If not concluded, apply "Show Selected Candidates" filter
+    // ✅ Show only selected candidates when showSelected is true
+    // ✅ Show only unselected candidates when showSelected is false
     if (showSelected && !candidate.selected) return false;
-
+    if (!showSelected && candidate.selected) return false;
+  
     // ✅ Apply search query filtering
     const query = searchQuery.toLowerCase();
     return (
@@ -229,6 +265,7 @@ const CandidateList = () => {
       candidate.phone.toLowerCase().includes(query)
     );
   });
+  
 
   // ✅ Pagination Logic
   const indexOfLastCandidate = currentPage * itemsPerPage;
@@ -309,8 +346,8 @@ const CandidateList = () => {
               <th onClick={() => handleSort("email")}>Email {getSortIcon("email")}</th>
               <th onClick={() => handleSort("phone")}>Phone {getSortIcon("phone")}</th>
               <th onClick={() => handleSort("candidateEvaluation")}>Score{getSortIcon("candidateEvaluation")}</th>
-              {showSelected && <th onClick={() => handleSort("candidatePerformance")}>Performance {getSortIcon("candidatePerformance")}</th>} 
-              {showSelected && <th onClick={() => handleSort("result")}>
+              {(showSelected && announcement.concluded) && <th onClick={() => handleSort("candidatePerformance")}>Performance {getSortIcon("candidatePerformance")}</th>} 
+              {(showSelected && announcement.concluded)&& <th onClick={() => handleSort("result")}>
                 Hire {getSortIcon("result")}
               </th>} {/* ✅ Hide column when showSelected is false */}
               <th>Resume</th>
@@ -322,20 +359,37 @@ const CandidateList = () => {
             {currentCandidates.length > 0 ? (
               currentCandidates.map((candidate) => (
                 <tr key={candidate.candidateId} className={checkedRows.includes(candidate.candidateId) ? "active" : ""}>
-                  <td>{candidate.candidateId}</td>
+                  <td
+                    className={`pinned-candidate ${pinnedCandidates.includes(candidate.candidateId) ? "pinned" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevents parent interference
+                      handlePinToggle(candidate.candidateId);
+                    }}
+                  >
+                    {candidate.candidateId} {pinnedCandidates.includes(candidate.candidateId) && <span className="pin-icon">📌</span>}
+                  </td>
+
                   <td>{`${candidate.firstName} ${candidate.surName}`}</td>
                   <td>{candidate.email}</td>
                   <td>{candidate.phone}</td>
                   <td>{candidate.candidateEvaluation ? `${candidate.candidateEvaluation}%` : "N/A"}</td>
                   {/* ✅ Show Performance Score Only When `showSelected` is Enabled */}
-                  {showSelected && (
-                    <td>
-                      {candidate.candidatePerformance 
-                        ? `${candidate.candidatePerformance}%` 
-                        : "N/A"}
+                  {(showSelected && announcement.concluded) && (
+                    <td 
+                      className="text-primary cursor-pointer fw-bold"
+                      onClick={(e) => {
+                        // Optionally, if you need to set the candidate details, do so:
+                        setSelectedCandidate(candidate); 
+                        // Set the default tab to "Candidate Performance" when this cell is clicked:
+                        setModalDefaultTab("Candidate Performance");
+                        // Open the OptionModal
+                        setOptionModal(true);
+                      }}
+                    >
+                      {candidate.candidatePerformance ? `${candidate.candidatePerformance}%` : "N/A"}
                     </td>
                   )}
-                  {showSelected && (
+                  {(showSelected && announcement.concluded) && (
                     <td className={candidate.result ? "text-success fw-bold" : "text-danger fw-bold"}>
                       {candidate.result ? "Yes" : "No"}
                     </td>
@@ -394,18 +448,27 @@ const CandidateList = () => {
     {/* Go Back & Conclude/Reopen Button */}
     <div className="d-flex justify-content-between align-items-center mt-4">
       <button className="btn btn-primary" onClick={() => navigate(-1)}>← Go Back</button>
-      {announcement && (
-        announcement.concluded ? (
+
+      {announcement && announcement.concluded ? (
+        <div className="d-flex gap-2"> 
+          <button 
+            className="btn btn-success px-4" 
+            onClick={handleDownloadReport} // ✅ No need to pass parameters manually
+          >
+            📄 Download Report
+          </button>
           <button className="btn btn-dark px-4" onClick={handleReopen}>
             Reopen
           </button>
-        ) : (
-          <button className="btn btn-danger px-4" onClick={handleConclude}>
-            Conclude
-          </button>
-        )
+        </div>
+      ) : (
+        <button className="btn btn-danger px-4" onClick={handleConclude}>
+          Conclude
+        </button>
       )}
     </div>
+
+
     <ConcludeModal
       isOpen={isConfirmModalOpen}
       onClose={() => setIsConfirmModalOpen(false)}
@@ -430,10 +493,13 @@ const CandidateList = () => {
       {showOptionModal && (
         <OptionModal
           show={showOptionModal}
-          candidates={selectedCandidate || []} // ✅ Ensure it's always an array
-          setCandidates={setCandidates} 
+          // Ensure it's always an array. If selectedCandidate is an object, wrap it in an array.
+          candidates={Array.isArray(selectedCandidate) ? selectedCandidate : selectedCandidate ? [selectedCandidate] : []}
+          setCandidates={setCandidates}
           onClose={() => setOptionModal(false)}
+          defaultTab={modalDefaultTab}
         />
+
       )}
     </div>
   );

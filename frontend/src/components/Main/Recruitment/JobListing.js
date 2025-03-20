@@ -27,9 +27,10 @@ const JobListing = () => {
           jobListings.map((job) => (
             <Link to={`/CandidateList/${job.announcementId}`} key={job.announcementId} className="card-link">
               <div className="card">
-                {/* Total Candidates on Top Right Corner */}
-                <div className="card__total-candidates">
-                  {job.totalCandidates} Candidates
+
+                {/* Candidates OR Selected Count */}
+                <div className="card__total-candidates" style={{ background: job.concluded ? "#007bff" : "#ff6b6b" }}>
+                  {job.concluded ? `Concluded` : `${job.totalCandidates} Candidates`}
                 </div>
 
                 <h3 className="card__title">{job.position || "Unknown Position"}</h3>
@@ -37,11 +38,11 @@ const JobListing = () => {
                   Department: {job.departmentName || "Unknown"}
                 </p>
                 <p className="card__content">
-                  Vacancies: {job.totalVacancy} | Selected: {job.totalSelected}
+                  Vacancies: {job.totalVacancy > 0 ? job.totalVacancy : <span className="text-success">All Vacancies Filled</span>} 
+                  | Selected: {job.totalSelected}
                 </p>
                 <p className="card__content">
-                  Salary:{" "}
-                  {job.salaryRange && job.salaryRange.min && job.salaryRange.max
+                  Salary: {job.salaryRange?.min && job.salaryRange?.max
                     ? `${job.salaryRange.currency || "N/A"} ${job.salaryRange.min} - ${job.salaryRange.max}`
                     : "Not Disclosed Yet"}
                 </p>
@@ -156,6 +157,20 @@ const StyledWrapper = styled.div`
   .card:hover .card__arrow svg {
     transform: translateX(6px);
   }
+
+.card__concluded {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  background: #007bff;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 
   .no-data {
     font-size: 1.2rem;

@@ -203,7 +203,7 @@ export const getCandidateList = async (req, res) => {
     // Find candidates matching job position and department
     const candidates = await Candidate.find(
       { position: jobPosition, departmentId: departmentId },
-      "candidateId firstName fatherName surName email phone dob age nativePlace nationality candidatePerformance gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result candidateEvaluation detailedEvaluation"
+      "candidateId firstName fatherName surName email phone dob age nativePlace nationality candidatePerformance gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result recruited candidateEvaluation detailedEvaluation"
     );
 
     // Convert file paths to URLs
@@ -220,7 +220,7 @@ export const getCandidateList = async (req, res) => {
         ? `${baseUrl}/${candidate.candidateDocuments}`.replace(/\\/g, "/") 
         : null
     }));
-
+    
     res.status(200).json(formattedCandidates);
   } catch (error) {
     console.error("Error fetching candidates:", error);
@@ -277,7 +277,6 @@ export const getCandidateById = async (req, res) => {
       return res.status(404).json({ message: "Candidate not found" });
     }
     
-    console.log(candidate);
     res.status(200).json(candidate); // Send candidate data as response
   } catch (error) {
     console.error("Error fetching candidate:", error);

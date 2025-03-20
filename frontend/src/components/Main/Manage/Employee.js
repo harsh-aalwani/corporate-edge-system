@@ -1,156 +1,152 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
-import { Link } from "react-router-dom";
+import axios from "axios";
 
-const Employee = () => {
-const [checkedRows, setCheckedRows] = useState([]);
-const [checkAll, setCheckAll] = useState(false);
+const EmployeeManager = () => {
+  const [employees, setEmployees] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [checkedRows, setCheckedRows] = useState([]);
+  const [checkAll, setCheckAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-const handleCheckAll = (e) => {
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/manage/employees");
+        setEmployees(response.data.employees);
+        setFilteredEmployees(response.data.employees);
+      } catch (error) {
+        console.error("Error fetching employees:", error.message);
+      }
+    };
+    fetchEmployees();
+  }, []);
+
+  const handleCheckAll = (e) => {
     const isChecked = e.target.checked;
     setCheckAll(isChecked);
+    setCheckedRows(isChecked ? filteredEmployees.map(emp => emp.userId) : []);
+  };
 
-    if (isChecked) {
-    const allRows = Array.from(document.querySelectorAll("tbody tr")).map(
-        (row) => row.dataset.id
-    );
-    setCheckedRows(allRows);
-    } else {
-    setCheckedRows([]);
-    }
-};
-
-const handleRowCheck = (e, rowId) => {
+  const handleRowCheck = (e, rowId) => {
     const isChecked = e.target.checked;
-    setCheckedRows((prev) =>
-    isChecked ? [...prev, rowId] : prev.filter((id) => id !== rowId)
+    setCheckedRows(prev =>
+      isChecked ? [...prev, rowId] : prev.filter(id => id !== rowId)
     );
-};
+  };
 
-const isRowChecked = (rowId) => checkedRows.includes(rowId);
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    const filtered = employees.filter(emp =>
+      emp.fullName.toLowerCase().includes(query) ||
+      emp.userEmail.toLowerCase().includes(query) ||
+      emp.userMobileNumber.includes(query)
+    );
+    setFilteredEmployees(filtered);
+  };
 
-const rows = [
-    {
-    id: "1392",
-    name: "James Yates",
-    mobile: "+63 983 0962 971",
-    email: "NY University",
-    department: "Engineering",  
-    isOnline: true,
-    },
-    {
-    id: "4616",
-    name: "Matthew Wasil",
-    mobile: "+02 020 3994 929",
-    email: "London College",
-    department: "Marketing",  
-    isOnline: false,
-    },
-    {
-    id: "9841",
-    name: "Sampson Murphy",
-    mobile: "+01 352 1125 0192",
-    email: "Senior High",
-    department: "Sales",  
-    isOnline: true,
-    },
-    {
-    id: "9548",
-    name: "Gaspar Semenov",
-    mobile: "+92 020 3994 929",
-    email: "College",
-    department: "HR",  
-    isOnline: false,
-    },
-];
+  const isRowChecked = (rowId) => checkedRows.includes(rowId);
 
-return (
-<div className="page-inner page-box page-start mt-5">
-    <div className="d-flex align-items-center flex-column flex-md-row pt-2 pb-4">
+  const handleRemove = () => {
+    if (checkedRows.length === 0) {
+      alert("Please select at least one employee to remove.");
+      return;
+    }
+    console.log("Removing employees with IDs:", checkedRows);
+  };
+
+  return (
+    <div className="page-inner page-box page-start mt-5">
+      <div className="d-flex align-items-center flex-column flex-md-row pt-2 pb-4">
         <div>
-            <h4 className="fw-bold mb-3">Manage Employees</h4> {/* Changed title */}
-            <h6 className="op-7 mb-2">Add, Change, and Delete Departments</h6>
-            </div>
-            <div className="ms-md-auto py-2 py-md-0">
-            <Link to="/EditDepartment" className="btn btn-label-info btn-round me-2">
-                Edit
-            </Link>
-            <Link to="/AddDepartment" className="btn btn-primary btn-round me-2">
-                Add
-            </Link>
-            <button className="btn btn-dark btn-round">Remove</button>
+          <h4 className="fw-bold mb-3">Manage Employees</h4>
+          <h6 className="op-7 mb-2">Add, Change, and Delete Employees</h6>
         </div>
-    </div>
-    <div className="input-group">
-        <input type="text" placeholder="Search ..." className="form-control" />
-    </div>
-    <hr id="title-line" data-symbol="✈" />
-    <div className="content-area">
-        <div className="table-responsive" style={{ border: "" }}>
-        <table className="table custom-table">
+        <div className="ms-md-auto py-2 py-md-0">
+          <Link
+            to={checkedRows.length === 1 ? `/EditUser/${checkedRows[0]}` : "#"}
+            className="btn btn-label-info btn-round me-2"
+            onClick={(e) => {
+              if (checkedRows.length !== 1) {
+                e.preventDefault();
+                alert("Please select exactly one system admin to edit.");
+              }
+            }}
+          >
+            Edit
+          </Link>
+          <Link to="/AddUser" className="btn btn-primary btn-round me-2">Add</Link>
+          <button className="btn btn-dark btn-round" onClick={handleRemove}>Remove</button>
+        </div>
+      </div>
+
+      <div className="input-group mb-3">
+        <input
+          type="text"
+          placeholder="Search by Name, Email, or Mobile..."
+          className="form-control"
+          value={searchQuery}
+          onChange={handleSearch}
+        />
+      </div>
+
+      <hr id="title-line" data-symbol="✈" />
+
+      <div className="content-area">
+        <div className="table-responsive">
+          <table className="table custom-table">
             <thead>
-            <tr>
-                <th scope="col">Status</th>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Email</th>
-                <th scope="col">Mobile Number</th>
-                <th scope="col">Department</th> 
-                <th scope="col">
-                <label className="control control--checkbox">
-                    <input
-                    type="checkbox"
-                    className="js-check-all"
-                    checked={checkAll}
-                    onChange={handleCheckAll}
-                    />
-                    <div className="control__indicator"></div>
-                </label>
+              <tr>
+                <th>Status</th>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Mobile Number</th>
+                <th>
+                  <input type="checkbox" checked={checkAll} onChange={handleCheckAll} />
                 </th>
-            </tr>
+              </tr>
             </thead>
             <tbody>
-            {rows.map((row) => (
-                <tr
-                key={row.id}
-                data-id={row.id}
-                className={isRowChecked(row.id) ? "active" : ""}
-                >
-                <th scope="row">
-                    <span
-                    style={{
+              {filteredEmployees.length > 0 ? (
+                filteredEmployees.map((emp) => (
+                  <tr key={emp.userId} className={isRowChecked(emp.userId) ? "active" : ""}>
+                    <td>
+                      <span style={{
                         display: "inline-block",
                         width: "10px",
                         height: "10px",
                         borderRadius: "50%",
-                        backgroundColor: row.isOnline ? "green" : "red",
-                    }}
-                    ></span>
-                </th>
-                <td>{row.id}</td>
-                <td>{row.name}</td>
-                <td>{row.email}</td>
-                <td>{row.mobile}</td>
-                <td>{row.department}</td> 
-                <th scope="row">
-                    <label className="control control--checkbox">
-                    <input
+                        backgroundColor: emp.userStatus ? "green" : "red",
+                      }}></span>
+                    </td>
+                    <td>{emp.userId}</td>
+                    <td>{emp.fullName}</td>
+                    <td>{emp.userEmail}</td>
+                    <td>{emp.userMobileNumber}</td>
+                    <td>
+                      <input
                         type="checkbox"
-                        checked={isRowChecked(row.id)}
-                        onChange={(e) => handleRowCheck(e, row.id)}
-                    />
-                    <div className="control__indicator"></div>
-                    </label>
-                </th>
+                        checked={isRowChecked(emp.userId)}
+                        onChange={(e) => handleRowCheck(e, emp.userId)}
+                      />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center">No Employees found</td>
                 </tr>
-            ))}
+              )}
             </tbody>
-        </table>
+          </table>
         </div>
+      </div>
     </div>
-    </div>
-);
+  );
 };
 
-export default Employee;
+export default EmployeeManager;

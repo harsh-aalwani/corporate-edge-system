@@ -136,8 +136,7 @@ const Login = () => {
             <div className="logo-container">
               <img src={profileImage} alt="User Logo" className="logo" />
             </div>
-            <p className="heading">Login</p>
-            <p className="sub-heading">For Evaluators</p>
+            <p className="heading mb-3">Evaluator's Login</p>
             <div className="input-group">
               <input
                 type="email"

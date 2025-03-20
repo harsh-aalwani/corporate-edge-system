@@ -144,3 +144,21 @@ h2 {
     animation: vibrate 0.3s ease-in-out;
   }
   
+  .pinned-candidate {
+    cursor: pointer;
+    font-weight: bold;
+    position: relative;
+    transition: color 0.2s ease-in-out;
+    color: inherit; /* Default color */
+  }
+  
+  .pinned-candidate.pinned {
+    color: var(--bs-primary) !important; /* Uses Bootstrap primary color */
+  }
+  
+  .pin-icon {
+    margin-left: 5px;
+    font-size: 1.2rem;
+    transition: opacity 0.2s ease-in-out;
+  }
+  

@@ -11,36 +11,34 @@ const WEIGHTS = {
 };
 
 // ✅ Main Function to Generate a Well-Designed Resume PDF
-function generatePDF(formData) {
+async function generatePDF(formData) {
     if (!formData) {
         console.error("❌ Error: formData is undefined");
         return;
     }
-    
-    const doc = new jsPDF("p", "mm", "a4");
 
-    // ✅ Add Border for a Professional Look
+    const doc = new jsPDF("p", "mm", "a4");
     doc.setDrawColor(0, 122, 204);
     doc.rect(5, 5, 200, 287);
 
-    // ✅ Define text position
-    const textX = 15;  // Left-aligned text
-    const textY = 30;  // Y-position
-    const imageX = 160; // Right-aligned image
-    const imageY = 15;  // Same row level
+    const textX = 15;
+    const textY = 30;
+    const imageX = 160;
+    const imageY = 15;
 
-    // ✅ Candidate Image (if available)
     let imageUrl = formData.candidatePicture || formData.picture;
     if (imageUrl) {
-        fetchImageAsBase64(imageUrl).then((imgData) => {
+        try {
+            let imgData = await fetchImageAsBase64(imageUrl);
             if (imgData) {
-                doc.addImage(imgData, "JPEG", imageX, imageY, 35, 45); // Align image to the right
+                doc.addImage(imgData, "JPEG", imageX, imageY, 35, 45);
             }
-            addResumeContent(doc, formData, textX, textY);
-        });
-    } else {
-        addResumeContent(doc, formData, textX, textY);
+        } catch (err) {
+            console.error("❌ Error adding image:", err);
+        }
     }
+
+    addResumeContent(doc, formData, textX, textY);
 }
 
 // ✅ Convert Image to Base64

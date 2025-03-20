@@ -1,4 +1,5 @@
 import React, { useState, useEffect,useRef, useMemo} from "react";
+import BellCurveChart from "./BellCurveChart";
 import {FaCalendarAlt, FaCheckCircle, FaChartBar, FaTasks, FaHistory, FaCommentDots, FaFileAlt, FaExclamationCircle} from "react-icons/fa";
 import styled from "styled-components";
 import { useSnackbar } from "notistack";
@@ -7,14 +8,16 @@ import { AddUserForm } from "./AddUserForm";
 import axios from "axios";
 import ApprovalModal from "./ApprovalModal";
 
-const OptionModal = ({ show, onClose, candidates = [], setCandidates }) => {
+const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab }) => {
 
   // Static Department Data
   const [departments, setDepartments] = useState([]);
+  const [allCandidates, setAllCandidates] = useState("");
 
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [allUsers, setAllUsers] = useState([]);
   const [removedUsers, setRemovedUsers] = useState([]);
+  const [graphView, setGraphView] = useState("all");
 
   // Static User Data (Users Available for Assignment)
   const [availableUsers, setAvailableUsers] = useState([]);
@@ -52,7 +55,6 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates }) => {
       }
     };    
     
-  // Effect triggers fetching when candidates change
   useEffect(() => {
     fetchAnnouncement();
   }, [allUsers]);
@@ -125,7 +127,7 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates }) => {
   };
   
   
-  const [activeTab, setActiveTab] = useState("Check List");
+  const [activeTab, setActiveTab] = useState(defaultTab || "Check List");
   const [localCandidates, setLocalCandidates] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
@@ -145,13 +147,11 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates }) => {
   const [approvalAction, setApprovalAction] = useState(null);
   const [approvalText, setApprovalText] = useState("");
 
-
   useEffect(() => {
     if (show) {
-      setLocalCandidates(candidates.filter((c) => c.selected)); // Load selected candidates
+      setActiveTab(defaultTab || "Check List");
     }
-  }, [show, candidates]);
-  
+  }, [show, defaultTab]);
 
   const handleApproval = async () => {
     if (!selectedCandidateId) return;
@@ -256,8 +256,12 @@ const fetchCandidatePerformanceData = async (candidateId) => {
   // Copy candidates to local state when modal opens
   useEffect(() => {
     if (show) {
-      setLocalCandidates(candidates.filter((c) => c.selected)); // Load selected candidates
-  
+      const candidateArray = Array.isArray(candidates) ? candidates : [];
+      // Only set localCandidates on modal open if it's not already set
+      if (!localCandidates.length) {
+        setLocalCandidates(candidateArray.filter((c) => c.selected));
+      }
+    
       // Define placeholder mappings from `placeholderData`
       const placeholderMappings = {
         "[[CompanyName]]": placeholderData?.Header?.Name?.trim() || "",
@@ -271,42 +275,11 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       );
       setPlaceholders(filteredPlaceholders);
     }
-  }, [show, candidates, placeholderData]);  
+  }, [show, placeholderData]);
+  
+  
   
   useEffect(() => {
-    if (!candidates.length) return; // ✅ Ensure candidates exist
-  
-    const announcementIdFromCandidate = candidates[0]?.announcementId;
-    if (!announcementIdFromCandidate) return; // ✅ Prevent fetching if ID is missing
-  
-    const fetchAnnouncement = async () => {
-      try {
-        const response = await axios.post(
-          "http://localhost:5000/api/announcements/getAnnouncementInfoById",
-          { announcementId: announcementIdFromCandidate }
-        );
-    
-        setAnnouncementConcluded(response.data.concluded);
-        setSelectedDepartment(response.data.departmentd);
-      } catch (error) {
-        console.error("Error fetching announcement:", error);
-      }
-    };
-    
-    const fetchDepartments = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/departments/list");
-        setDepartments(
-          response.data.map((dept) => ({
-            id: dept.departmentid,
-            name: dept.departmentName,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-      }
-    };
-  
     const fetchUsers = async () => {
       try {
         const response = await axios.post("http://localhost:5000/api/users/getUserInfoAndExperience");
@@ -315,11 +288,49 @@ const fetchCandidatePerformanceData = async (candidateId) => {
         console.error("Error fetching users:", error);
       }
     };
-  
     fetchUsers();
-    fetchAnnouncement();
-    fetchDepartments();
-  }, [candidates]);  // ✅ Runs when candidates or allUsers change
+  }, []); // Runs once on mount
+  
+  useEffect(() => {
+    if (candidates && candidates.length > 0) {
+      const announcementIdFromCandidate = candidates[0]?.announcementId;
+      if (!announcementIdFromCandidate) return;
+    
+      const fetchAnnouncementAndDepartments = async () => {
+        try {
+          const [announcementResponse, deptResponse] = await Promise.all([
+            axios.post("http://localhost:5000/api/announcements/getAnnouncementInfoById", { announcementId: announcementIdFromCandidate }),
+            axios.get("http://localhost:5000/api/departments/list"),
+          ]);
+          setAnnouncementConcluded(announcementResponse.data.concluded);
+          setSelectedDepartment(announcementResponse.data.departmentd);
+          setDepartments(deptResponse.data.map((dept) => ({
+            id: dept.departmentid,
+            name: dept.departmentName,
+          })));
+        } catch (error) {
+          console.error("Error fetching announcement or departments:", error);
+        }
+      };
+      fetchAnnouncementAndDepartments();
+    }
+
+    const fetchAllCandidates = async () => {
+      const announcementId = candidates[0]?.announcementId;
+      if (!announcementId) return;
+      try {
+        const response = await axios.post("http://localhost:5000/api/candidates/List", { announcementId });
+        // Filter the data to only include candidates with selected:true
+        const selectedCandidates = response.data.filter(candidate => candidate.selected);
+        setAllCandidates(selectedCandidates);
+      } catch (error) {
+        enqueueSnackbar("Failed to fetch data. Please try again.", { variant: "error" });
+      }
+    };
+    
+
+    fetchAllCandidates();
+  }, [candidates]);
   
   
   const handleFileChange = (e) => {
@@ -525,13 +536,13 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       <ModalContent>
         <CloseButtonTop onClick={onClose}>&times;</CloseButtonTop>
         <TabsContainer>
-        {["Check List", "Send Email", "Manage Evaluator", "Candidate Performance", ...(announcementConcluded ? ["Add as User"] : [])].map(
-          (tab) => (
-            <Tab key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
-              {tab}
-            </Tab>
-          )
-        )}
+          {["Check List", "Send Email", "Manage Evaluator", ...(announcementConcluded ? ["Candidate Performance", "Add as User"] : [])].map(
+            (tab) => (
+              <Tab key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
+                {tab}
+              </Tab>
+            )
+          )}
         </TabsContainer>
         <ContentContainer>
           {activeTab === "Check List" && (
@@ -730,9 +741,11 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                           style={{ fontWeight: "600", color: "#212529" }}
                         >
                           <span>{user.userId}: {user.fullName}</span>
-                          <button className="btn btn-danger btn-sm" onClick={() => removeUserFromDepartment(user)}>
-                            <i className="fas fa-trash"></i>
-                          </button>
+                          {!announcementConcluded && (
+                            <button className="btn btn-danger btn-sm" onClick={() => removeUserFromDepartment(user)}>
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          )}
                         </li>
                       ))
                     ) : (
@@ -740,9 +753,12 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                     )}
                   </ul>
 
-                  <button className="btn btn-success px-4 mt-4" onClick={handleSaveEvaluators}>
-                    Save
-                  </button>
+                  {!announcementConcluded && (
+                    <button className="btn btn-success px-4 mt-4" onClick={handleSaveEvaluators}>
+                      Save
+                    </button>
+                  )}
+
                 </div>
 
                 {/* Available Users Table with Pagination */}
@@ -833,110 +849,131 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               <Heading>CANDIDATE PERFORMANCE</Heading>
               <hr id="title-line" className="mb-4" data-symbol="✈" />
               <div className="d-flex align-items-center gap-3 mb-4">
-                <div className="form-group flex-grow-1">
-                    <label className="form-label">Select Candidate:</label>
-                    <div className="d-flex align-items-center gap-2">
-                      <select className="form-control w-100" value={selectedCandidateId} onChange={handleCandidateSelect} style={{ height: "42px" }}>
-                          <option value="">-- Select Candidate --</option>
-                          {localCandidates.map((candidate) => (
-                              <option 
-                                  key={candidate.candidateId} 
-                                  value={candidate.candidateId} 
-                              >
-                                  {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}
-                                  {candidate.result && " ✅"} 
-                              </option>
-                          ))}
-                      </select>
-                      <button
-                          className={`btn ${selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "btn-danger" : "btn-primary"} px-4`}
-                          style={{ height: "42px", minWidth: "120px" }}
-                          onClick={handleOpenApprovalModal}
-                          disabled={!selectedCandidateId}
-                      >
-                          {selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "Declined " : "Hire"}
-                      </button>
-                    </div>
-                </div>
+                <label className="form-label">Select Candidate:</label>
+                <select
+                  className="form-control w-100"
+                  value={selectedCandidateId}
+                  onChange={handleCandidateSelect}
+                  style={{ height: "42px" }}
+                >
+                  <option value="">-- Select Candidate --</option>
+                  {localCandidates
+                    .slice() // Create a copy to avoid mutating the state
+                    .sort((a, b) => (b.candidatePerformance || 0) - (a.candidatePerformance || 0)) // Sort descending
+                    .map((candidate) => (
+                      <option key={candidate.candidateId} value={candidate.candidateId}>
+                        {`${candidate.candidateId} : ${candidate.firstName} ${candidate.surName}`}
+                        {candidate.result ? " ✅" : ""}  
+                        {candidate.candidatePerformance !== undefined ? ` (${candidate.candidatePerformance}%)` : ""}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  className={`btn ${selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "btn-danger" : "btn-primary"} px-4`}
+                  style={{ height: "42px", minWidth: "120px" }}
+                  onClick={handleOpenApprovalModal}
+                  disabled={!selectedCandidateId}
+                >
+                  {selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "Declined " : "Hire"}
+                </button>
               </div>
 
-            
-            {/* ✅ Custom Confirmation Modal */}
-            <ApprovalModal
-                isOpen={isApprovalModalOpen}
-                onClose={() => setIsApprovalModalOpen(false)}
-                onConfirm={approvalAction}
-                actionText={approvalText}
-            />
-              {/* ✅ Show Previous Performance Records */}
-              <div className="mt-5 p-3 border rounded bg-light shadow-sm record-container">
-                <h4 className="text-dark fw-bold mb-3 d-flex align-items-center">
-                  <FaHistory className="me-2 text-secondary" size={20} /> Previous Performance Records
-                </h4>
 
-                {previousPerformanceData[selectedCandidateId]?.length > 0 ? (
-                  <div className="d-flex flex-column gap-2">
-                    {previousPerformanceData[selectedCandidateId]
-                      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // 🔹 Sort by Date (Newest First)
-                      .map((record, index) => (
-                        <div className="card p-3 shadow-sm border rounded bg-white" key={index}>
-                          {/* 📌 Record Name & Date */}
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <h5 className="card-title text-dark fw-bold m-0">
-                              <FaFileAlt className="me-2 text-secondary" size={16} /> {record.recordName.toUpperCase()}
-                            </h5>
-                            <span className="text-muted fs-6">
-                              <FaCalendarAlt className="me-1 text-secondary" size={14} /> {new Date(record.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <hr className="my-2" />
-
-                          {/* 📊 Assessment */}
-                          <div className="mb-1">
-                            <p className="mb-1 fs-5 d-flex align-items-center">
-                              <strong className="text-primary d-flex align-items-center">
-                                <FaChartBar className="me-2 text-primary" size={18} /> Assessment:
-                              </strong> 
-                              <span className="fw-semibold ms-2 text-dark">{record.candidateAssessment} [{record.averageScore}%]</span>
-                            </p>
-                          </div>
-
-                          {/* 📜 Remarks */}
-                          <div className="mb-2">
-                            <p className="mb-1 fs-5 d-flex align-items-center">
-                              <strong className="text-muted d-flex align-items-center">
-                                <FaCommentDots className="me-2 text-muted" size={18} /> Remarks:
-                              </strong> 
-                              <span className="fw-semibold ms-2 text-dark">{record.remarks}</span>
-                            </p>
-                          </div>
-
-                          {/* ✅ Performance Criteria */}
-                          <div className="mt-2">
-                            <h5 className="text-dark fw-bold d-flex align-items-center">
-                              <FaTasks className="me-2 text-secondary" size={16} /> EVALUATION CRITERIA
-                            </h5>
-                            <ul className="list-group list-group-flush mt-1 criteria-list">
-                              {record.criteria.map((crit, idx) => (
-                                <li key={idx} className="list-group-item d-flex justify-content-between align-items-center px-3 py-2 bg-light border rounded shadow-sm">
-                                  <span className="fs-6 fw-semibold d-flex align-items-center text-dark">
-                                    <FaCheckCircle className="me-2 text-success" size={18} /> {crit.type}
-                                  </span>
-                                  <span className="badge bg-secondary rounded-pill fs-6 px-3 py-1">{crit.score}/100</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      ))}
+              {/* When no candidate is selected, show graph options */}
+              {!selectedCandidateId && (
+                <div>
+                  <div className="graph-toggle" style={{ marginBottom: '20px' }}>
+                  <button 
+                    className={`btn ${graphView === "all" ? "btn-primary" : "btn-secondary"} me-2`}
+                    onClick={() => setGraphView(graphView === "all" ? "checked" : "all")}
+                  >
+                    {graphView === "all" ? "Only Checked Candidates" : "All Candidates"}
+                  </button>
                   </div>
-                ) : (
-                  <p className="text-muted text-center fs-5 fw-bold mt-3">
-                    <FaExclamationCircle className="me-2 text-danger" size={18} /> No data available for candidate
-                  </p>
-                )}
-              </div>
-
+                  {graphView === "all" && (
+                    <BellCurveChart 
+                      candidates={allCandidates} 
+                      title="All Candidates Performance Distribution" 
+                    />
+                  )}
+                  {graphView === "checked" && (
+                    <BellCurveChart 
+                      candidates={localCandidates} 
+                      title="Checked Candidates Performance Distribution" 
+                    />
+                  )}
+                </div>
+              )}
+              {/* When a candidate is selected, you can show that candidate’s detailed performance records */}
+              {selectedCandidateId && (
+                <div>
+                  <ApprovalModal
+                    isOpen={isApprovalModalOpen}
+                    onClose={() => setIsApprovalModalOpen(false)}
+                    onConfirm={approvalAction}
+                    actionText={approvalText}
+                  />
+                  <div className="mt-5 p-3 border rounded bg-light shadow-sm record-container">
+                    <h4 className="text-dark fw-bold mb-3 d-flex align-items-center">
+                      <FaHistory className="me-2 text-secondary" size={20} /> Previous Performance Records
+                    </h4>
+                    {previousPerformanceData[selectedCandidateId]?.length > 0 ? (
+                      <div className="d-flex flex-column gap-2">
+                        {previousPerformanceData[selectedCandidateId]
+                          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                          .map((record, index) => (
+                            <div className="card p-3 shadow-sm border rounded bg-white" key={index}>
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <h5 className="card-title text-dark fw-bold m-0">
+                                  <FaFileAlt className="me-2 text-secondary" size={16} /> {record.recordName.toUpperCase()}
+                                </h5>
+                                <span className="text-muted fs-6">
+                                  <FaCalendarAlt className="me-1 text-secondary" size={14} /> {new Date(record.createdAt).toLocaleString()}
+                                </span>
+                              </div>
+                              <hr className="my-2" />
+                              <div className="mb-1">
+                                <p className="mb-1 fs-5 d-flex align-items-center">
+                                  <strong className="text-primary d-flex align-items-center">
+                                    <FaChartBar className="me-2 text-primary" size={18} /> Assessment:
+                                  </strong> 
+                                  <span className="fw-semibold ms-2 text-dark">{record.candidateAssessment} [{record.averageScore}%]</span>
+                                </p>
+                              </div>
+                              <div className="mb-2">
+                                <p className="mb-1 fs-5 d-flex align-items-center">
+                                  <strong className="text-muted d-flex align-items-center">
+                                    <FaCommentDots className="me-2 text-muted" size={18} /> Remarks:
+                                  </strong> 
+                                  <span className="fw-semibold ms-2 text-dark">{record.remarks}</span>
+                                </p>
+                              </div>
+                              <div className="mt-2">
+                                <h5 className="text-dark fw-bold d-flex align-items-center">
+                                  <FaTasks className="me-2 text-secondary" size={16} /> EVALUATION CRITERIA
+                                </h5>
+                                <ul className="list-group list-group-flush mt-1 criteria-list">
+                                  {record.criteria.map((crit, idx) => (
+                                    <li key={idx} className="list-group-item d-flex justify-content-between align-items-center px-3 py-2 bg-light border rounded shadow-sm">
+                                      <span className="fs-6 fw-semibold d-flex align-items-center text-dark">
+                                        <FaCheckCircle className="me-2 text-success" size={18} /> {crit.type}
+                                      </span>
+                                      <span className="badge bg-secondary rounded-pill fs-6 px-3 py-1">{crit.score}/100</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted text-center fs-5 fw-bold mt-3">
+                        <FaExclamationCircle className="me-2 text-danger" size={18} /> No data available for candidate
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeTab === "Add as User" && (

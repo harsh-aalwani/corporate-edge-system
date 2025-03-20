@@ -13,16 +13,21 @@ export const addPerformanceRecord = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized: Session expired or invalid" });
         }
 
-        // ✅ Find the Highest CAP ID and Increment It
-        const lastRecord = await CandidatePerformance.findOne({ candidateId })
-            .sort({ candidatePerformanceId: -1 }) // Sort by highest CAP number
+        // ✅ Find the last candidatePerformanceId to generate the next ID
+        const lastRecord = await CandidatePerformance.findOne()
+            .sort({ candidatePerformanceId: -1 }) // Sort by the highest CAP ID
             .select("candidatePerformanceId"); // Select only the ID
 
-        let newPerformanceId = "CAP1"; // Default if no records exist
+        let nextPerformanceNumber = 1;
         if (lastRecord?.candidatePerformanceId) {
-            const lastIdNumber = parseInt(lastRecord.candidatePerformanceId.replace("CAP", ""), 10);
-            newPerformanceId = `CAP${lastIdNumber + 1}`;
+            const lastNumberMatch = lastRecord.candidatePerformanceId.match(/\d+$/); // Extract numeric part
+            if (lastNumberMatch) {
+                nextPerformanceNumber = parseInt(lastNumberMatch[0], 10) + 1; // Increment the number
+            }
         }
+
+        // ✅ Generate new candidatePerformanceId
+        const newPerformanceId = `CAP${nextPerformanceNumber}`;
 
         // ✅ Save New Performance Record
         const newPerformanceRecord = new CandidatePerformance({

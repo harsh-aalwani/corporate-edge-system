@@ -302,13 +302,12 @@ export const getJobData = async (req, res) => {
   }
 };
 
-
 export const getJobListings = async (req, res) => {
   try {
     // Fetch job announcements with valid jobPosition and departmentId
     const announcements = await Announcement.find({
       jobPosition: { $exists: true, $nin: [null, ""] },
-      departmentId: { $exists: true, $nin: [null, ""] } // Department ID is stored as a string
+      departmentId: { $exists: true, $nin: [null, ""] }
     }).sort({ createdAt: -1 });
 
     // Extract unique department IDs and announcement IDs
@@ -376,12 +375,13 @@ export const getJobListings = async (req, res) => {
       return {
         announcementId: announcement.announcementId,
         position: announcement.jobPosition,
-        departmentId: announcement.departmentId, // Stored as string
+        departmentId: announcement.departmentId,
         departmentName,
         totalVacancy: announcement.totalVacancy || 0,
         totalSelected: selectedCount,
-        totalCandidates, // New field for total candidates count
-        salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 }
+        totalCandidates,
+        salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 },
+        concluded: announcement.concluded || false, // ✅ Added concluded field
       };
     });
 
@@ -391,6 +391,7 @@ export const getJobListings = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch job listings" });
   }
 };
+
 
 export const getAnnouncementInfoById = async (req, res) => {
   try {
@@ -618,7 +619,8 @@ export const assignedJobs = async (req, res) => {
       totalVacancy: announcement.totalVacancy || 0,
       totalSelected: selectedCountMap[announcement.announcementId] || 0,
       totalCandidates: candidateCountMap[announcement.announcementId] || 0,
-      salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 }
+      salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 },
+      concluded: announcement.concluded || false, // ✅ Added concluded field
     }));
 
     res.status(200).json(jobListings);
