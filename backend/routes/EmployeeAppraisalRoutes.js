@@ -4,7 +4,7 @@ import {
   createEmployeeAppraisal,
   getAllEmployeeAppraisals,
   updateAppraisalStatus,
-} from "../controllers/EmployeeAppraisalController.js";
+} from "../controllers/appraisalController.js";
 
 const router = express.Router();
 

@@ -217,6 +217,11 @@ export const Navigation = () => {
                 Career
               </Link>
             </li>
+            <li style={navItemStyle} className="nav-item">
+              <Link className="nav-link" to="/Policy" style={navLinkStyle}>
+                Policy
+              </Link>
+            </li>
           
             <li style={navItemStyle} className="nav-item">
               <button style={btn23Style} className="btn-23">

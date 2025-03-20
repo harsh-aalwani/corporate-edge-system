@@ -1,111 +1,155 @@
 import React, { useState, useEffect } from "react";
-import { useSnackbar } from "notistack";
 import axios from "axios";
-import "../../../assets/css/FormsCss/form.css";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import { Modal, Button, Card, Accordion, Form, Alert } from "react-bootstrap";
+import { useSnackbar } from "notistack";
 
-const DepartmentManager = () => {
-  const { enqueueSnackbar } = useSnackbar();
+const DepartmentConcernList = () => {
   const [concerns, setConcerns] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedConcern, setSelectedConcern] = useState(null);
+  const [statement, setStatement] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     fetchConcerns();
   }, []);
 
+  // ✅ GET /api/concern/all → Fetch all concerns
   const fetchConcerns = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/employee-concerns/list");
+      const response = await axios.get("http://localhost:5000/api/concern/concerns"); // ✅ Corrected API endpoint
       setConcerns(response.data);
     } catch (error) {
-      enqueueSnackbar("Failed to fetch concerns", { variant: "error" });
+      console.error("Error fetching concerns:", error);
+      enqueueSnackbar("Failed to load concerns!", { variant: "error" });
     }
   };
-
-  const handleApproval = async (id, status) => {
+  
+  const handleStatementSubmit = async (concernId) => {
+    if (!statement.trim()) {
+      enqueueSnackbar("Statement cannot be empty!", { variant: "warning" });
+      return;
+    }
+  
     try {
-      setLoading(true);
-      await axios.put(`http://localhost:5000/api/employee-concerns/update/${id}`, { status });
-      enqueueSnackbar("Concern status updated successfully!", { variant: "success" });
-      setConcerns((prev) =>
-        prev.map((concern) => (concern._id === id ? { ...concern, status } : concern))
-      );
+      await axios.put("http://localhost:5000/api/concern/concerns/statement", {
+        concernId,
+        managerStatement: statement,
+      });
+  
+      enqueueSnackbar("Statement added successfully!", { variant: "success" });
+      setConcerns(concerns.map((c) => (c.concernId === concernId ? { ...c, managerStatement: statement } : c)));
+      setStatement("");
+      setShowDetails(false);
     } catch (error) {
-      enqueueSnackbar("Failed to update concern status", { variant: "error" });
-    } finally {
-      setLoading(false);
+      console.error("Error submitting statement:", error);
+      enqueueSnackbar("Failed to submit statement!", { variant: "error" });
     }
   };
-
-  const viewDocument = (documentPath) => {
-    window.open(`http://localhost:5000/uploads/${documentPath}`, "_blank");
-  };
+  
 
   return (
-    <div className="container mt-5 px-5">
-      <div className="card p-4 page-box">
-        <h4 className="mb-3 text-center">Department Manager</h4>
-        <table className="table table-bordered">
-          <thead>
-            <tr>
-              <th>Complaint Title</th>
-              <th>Description</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th>Document</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {concerns.map(concern => (
-              <tr key={concern._id}>
-                <td>{concern.complaintTitle}</td>
-                <td>{concern.complaintDescription}</td>
-                <td>{concern.departmentid}</td>
-                <td className={concern.status === "Approved by Manager" ? "text-success" : concern.status === "Rejected by Manager" ? "text-danger" : "text-warning"}>
-                  {concern.status}
-                </td>
-                <td>
-                  {concern.relatedDocuments && (
-                    <button className="btn btn-primary action-btn" onClick={() => viewDocument(concern.relatedDocuments)}>
-                      <VisibilityIcon /> View
-                    </button>
+    <div className="container mt-4">
+      {concerns.length > 0 ? (
+        concerns.map((concern, index) => (
+          <Card
+            key={index}
+            className="p-3 shadow mb-3 position-relative"
+            onClick={() => {
+              setSelectedConcern(concern);
+              setShowDetails(true);
+            }}
+          >
+            <Card.Body>
+              {/* ✅ Status Tag on Right Side */}
+              <div
+                className="position-absolute top-0 end-0 px-3 py-1 text-white"
+                style={{
+                  backgroundColor:
+                    concern.status === "approved"
+                      ? "green"
+                      : concern.status === "Rejected"
+                      ? "red"
+                      : "orange",
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                  borderRadius: "8px",
+                  margin: "8px",
+                }}
+              >
+                {concern.status.toUpperCase()}
+              </div>
+
+              <h5>Concern ID: {concern.concernId}</h5>
+              <h6>Employee ID: {concern.userId}</h6>
+              <h6>Employee Name: {concern.userName}</h6>
+              <p style={{ color: "#000", textAlign: "left" }}>Concern Subject: {concern.subject}</p>
+            </Card.Body>
+          </Card>
+        ))
+      ) : (
+        <Alert variant="warning">No concerns found</Alert>
+      )}
+
+      <Modal show={showDetails} onHide={() => setShowDetails(false)} style={{ maxWidth: "100vw", margin: "auto" }}>
+        <Modal.Header closeButton>
+          <Modal.Title>Concern Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedConcern && (
+            <Accordion>
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>Concern Message</Accordion.Header>
+                <Accordion.Body>{selectedConcern.message || "No message provided"}</Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey="1">
+                <Accordion.Header>Documents</Accordion.Header>
+                <Accordion.Body>
+                  {selectedConcern.supportingDocuments?.length > 0 ? (
+                    selectedConcern.supportingDocuments.map((doc, index) => (
+                      <p key={index}>
+                        <a href={`http://localhost:5000/${doc}`} target="_blank" rel="noopener noreferrer">
+                          Document {index + 1}
+                        </a>
+                      </p>
+                    ))
+                  ) : (
+                    <p>No documents available</p>
                   )}
-                </td>
-                <td>
-                  {concern.status === "Pending" && (
-                    <>
-                      <button className="btn btn-success action-btn" disabled={loading} onClick={() => handleApproval(concern._id, "Approved by Manager")}>Approve</button>
-                      <button className="btn btn-danger action-btn ml-2" disabled={loading} onClick={() => handleApproval(concern._id, "Rejected by Manager")}>Reject</button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <style>
-        {`.action-btn {
-          padding: 8px 12px;
-          font-size: 14px;
-          margin: 4px;
-        }
-        .text-success {
-          color: green;
-          font-weight: bold;
-        }
-        .text-danger {
-          color: red;
-          font-weight: bold;
-        }
-        .text-warning {
-          color: orange;
-          font-weight: bold;
-        }`}
-      </style>
+                </Accordion.Body>
+              </Accordion.Item>
+
+              <Accordion.Item eventKey="2">
+                <Accordion.Header>Manager Statement</Accordion.Header>
+                <Accordion.Body>
+                  <Form>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Add Statement</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={4}
+                        value={statement}
+                        onChange={(e) => setStatement(e.target.value)}
+                      />
+                    </Form.Group>
+                    <Button variant="success" onClick={() => handleStatementSubmit(selectedConcern.concernId)}>
+                      Submit Statement
+                    </Button>
+                  </Form>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDetails(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
 
-export default DepartmentManager;
+export default DepartmentConcernList;

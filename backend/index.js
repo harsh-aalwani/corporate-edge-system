@@ -9,8 +9,11 @@ import manageRoutes from './routes/manageRoutes.js';
 import departmentsRoutes from './routes/departmentsRoutes.js';
 import authUserRoutes from './routes/authUserRoutes.js';
 import announcementRoutes from "./routes/announcementRoutes.js";
-import employeeConcernRoutes from "./routes/employeeConcernRoutes.js";
-import employeeAppraisalRoutes from "./routes/EmployeeAppraisalRoutes.js";
+import concernRoutes from "./routes/concernRoutes.js";
+import appraisalRoutes from "./routes/appraisalRoutes.js";
+import leaveAllocationRoutes from "./routes/leaveAllocationRoutes.js"
+import leaveRoutes from "./routes/leaveRoutes.js"; 
+import policyRoutes from "./routes/policyRoutes.js";
 import candidateRoutes from "./routes/candidateRoutes.js";
 import emailRoutes from "./routes/emailRoutes.js";
 import candidatePerformanceRoutes from './routes/candidatePerformanceRoutes.js';
@@ -34,13 +37,14 @@ app.use('/api/manage', manageRoutes);
 app.use('/api/departments', departmentsRoutes);
 app.use('/api/authuser', authUserRoutes);
 app.use("/api/announcements", announcementRoutes);
-app.use("/api/employee-concerns", employeeConcernRoutes);
-app.use("/api/employee-appraisal", employeeAppraisalRoutes);
 app.use("/api/emails", emailRoutes);
 app.use("/api/candPerformance", candidatePerformanceRoutes);
-
-// Use Routes
 app.use("/api/candidates",candidateRoutes);
+app.use("/api/leaves", leaveRoutes); 
+app.use("/api/policies", policyRoutes);
+app.use("/api/concern", concernRoutes);
+app.use("/api/appraisals", appraisalRoutes);
+app.use("/api/leaveAllocation", leaveAllocationRoutes);
 // Initialize Socket.IO
 initializeSocket(server);
 // Serve static files

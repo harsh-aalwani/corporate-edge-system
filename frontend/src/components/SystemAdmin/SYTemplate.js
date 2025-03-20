@@ -168,29 +168,22 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/LeaveBalance">
-                        <span className="sub-item">Leave Balance</span>
-                      </Link>
-                    </li>
+                   
                     <li>
                       <Link to="/LeaveAllocation">
                         <span className="sub-item">Leave Allocation</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/LeaveAllocation">
-                        <span className="sub-item">Withdraw Allocation</span>
+                      <Link to="/List">
+                        <span className="sub-item">Leave Request</span>
                       </Link>
                     </li>
-                    <li>
-                      <Link to="/LeaveAllocation">
-                        <span className="sub-item">Leave Balance</span>
-                      </Link>
-                    </li>
+                    
                   </ul>
                 </div>
               </li>
+
 
               <li className="nav-item">
                 <Link to="/OrganizationChart">

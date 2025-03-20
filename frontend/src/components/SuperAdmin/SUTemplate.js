@@ -155,24 +155,25 @@ const SUTemplate = ({ children }) => {
             </li>
 
             {/* Leave Management */}
-            <li className={`nav-item ${isActive(['/LeaveBalance', '/LeaveAllocation']) ? 'active' : ''}`}>
-              <Link to="/LeaveManagement" data-bs-toggle="collapse">
+            <li className={`nav-item ${isActive(['/LeaveManagement', '/List']) ? 'active' : ''}`}>
+              <Link to="#" data-bs-toggle="collapse">
                 <i className="fas fa-id-card"></i>
                 <p>Leave Management</p>
                 <span className="caret"></span>
               </Link>
               <div className="collapse" id="tables">
                 <ul className="nav nav-collapse">
-                  <li className={isActive(['/LeaveBalance']) ? 'active' : ''}>
-                    <Link to="/LeaveBalance">
-                      <span className="sub-item">Leave Balance</span>
-                    </Link>
-                  </li>
-                  <li className={isActive(['/LeaveAllocation']) ? 'active' : ''}>
-                    <Link to="/LeaveAllocation">
+                  <li className={isActive(['/LeaveManagement']) ? 'active' : ''}>
+                    <Link to="/LeaveManagement">
                       <span className="sub-item">Leave Allocation</span>
                     </Link>
                   </li>
+                  <li className={isActive(['/AnnouncementTable']) ? 'active' : ''}>
+                    <Link to="/List">
+                      <span className="sub-item">Leave Request</span>
+                    </Link>
+                  </li>
+                 
                 </ul>
               </div>
             </li>

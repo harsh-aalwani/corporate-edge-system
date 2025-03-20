@@ -23,6 +23,8 @@ import { Team } from "./components/Guest/Team";
 import { Contact } from "./components/Guest/contact";
 import JobAnnouncement from "./components/Guest/JobAnnouncement";
 import JobVacancy from "./components/Guest/JobVacancy";
+import Policy from "./components/Guest/Policy";
+import DetailPage from "./components/Guest/DetailPage";
 
 // SuperAdmin Modules
 import SuperAdminDashboard from "./pages/SuperAdmin/Dashboard";
@@ -40,9 +42,23 @@ import SuperAdminAddAnnouncment from "./pages/SuperAdmin/Announcements/AddAnnoun
 import SuperAdminAnnouncementList from "./pages/SuperAdmin/Announcements/AnnouncementList";
 import SuperAdminEditAnnouncements from "./pages/SuperAdmin/Announcements/EditAnnouncement";
 import SuperAdminReceiveAnnouncement from "./pages/SuperAdmin/Announcements/ReceiveAnnouncement";
+// Leave
+import SuperAdminLeaveAllocation from "./pages/SuperAdmin/Leave/LeaveAllocation";
+import SuperAdminLeaveManagment from "./pages/SuperAdmin/Leave/LeaveManagement";
+import SuperAdminEditLeave from "./pages/SuperAdmin/Leave/LeaveEdit";
+import SuperAdminLeavelist from "./pages/SuperAdmin/Leave/List";
 
 // SystemAdmin Modules
 import SystemAdminDashboard from "./pages/SystemAdmin/Dashboard";
+import SystemAdminAddAnnouncment from "./pages/SystemAdmin/Announcements/SYAddAnnouncement";
+import SystemAdminAnnouncementList from "./pages/SystemAdmin/Announcements/SYAnnouncementList";
+import SystemAdminEditAnnouncements from "./pages/SystemAdmin/Announcements/SYEditAnnouncement";
+import SystemAdminReceiveAnnouncement from "./pages/SystemAdmin/Announcements/SYReceiveAnnouncement";
+// Leave
+import SystemAdminLeaveAllocation from "./pages/SystemAdmin/Leave/LeaveAllocation";
+import SystemAdminLeaveManagment from "./pages/SystemAdmin/Leave/LeaveManagement";
+import SystemAdminEditLeave from "./pages/SystemAdmin/Leave/LeaveEdit";
+import SystemAdminLeavelist from "./pages/SuperAdmin/Leave/List";
 // Manage By system admin
 import SystemAdminAddUser from "./pages/SystemAdmin/Manage/AddUser";
 import SystemAdminEditUser from "./pages/SystemAdmin/Manage/EditUser";
@@ -55,6 +71,19 @@ import SystemAdminManageProjectManager from "./pages/SystemAdmin/Manage/MngProje
 import HRManagerDashboard from "./pages/HRManager/Dashboard";
 import HRJobListing from "./pages/HRManager/Recruitment/HRJobListing";
 import HRCandidateList from "./pages/HRManager/Recruitment/HRCandidateList";
+import HRAdminPrivateAnnouncment from "./pages/HRManager/Announcements/PrivateAnnouncements";
+import HREmployeeConcerns from "./pages/HRManager/EmployeeConcerns/FinalEmployeeConcerns";
+import HREmployeeAppraisal from "./pages/HRManager/EmployeeAppraisal/FinalEmployeeAppraisal";
+import HRLeaveApply from "./pages/HRManager/Leave/LeaveApply";
+import HRLeaveList from "./pages/HRManager/Leave/HRleaveList";
+import HRLeave from "./pages/HRManager/Leave/MyLeave";
+import HRWithdrawLeave from "./pages/HRManager/Leave/WithdrawLeave";
+import HRManagerLeaveAllocation from "./pages/HRManager/Leave/LeaveAllocation";
+import HRAdminLeaveManagment from "./pages/HRManager/Leave/LeaveManagement";
+import HRAdminEditLeave from "./pages/HRManager/Leave/LeaveEdit";
+import HRCreatePolicy from "./pages/HRManager/Policy/CreatePolicy";
+import HRSetPolicy from "./pages/HRManager/Policy/SetPolicy";
+import HRAdminEditPolicy from "./pages/HRManager/Policy/EditPolicy";
 // manage by HR
 import HrManageAddUser from "./pages/HRManager/Manage/AddUser";
 import HrManageEditUser from "./pages/HRManager/Manage/EditUser";
@@ -64,6 +93,13 @@ import HrManageProjectManager from "./pages/HRManager/Manage/MngProjectManager";
 
 // Department Modules
 import DepartmentManagerDashboard from "./pages/DepartmentManager/Dashboard";
+import DepartmentManagerPrivateAnnouncment from "./pages/DepartmentManager/Announcements/PrivateAnnouncements";
+import DepartmentManagerEmployeeConcerns from "./pages/DepartmentManager/EmployeeConcerns/EmployeeConcerns";
+import DepartmentManagerEmployeeAppraisal from "./pages/DepartmentManager/EmployeeAppraisal/EmployeeAppraisal";
+import DMLeaveApply from "./pages/DepartmentManager/Leave/LeaveApply";
+import DepartmentManagerLeavelist from "./pages/DepartmentManager/Leave/DmList";
+import DMLeave from "./pages/DepartmentManager/Leave/MyLeave";
+import DMWithdrawLeave from "./pages/DepartmentManager/Leave/WithdrawLeave";
 // Manage By DM
 import DmManageAddUser from "./pages/DepartmentManager/Manage/AddUser";
 import DmManageEditUser from "./pages/DepartmentManager/Manage/EditUser";
@@ -72,25 +108,17 @@ import DmManageProjectManager from "./pages/DepartmentManager/Manage/MngProjectM
 
 // Employee Dashboard Modules
 import EmployeeDashboard from "./pages/Employee/Dashboard";
+import EmployeePrivateAnnouncment from "./pages/Employee/Announcements/PrivateAnnouncements";
+import EmployeeRaiseaConcern from "./pages/Employee/EmployeeAssistance/RaiseaConcern";
+import EmployeeRaiseaAppraisal from "./pages/Employee/EmployeeAssistance/RaiseaAppraisal";
+import EmployeeLeaveApply from "./pages/Employee/Leave/LeaveApply";
+import EmployeeLeave from "./pages/Employee/Leave/MyLeave";
+import EmployeeWithdrawLeave from "./pages/Employee/Leave/WithdrawLeave";
 
 // Candidate Evaluator Modules
 import CandidateEvaluatorLogin from "./pages/CandidateEvaluator/Login";
 import CandidateEvaluatorDashboard from "./pages/CandidateEvaluator/dashboard";
 import CandidateEvaluation from "./pages/CandidateEvaluator/CandidateEvaluation";
-
-import HRAdminPrivateAnnouncment from "./pages/HRManager/Announcements/PrivateAnnouncements";
-import DepartmentManagerPrivateAnnouncment from "./pages/DepartmentManager/Announcements/PrivateAnnouncements";
-import EmployeePrivateAnnouncment from "./pages/Employee/Announcements/PrivateAnnouncements";
-import SystemAdminAddAnnouncment from "./pages/SystemAdmin/Announcements/SYAddAnnouncement";
-import SystemAdminAnnouncementList from "./pages/SystemAdmin/Announcements/SYAnnouncementList";
-import SystemAdminEditAnnouncements from "./pages/SystemAdmin/Announcements/SYEditAnnouncement";
-import SystemAdminReceiveAnnouncement from "./pages/SystemAdmin/Announcements/SYReceiveAnnouncement";
-import EmployeeRaiseaConcern from "./pages/Employee/EmployeeAssistance/RaiseaConcern";
-import DepartmentManagerEmployeeConcerns from "./pages/DepartmentManager/EmployeeConcerns/EmployeeConcerns";
-import HREmployeeConcerns from "./pages/HRManager/EmployeeConcerns/FinalEmployeeConcerns";
-import EmployeeRaiseaAppraisal from "./pages/Employee/EmployeeAssistance/RaiseaAppraisal";
-import DepartmentManagerEmployeeAppraisal from "./pages/DepartmentManager/EmployeeAppraisal/EmployeeAppraisal";
-import HREmployeeAppraisal from "./pages/HRManager/EmployeeAppraisal/FinalEmployeeAppraisal";
 
 // profile page
 import SUProfile from "./pages/SuperAdmin/Manage/MyProfile";
@@ -105,6 +133,13 @@ import SuUSerLog from "./pages/SuperAdmin/Log/UserLog";
 // import HRUSerLog from './pages/HRManager/Log/UserLog';
 // import DMUSerLog from './pages/DepartmentManager/Log/UserLog';
 // import EmpUSerLog from './pages/Employee/Log/UserLog';
+
+// Organization Charts
+import SUOrgChart from "./pages/SuperAdmin/SUOrgChart";
+import SYOrgChart from "./pages/SystemAdmin/SYOrgChart.JS";
+import DMOrgChart from "./pages/DepartmentManager/DMOrgChart";
+import EMOrgChart from "./pages/Employee/EMOrgChart";
+import HROrgChart from "./pages/HRManager/HROrgChart";
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -159,6 +194,8 @@ const App = () => {
             />
             <Route path="/PublicAnnouncement" element={<JobAnnouncement />} />
             <Route path="/JobApplicationForm" element={<JobVacancy />} />
+            <Route path="/Policy" element={<Policy />} />
+            <Route path="/DetailPage" element={<DetailPage />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/EvaluatorLogin" element={<CandidateEvaluatorLogin />} />
@@ -809,6 +846,271 @@ const App = () => {
                     // case 'R3': return <HRUSerLog/>;
                     // case 'R4': return <DMUSerLog/>;
                     // case 'R5': return <EmpUSerLog/>;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+
+          <Route
+            path="/OrganizationChart"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SUOrgChart />;
+                    case "R2":
+                      return <SYOrgChart />;
+                    case "R3":
+                      return <HROrgChart />;
+                    case "R4":
+                      return <DMOrgChart />;
+                    case "R5":
+                      return <EMOrgChart />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+
+          <Route
+            path="/LeaveApply"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R5":
+                      return <EmployeeLeaveApply />;
+                    case "R4":
+                      return <DMLeaveApply />;
+                    case "R3":
+                      return <HRLeaveApply />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/DmList"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R4":
+                      return <DepartmentManagerLeavelist />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/List"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SuperAdminLeavelist />;
+                    case "R2":
+                      return <SystemAdminLeavelist />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/HRleaveList"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R3":
+                      return <HRLeaveList />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+
+          <Route
+            path="/LeaveAllocation"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SuperAdminLeaveAllocation />;
+                    case "R2":
+                      return <SystemAdminLeaveAllocation />;
+                    case "R3":
+                      return <HRManagerLeaveAllocation />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/LeaveManagement"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SuperAdminLeaveManagment />;
+                    case "R2":
+                      return <SystemAdminLeaveManagment />;
+                    case "R3":
+                      return <HRAdminLeaveManagment />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/LeaveEdit/:leaveIds"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SuperAdminEditLeave />;
+                    case "R2":
+                      return <SystemAdminEditLeave />;
+                    case "R3":
+                      return <HRAdminEditLeave />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/MyLeave"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R5":
+                      return <EmployeeLeave />;
+                    case "R4":
+                      return <DMLeave />;
+                    case "R3":
+                      return <HRLeave />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/withdrawLeave"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R5":
+                      return <EmployeeWithdrawLeave />;
+                    case "R4":
+                      return <DMWithdrawLeave />;
+                    case "R3":
+                      return <HRWithdrawLeave />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/CreatePolicy"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R3":
+                      return <HRCreatePolicy />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/SetPolicy"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R3":
+                      return <HRSetPolicy />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+          <Route
+            path="/EditPolicy/:policyIds"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R3":
+                      return <HRAdminEditPolicy />;
 
                     default:
                       return <Navigate to="/login" />;
