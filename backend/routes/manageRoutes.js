@@ -1,5 +1,5 @@
 import express from 'express';
-import { getHRManagers,getEmployee,getDeptManager,getSystemAdmin } from '../controllers/manageControllers.js';  // Import controller function
+import { getHRManagers,getEmployee,getDeptManager,getSystemAdmin,getAllCounts,historyData } from '../controllers/manageControllers.js';  // Import controller function
 
 const router = express.Router();
 
@@ -11,4 +11,9 @@ router.get('/employees', getEmployee);
 router.get('/department-managers',getDeptManager);
 
 router.get('/system-admins',getSystemAdmin);
+
+router.get("/counts", getAllCounts); 
+
+router.post("/history", historyData); 
+
 export default router;

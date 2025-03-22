@@ -132,11 +132,11 @@ const SUTemplate = ({ children }) => {
                       <span className="sub-item">Department-Manager</span>
                     </Link>
                   </li>
-                  <li className={isActive(['/ManageProjectManager']) ? 'active' : ''}>
+                  {/* <li className={isActive(['/ManageProjectManager']) ? 'active' : ''}>
                     <Link to="/ManageProjectManager">
                       <span className="sub-item">Project-Manager</span>
                     </Link>
-                  </li>
+                  </li> */}
                   <li className={isActive(['/ManageEmployee']) ? 'active' : ''}>
                     <Link to="/ManageEmployee">
                       <span className="sub-item">Employee</span>
@@ -231,17 +231,17 @@ const SUTemplate = ({ children }) => {
               </Link>
               <div className="collapse" id="tables">
                 <ul className="nav nav-collapse">
-                  <li className={isActive(['/SystemAccessLog']) ? 'active' : ''}>
+                  {/* <li className={isActive(['/SystemAccessLog']) ? 'active' : ''}>
                     <Link to="/SystemAccessLog">
                       <span className="sub-item">System Access log</span>
                     </Link>
-                  </li>
+                  </li> */}
                   <li className={isActive(['/UserLog']) ? 'active' : ''}>
                     <Link to="/UserLog">
-                      <span className="sub-item">User log</span>
+                      <span className="sub-item">User Access log</span>
                     </Link>
                   </li>
-                  <li className={isActive(['/DepartmentLog']) ? 'active' : ''}>
+                  {/* <li className={isActive(['/DepartmentLog']) ? 'active' : ''}>
                     <Link to="/DepartmentLog">
                       <span className="sub-item">Department log</span>
                     </Link>
@@ -270,13 +270,13 @@ const SUTemplate = ({ children }) => {
                     <Link to="/Leavelog">
                       <span className="sub-item">Leave log</span>
                     </Link>
-                  </li>
-                  <li className={isActive(['/ProjectLog']) ? 'active' : ''}>
+                  </li> */}
+                  {/* <li className={isActive(['/ProjectLog']) ? 'active' : ''}>
                     <Link to="/ProjectLog">
                       <span className="sub-item">Project Log</span>
                     </Link>
-                  </li>
-                  <li className={isActive(['/EmployeeConcernslog']) ? 'active' : ''}>
+                  </li> */}
+                  {/* <li className={isActive(['/EmployeeConcernslog']) ? 'active' : ''}>
                     <Link to="/EmployeeConcernslog">
                       <span className="sub-item">Employee Concerns log</span>
                     </Link>
@@ -285,7 +285,7 @@ const SUTemplate = ({ children }) => {
                     <Link to="/EmployeeAppraisallog">
                       <span className="sub-item">Employee Appraisal log</span>
                     </Link>
-                  </li>
+                  </li> */}
                 </ul>
               </div>
             </li>
@@ -303,8 +303,8 @@ const SUTemplate = ({ children }) => {
                 <div className="website-title">Corporate Edge System</div>
               </nav>
               <ul className="navbar-nav topbar-nav ms-md-auto align-items-center">
-                {/* Quick Actions */}
-                <li className="nav-item topbar-icon dropdown hidden-caret">
+
+                {/* <li className="nav-item topbar-icon dropdown hidden-caret">
                   <a className="nav-link" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                     <i className="fas fa-layer-group"></i>
                   </a>
@@ -330,9 +330,9 @@ const SUTemplate = ({ children }) => {
                       </div>
                     </div>
                   </div>
-                </li>
+                </li> */}
 
-              {/* User Profile */}
+
               <li className="nav-item topbar-user dropdown hidden-caret">
                 <a
                   className="dropdown-toggle profile-pic"
@@ -340,12 +340,7 @@ const SUTemplate = ({ children }) => {
                   href="#"
                   aria-expanded="false"
                 >
-                  {/* <div className="avatar-sm">
-                    <img
-                      alt="Profile"
-                      className="avatar-img rounded-circle"
-                    />
-                  </div> */}
+
                   <span className="profile-username">
                     <span className="op-7">Hi, </span>
                     <span className="fw-bold">{fullName.split(' ')[0]}</span>
@@ -355,12 +350,6 @@ const SUTemplate = ({ children }) => {
                   <div className="dropdown-user-scroll scrollbar-outer">
                     <li>
                       <div className="user-box">
-                        {/* <div className="avatar-lg">
-                          <img
-                            alt="User"
-                            className="avatar-img rounded"
-                          />
-                        </div> */}
                         <div className="u-text">
                           <h4 className="fw-bold">{fullName }</h4>
                           <p className="text-muted">{userEmail}</p>
@@ -371,7 +360,7 @@ const SUTemplate = ({ children }) => {
                     <li>
                       <a className="dropdown-item" href="#">My Profile</a>
                     </li>
-                    <li><div className="dropdown-divider"></div></li>
+                    {/* <li><div className="dropdown-divider"></div></li>
                     <li>
                       <a className="dropdown-item" href="#">My Balance</a>
                     </li>
@@ -382,7 +371,7 @@ const SUTemplate = ({ children }) => {
                     <li><div className="dropdown-divider"></div></li>
                     <li>
                       <a className="dropdown-item" href="#">Account Setting</a>
-                    </li>
+                    </li> */}
                     <li><div className="dropdown-divider"></div></li>
                     <li>
                       <UserActivityHandler />
@@ -462,7 +451,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['System Access log','User log','Department log','Announcement log','Vacancy Log','Candidate Log','Website update log','Leave log','Project Log','Employee Concerns log','Employee Appraisal log'].map((item) => (
+                        {['User log'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>

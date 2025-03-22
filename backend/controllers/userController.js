@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 // controllers/userController.js
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
@@ -404,15 +406,20 @@ export const changePassword = async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Unauthorized. Please log in." });
     }
-
-    // Fetch user from database
+    // 🔹 Fetch user from the database
     const user = await User.findOne({ userId: req.session.userId });
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Validate old password
+    // 🛠 Debugging Logs
+    console.log("🔑 Entered Old Password:", oldPassword);
+    console.log("🔒 Stored Hashed Password:", user.userPassword);
+
+    // 🔹 Validate old password
     const isOldPasswordValid = await bcrypt.compare(oldPassword, user.userPassword);
+    console.log("✅ Password Match:", isOldPasswordValid);
+
     if (!isOldPasswordValid) {
       return res.status(400).json({ message: "Incorrect old password." });
     }
@@ -868,145 +875,139 @@ export const evaluatorsLogin = async (req, res) => {
   }
 };
 
+
+// ✅ Define role mapping outside to avoid re-initialization
+const roleMapping = {
+  "System-Admin": { id: "R2", prefix: "SY" },
+  "HR": { id: "R3", prefix: "HR" },
+  "Department-Manager": { id: "R4", prefix: "DM" },
+  "Employee": { id: "R5", prefix: "EM" },
+};
+
 export const createUsersFromCandidates = async (req, res) => {
+  console.log("📌 Processing candidate conversion...");
+  console.log("Received data:", req.body);
+
   try {
-    // ✅ Fetch all candidates
-    const candidates = await Candidate.find({});
-    if (!candidates.length) {
-      return res.status(404).json({ message: "No candidates found." });
-    }
-
-    for (const candidate of candidates) {
-      // ✅ Skip candidates without required data
-      if (!candidate.email || !candidate.firstName || !candidate.position) {
-        console.log(`Skipping candidate ${candidate.candidateId}: Missing required data.`);
-        continue;
+      const userEmail = req.body.userEmail;
+      if (!userEmail) {
+          return res.status(400).json({ message: "User email is required." });
       }
 
-      // ✅ Check if user with email already exists
-      const existingUser = await User.findOne({ userEmail: candidate.email });
-      if (existingUser) {
-        console.log(`Skipping candidate ${candidate.candidateId}: Email already exists.`);
-        continue;
+      // ✅ Fetch candidate data including documents and picture
+      const candidate = await Candidate.findOne({ email: userEmail });
+
+      if (!candidate) {
+          return res.status(404).json({ message: "Candidate not found." });
       }
 
-      // ✅ Convert `educationQualification` if stored as a string
-      let educationQualification = candidate.educationQualification;
-      if (typeof educationQualification === "string") {
-        try {
-          educationQualification = JSON.parse(educationQualification);
-        } catch (error) {
-          console.log(`Skipping candidate ${candidate.candidateId}: Invalid educationQualification format.`);
-          continue;
-        }
+      // ✅ Generate unique userId
+      const roleInfo = roleMapping[req.body.userRoleid] || {};
+      if (!roleInfo.id) {
+          return res.status(400).json({ message: "Invalid role." });
       }
 
-      if (!Array.isArray(educationQualification)) {
-        educationQualification = [];
-      }
+      const lastUser = await User.findOne({ userRoleid: roleInfo.id }).sort({ createdAt: -1 }).lean();
+      const nextUserNumber = lastUser ? parseInt(lastUser.userId.match(/\d+$/)[0]) + 1 : 1;
+      const userId = `${roleInfo.prefix}${nextUserNumber}`;
 
-      // ✅ Convert Role to Role ID & Prefix
-      let convertedRoleId, rolePrefix;
-      switch (candidate.position) {
-        case "System-Admin":
-          convertedRoleId = "R2";
-          rolePrefix = "SY";
-          break;
-        case "HR":
-          convertedRoleId = "R3";
-          rolePrefix = "HR";
-          break;
-        case "Department-Manager":
-          convertedRoleId = "R4";
-          rolePrefix = "DM";
-          break;
-        case "Employee":
-          convertedRoleId = "R5";
-          rolePrefix = "EM";
-          break;
-        default:
-          console.log(`Skipping candidate ${candidate.candidateId}: Invalid role.`);
-          continue;
-      }
-
-      // ✅ Find the last user with the same role to determine the next ID
-      const lastUser = await User.findOne({ userRoleid: convertedRoleId })
-        .sort({ createdAt: -1 }) // Sort by latest created user
-        .lean();
-
-      let nextUserNumber = 1;
-      if (lastUser) {
-        const lastUserId = lastUser.userId;
-        const lastNumberMatch = lastUserId.match(/\d+$/);
-        if (lastNumberMatch) {
-          nextUserNumber = parseInt(lastNumberMatch[0]) + 1;
-        }
-      }
-
-      // ✅ Generate userId
-      const userId = `${rolePrefix}${nextUserNumber}`;
-
-      // ✅ Generate Default Password
-      const currentYear = new Date().getFullYear();
-      const emailPrefix = candidate.email.split("@")[0];
-      const rawPassword = `${currentYear}#${emailPrefix}`;
-
-      // ✅ Hash Password
+      // ✅ Hash password
+      const rawPassword = `${new Date().getFullYear()}#${candidate.email.split("@")[0]}`;
       const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
-      // ✅ Create User Entry
-      const newUser = await User.create({
-        userId,
-        fullName: `${candidate.firstName} ${candidate.fatherName} ${candidate.surName}`.trim(),
-        userEmail: candidate.email,
-        userMobileNumber: candidate.phone,
-        userStatus: false,
-        userPassword: hashedPassword,
-        userRoleid: convertedRoleId,
-        userDepartment: candidate.departmentId || "N/A",
-        userDesignation: candidate.specialization || "N/A",
-        userPermissions: { SystemAdminExtra: false },
-        activateAccount: true,
-        accountActivationTime: new Date(),
-        createdAt: new Date(),
+      // ✅ Construct user object
+      const fullName = `${candidate.firstName} ${candidate.fatherName || ""} ${candidate.surName || ""}`.trim();
+      const newUser = {
+          userId,
+          fullName,
+          userEmail: candidate.email,
+          userMobileNumber: candidate.phone,
+          userStatus: false,
+          userPassword: hashedPassword,
+          userRoleid: roleInfo.id,
+          userDepartment: candidate.departmentId || "N/A",
+          userDesignation: candidate.specialization || "N/A",
+          userPermissions: { SystemAdminExtra: false },
+          activateAccount: true,
+          accountActivationTime: new Date(),
+          createdAt: new Date(),
+      };
+
+      // ✅ Construct userDetails object (WITH DOCUMENT & IMAGE PATHS)
+      const newUserDetails = {
+          userdetailsId: `${userId}-D`,
+          userId,
+          dob: candidate.dob,
+          age: candidate.age,
+          nativePlace: candidate.nativePlace,
+          nationality: candidate.nationality,
+          gender: candidate.gender,
+          maritalStatus: candidate.maritalStatus,
+          languagesKnown: candidate.languagesKnown ? candidate.languagesKnown.split(",") : [],
+          presentAddress: candidate.presentAddress,
+          permanentAddress: candidate.permanentAddress,
+          educationQualification: candidate.educationQualification || [],
+          specialization: candidate.specialization,
+          lastWorkPlace: candidate.lastWorkPlace,
+          yearsOfExperience: candidate.yearsOfExperience,
+          addressOfWorkPlace: candidate.addressOfWorkPlace,
+          responsibilities: candidate.responsibilities,
+          referenceContact: candidate.referenceContact,
+          totalYearsOfExperience: candidate.totalYearsOfExperience,
+          createdBy: "System",
+          identityProof: candidate.candidateDocuments, // ✅ Attach candidate documents path
+          picture: candidate.candidatePicture, // ✅ Attach candidate picture path
+      };
+
+      // ✅ Insert into database
+      await User.create(newUser);
+      await UserDetails.create(newUserDetails);
+
+      // ✅ Update Candidate Table to set recruited = true
+      await Candidate.updateOne({ email: userEmail }, { $set: { recruited: true } });
+
+      // ✅ Send Email Notification
+      const emailSubject = "Welcome to Our System!";
+      const emailMessage = `
+        Dear ${fullName},
+
+        You have been successfully added to the system with the following credentials:
+        
+        Email: ${userEmail}
+        Password: ${rawPassword}
+        
+        Please log in and change your password immediately.
+
+        Regards,
+        Admin Team
+      `;
+
+      const emailSent = await sendEmail(userEmail, emailSubject, emailMessage);
+
+      if (!emailSent) {
+          console.error("❌ Email sending failed, but user created successfully.");
+          return res.status(201).json({
+              message: "User created successfully, but email sending failed.",
+              user: newUser,
+              userDetails: newUserDetails,
+              rawPassword,
+          });
+      }
+
+      console.log(`🎉 Successfully inserted user ${userId} and updated candidate status`);
+      return res.status(201).json({ 
+          message: "Candidate converted to user successfully, and email sent!", 
+          documentPath: candidate.candidateDocuments, 
+          picturePath: candidate.candidatePicture 
       });
-
-      // ✅ Create UserDetails Entry
-      const newUserDetails = await UserDetails.create({
-        userdetailsId: `${userId}-D`,
-        userId,
-        dob: candidate.dob,
-        age: candidate.age,
-        nativePlace: candidate.nativePlace,
-        nationality: candidate.nationality,
-        gender: candidate.gender,
-        maritalStatus: candidate.maritalStatus,
-        languagesKnown: candidate.languagesKnown ? candidate.languagesKnown.split(",") : [],
-        identityProof: candidate.candidateDocuments, // ✅ Just store the existing file path
-        picture: candidate.candidatePicture, // ✅ Just store the existing file path
-        presentAddress: candidate.presentAddress,
-        permanentAddress: candidate.permanentAddress,
-        educationQualification,
-        specialization: candidate.specialization,
-        lastWorkPlace: candidate.lastWorkPlace,
-        yearsOfExperience: candidate.yearsOfExperience,
-        addressOfWorkPlace: candidate.addressOfWorkPlace,
-        responsibilities: candidate.responsibilities,
-        referenceContact: candidate.referenceContact,
-        totalYearsOfExperience: candidate.totalYearsOfExperience,
-        createdBy: "System",
-      });
-
-      console.log(`✅ User created: ${userId}`);
-    }
-
-    res.status(201).json({ message: "All candidates converted to users successfully!" });
 
   } catch (error) {
-    console.error("❌ Error processing candidates:", error);
-    res.status(500).json({ message: "Server error while processing candidates." });
+      console.error("❌ Error processing candidate:", error);
+      return res.status(500).json({ message: "Server error while processing candidate." });
   }
 };
+
+
 export const getUserLogs = async (req, res) => {
   try {
     // Extract query parameters with default values
@@ -1045,4 +1046,3 @@ export const getUserLogs = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
-

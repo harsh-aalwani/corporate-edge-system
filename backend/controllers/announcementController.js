@@ -34,15 +34,18 @@ export const createAnnouncement = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!announcementTitle || !announcementDescription || !announcementTag || !announcementScheduleTime) {
+    if (!announcementTitle || !announcementDescription || !announcementTag) {
       return res.status(400).json({ error: "All required fields must be filled!" });
     }
-
-    // Validate schedule time (must be in the future)
-    const scheduleTime = new Date(announcementScheduleTime);
-    if (isNaN(scheduleTime.getTime()) || scheduleTime.getTime() <= Date.now() + 60000) {
-      return res.status(400).json({ error: "Invalid schedule time. It must be at least 1 minute in the future." });
+    
+    const scheduleTime = announcementScheduleTime
+      ? new Date(announcementScheduleTime)
+      : new Date(); // ✅ Defaults to current time if missing
+    
+    if (isNaN(scheduleTime.getTime())) {
+      return res.status(400).json({ error: "Invalid schedule time format." });
     }
+    
 
     // Convert announcementPublic to Boolean
     const isPublic = Boolean(announcementPublic);
@@ -53,7 +56,7 @@ export const createAnnouncement = async (req, res) => {
       announcementDescription,
       announcementTag,
       announcementPublic: isPublic,
-      announcementScheduleTime: scheduleTime.toISOString(),
+      announcementScheduleTime: scheduleTime.toISOString(), // ✅ Uses default if missing
       announcementSend: { sendDiscord, sendEmail },
       createdBy,
     });
@@ -366,18 +369,42 @@ export const getJobListings = async (req, res) => {
       selectedCountMap[`${_id.position}_${_id.departmentId}`] = count;
     });
 
+    // Count recruited candidates for each announcementId
+    const recruitedCounts = await Candidate.aggregate([
+      {
+        $match: {
+          announcementId: { $in: announcementIds },
+          recruited: true
+        }
+      },
+      {
+        $group: {
+          _id: "$announcementId",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Convert recruited counts into a lookup object
+    const recruitedCountMap = {};
+    recruitedCounts.forEach(({ _id, count }) => {
+      recruitedCountMap[_id] = count;
+    });
+
     // Process job listings
     const jobListings = announcements.map((announcement) => {
       const departmentName = departmentMap[announcement.departmentId] || "Unknown";
       const selectedCount = selectedCountMap[`${announcement.jobPosition}_${announcement.departmentId}`] || 0;
       const totalCandidates = candidateCountMap[announcement.announcementId] || 0;
+      const recruitedCount = recruitedCountMap[announcement.announcementId] || 0;
+      const availableVacancies = Math.max((announcement.totalVacancy || 0) - recruitedCount, 0); // ✅ Subtract recruited count
 
       return {
         announcementId: announcement.announcementId,
         position: announcement.jobPosition,
         departmentId: announcement.departmentId,
         departmentName,
-        totalVacancy: announcement.totalVacancy || 0,
+        totalVacancy: availableVacancies, // ✅ Adjusted vacancy count
         totalSelected: selectedCount,
         totalCandidates,
         salaryRange: announcement.salaryRange || { currency: "N/A", min: 0, max: 0 },
@@ -627,5 +654,37 @@ export const assignedJobs = async (req, res) => {
   } catch (error) {
     console.error("Error fetching assigned job listings:", error);
     res.status(500).json({ error: "Failed to fetch job listings" });
+  }
+};
+export const getRecentAnnouncements = async (req, res) => {
+  try {
+    const recentAnnouncements = await Announcement.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select("announcementId announcementTitle createdAt");
+
+    if (!recentAnnouncements) {
+      return res.json([]); // ✅ Always return an array
+    }
+
+    const now = new Date();
+    const formattedAnnouncements = recentAnnouncements.map((announcement) => {
+      const isNew = (now - announcement.createdAt) / (1000 * 60 * 60 * 24) < 3;
+      const maxTitleLength = 30;
+      let title =
+        announcement.announcementTitle.length > maxTitleLength
+          ? announcement.announcementTitle.substring(0, maxTitleLength) + "..."
+          : announcement.announcementTitle;
+
+      return {
+        id: announcement.announcementId,
+        title: isNew ? `[New] ${title}` : title,
+      };
+    });
+
+    res.json(formattedAnnouncements);
+  } catch (error) {
+    console.error("Error fetching announcements:", error);
+    res.status(500).json([]); // ✅ Always return an empty array on error
   }
 };

@@ -11,8 +11,8 @@ from typing import List, Dict, Optional
 import uvicorn
 
 # Define model directory
-MODEL_NAME = "microsoft/deberta-v3-large"
-MODEL_DIR = "models/deberta-v3-large"
+MODEL_NAME = "microsoft/deberta-v3-small"
+MODEL_DIR = "models/deberta-v3-small"
 
 # Ensure model directory exists
 os.makedirs(MODEL_DIR, exist_ok=True)
@@ -21,11 +21,11 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 MODEL_PATH = os.path.join(MODEL_DIR, "model")
 
 if not os.path.exists(MODEL_PATH):
-    print("🔹 Downloading DeBERTa v3 Large model...")
+    print("🔹 Downloading DeBERTa v3 Small model...")
     model = SentenceTransformer(MODEL_NAME)
     model.save(MODEL_PATH)
 else:
-    print("✅ Loading DeBERTa v3 Large model from local directory...")
+    print("✅ Loading DeBERTa v3 Small model from local directory...")
     model = SentenceTransformer(MODEL_PATH)
 
 print("✅ Model Loaded Successfully!")

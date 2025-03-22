@@ -15,6 +15,7 @@ import {
   reopenJob,  
   updateAssignedEvaluators,
   assignedJobs,
+  getRecentAnnouncements,
 } from "../controllers/announcementController.js";
 
 const router = express.Router();
@@ -56,5 +57,7 @@ router.put("/reopen/:announcementId", reopenJob);
 router.post("/updateAssignedEvaluators", updateAssignedEvaluators); 
 
 router.get("/assignedJobs",assignedJobs);
+
+router.get("/recent", getRecentAnnouncements);
 
 export default router;

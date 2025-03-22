@@ -39,15 +39,6 @@ const announcementSchema = new mongoose.Schema({
   concluded: { type: Boolean, default: false },
 });
 
-// Pre-save hook: Ensure schedule time is at least 1 minute in the future
-announcementSchema.pre("save", function (next) {
-  const scheduleTime = new Date(this.announcementScheduleTime);
-  if (scheduleTime.getTime() < Date.now() + 60000) {
-    return next(new Error("Announcement schedule time must be at least 1 minute in the future."));
-  }
-  next();
-});
-
 // Pre-save hook: Auto-generate announcementId (e.g., AN1, AN2, AN3)
 announcementSchema.pre("save", async function (next) {
   if (!this.announcementId) {

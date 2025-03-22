@@ -83,3 +83,15 @@ export const deletePolicy = async (req, res) => {
     res.status(500).json({ error: "Failed to delete policies" });
   }
 };
+
+// Get active policy count
+export const getPolicyCount = async (req, res) => {
+  try {
+      const count = await Policy.countDocuments();
+      console.log(count);
+      res.json({ count });
+  } catch (error) {
+      console.error("Error fetching policy count:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+};

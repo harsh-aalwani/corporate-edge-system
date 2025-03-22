@@ -172,12 +172,13 @@ const AddAnnouncement = () => {
             departmentId: value // Store department ID correctly
           }
         };
-      } else if (Object.keys(prevFormData.jobDetails).includes(name)) {
+      } else if (Object.keys(prevFormData.jobDetails).includes(name) || name === "jobDescription") {
         updatedFormData = {
           ...updatedFormData,
           jobDetails: { ...updatedFormData.jobDetails, [name]: value }
         };
-      } else {
+      }
+       else {
         updatedFormData = {
           ...updatedFormData,
           [name]: value
@@ -282,9 +283,6 @@ const AddAnnouncement = () => {
     if (!formData.announcementDescription.trim()) {
       errors.announcementDescription = "Description is required";
     }
-    if (!formData.announcementScheduleTime) {
-      errors.announcementScheduleTime = "Schedule time is required";
-    }
   
     return errors;
   };
@@ -306,20 +304,23 @@ const AddAnnouncement = () => {
       announcementTitle: formData.announcementTitle,
       announcementDescription: formData.announcementDescription,
       announcementTag: formData.announcementTag,
-      announcementScheduleTime: new Date(formData.announcementScheduleTime).toISOString(),
+      announcementScheduleTime: formData.announcementScheduleTime
+        ? new Date(formData.announcementScheduleTime).toISOString()
+        : new Date().toISOString(), // ✅ Auto-set current time if empty
       announcementPublic: formData.announcementPublic,
       announcementSend: { ...formData.announcementSend },
       ...(formData.announcementPublic
         ? {
             jobPosition: formData.jobDetails.jobPosition,
             jobType: formData.jobDetails.jobType,
+            jobDescription: formData.jobDetails.jobDescription,
             salaryRange: formData.jobDetails.salaryRange,
             requiredExperience: formData.jobDetails.requiredExperience,
             skillsRequired: formData.jobDetails.skillsRequired,
             educationQualification: formData.jobDetails.educationQualification,
             totalVacancy: formData.jobDetails.totalVacancy,
             applicationDeadline: formData.jobDetails.applicationDeadline,
-            departmentId: formData.jobDetails.departmentId // 🔹 Store department ID instead of department name
+            departmentId: formData.jobDetails.departmentId
           }
         : {})
     };
@@ -346,6 +347,7 @@ const AddAnnouncement = () => {
       setIsLoading(false);
     }
   };
+  
   
 
   const handleTagKeyDown = (e) => {

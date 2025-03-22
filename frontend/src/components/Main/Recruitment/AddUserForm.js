@@ -224,76 +224,66 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
     
     const handleSubmit = async (e) => {
         e.preventDefault();
-      
+        console.log(userFormData);
         try {
-          // Create FormData object
-          const userFormDataToServer = new FormData();
-      
-          // Append fields from userFormData
-          userFormDataToServer.append('userEmail', userFormData.email);
-          userFormDataToServer.append('fullName', `${userFormData.firstName} ${userFormData.fatherName} ${userFormData.surName}`.trim());
-          userFormDataToServer.append('userMobileNumber', userFormData.phone);
-          userFormDataToServer.append('userStatus', false);
-          userFormDataToServer.append('userRoleid', userFormData.userRoleid);
-          userFormDataToServer.append('userDepartment', userFormData.departmentId);
-          userFormDataToServer.append('userPermissions[SystemAdminExtra]', userFormData.extraPermissions || false);
-          userFormDataToServer.append('createdAt', new Date().toISOString());
-      
-          userFormDataToServer.append('dob', userFormData.dob);
-          userFormDataToServer.append('nativePlace', userFormData.nativePlace);
-          userFormDataToServer.append('nationality', userFormData.nationality);
-          userFormDataToServer.append('gender', userFormData.gender);
-          userFormDataToServer.append('maritalStatus', userFormData.maritalStatus);
-          userFormDataToServer.append('languagesKnown', userFormData.languagesKnown);
-          userFormDataToServer.append('presentAddress', userFormData.presentAddress);
-          userFormDataToServer.append('permanentAddress', userFormData.permanentAddress);
-          userFormDataToServer.append('educationQualification', JSON.stringify(userFormData.educationQualification));
-          userFormDataToServer.append('specialization', userFormData.specialization);
-          userFormDataToServer.append('userDesignation', userFormData.userDesignation);
-      
-          // ✅ Ensure account activation time is correctly formatted
-          const activationTime = userFormData.accountActivationTime
-            ? new Date(userFormData.accountActivationTime).toISOString()
-            : new Date().toISOString(); // Default to current time if not set
-      
-          userFormDataToServer.append('accountActivationTime', activationTime);
-      
-          userFormDataToServer.append('lastWorkPlace', userFormData.lastWorkPlace);
-          userFormDataToServer.append('yearsOfExperience', userFormData.yearsOfExperience);
-          userFormDataToServer.append('addressOfWorkPlace', userFormData.addressOfWorkPlace);
-          userFormDataToServer.append('responsibilities', userFormData.responsibilities);
-          userFormDataToServer.append('referenceContact', userFormData.referenceContact);
-          userFormDataToServer.append('totalYearsOfExperience', userFormData.totalYearsOfExperience);
-      
-          // Send API request to backend
-          const response = await axios.post(
-            "http://localhost:5000/api/users/createUsersFromCandidates",
-            userFormDataToServer,
-            {
-              withCredentials: true,
-              headers: { 'Content-Type': 'multipart/form-data' } // Important for sending FormData
+            // Construct a JSON object instead of FormData
+            const userFormDataToServer = {
+                userEmail: userFormData.email,
+                fullName: `${userFormData.firstName} ${userFormData.fatherName} ${userFormData.surName}`.trim(),
+                userMobileNumber: userFormData.phone,
+                userStatus: false,
+                userRoleid: userFormData.userRoleid,
+                userDepartment: userFormData.departmentId,
+                userPermissions: { SystemAdminExtra: userFormData.extraPermissions || false },
+                createdAt: new Date().toISOString(),
+                dob: userFormData.dob,
+                nativePlace: userFormData.nativePlace,
+                nationality: userFormData.nationality,
+                gender: userFormData.gender,
+                maritalStatus: userFormData.maritalStatus,
+                languagesKnown: userFormData.languagesKnown,
+                presentAddress: userFormData.presentAddress,
+                permanentAddress: userFormData.permanentAddress,
+                educationQualification: userFormData.educationQualification,
+                specialization: userFormData.specialization,
+                userDesignation: userFormData.position,
+                accountActivationTime: userFormData.accountActivationTime
+                    ? new Date(userFormData.accountActivationTime).toISOString()
+                    : new Date().toISOString(),
+                lastWorkPlace: userFormData.lastWorkPlace,
+                yearsOfExperience: userFormData.yearsOfExperience,
+                addressOfWorkPlace: userFormData.addressOfWorkPlace,
+                responsibilities: userFormData.responsibilities,
+                referenceContact: userFormData.referenceContact,
+                totalYearsOfExperience: userFormData.totalYearsOfExperience,
+            };
+            // Send API request to backend with JSON data
+            const response = await axios.post(
+                "http://localhost:5000/api/users/createUsersFromCandidates",
+                userFormDataToServer, // Sending JSON instead of FormData
+                {
+                    withCredentials: true,
+                    headers: { "Content-Type": "application/json" }, // ✅ Send JSON properly
+                }
+            );
+    
+            if (response.status === 201) {
+                enqueueSnackbar("User created successfully!", { variant: "success" });
+                navigate(-1);
+            } else {
+                throw new Error("Failed to create user.");
             }
-          );
-      
-          if (response.status === 201) {
-            enqueueSnackbar("User created successfully!", { variant: "success" });
-            navigate(-1);
-          } else {
-            throw new Error("Failed to create user.");
-          }
         } catch (error) {
-          console.error("Error creating user:", error);
-      
-          if (error.response) {
-            enqueueSnackbar(error.response.data.message || "An unexpected error occurred.", {
-              variant: "error",
-            });
-          } else {
-            enqueueSnackbar("Error creating user. Please try again.", { variant: "error" });
-          }
+            console.error("❌ Error creating user:", error);
+    
+            if (error.response) {
+                enqueueSnackbar(error.response.data.message || "An unexpected error occurred.", { variant: "error" });
+            } else {
+                enqueueSnackbar("Error creating user. Please try again.", { variant: "error" });
+            }
         }
-      };
-      
+    };
+    
     
     useEffect(() => {
         const fetchDepartments = async () => {

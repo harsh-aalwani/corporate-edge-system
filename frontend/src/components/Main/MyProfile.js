@@ -132,39 +132,45 @@ const MyProfile = () => {
     }
   };
 
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      setError("New password and confirm password do not match.");
-      return;
-    }
-    setError("");
-    try {
-      const response = await fetch("http://localhost:5000/api/users/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ oldPassword: currentPassword, newPassword }),
-      });
+	const handleChangePassword = async () => {
+	  if (newPassword !== confirmPassword) {
+		setError("New password and confirm password do not match.");
+		return;
+	  }
 
-      if (response.ok) {
-        enqueueSnackbar("Password changed successfully. Logging out...", { variant: "success" });
-        handleLogoutBackend();
-        setShowModal(false);
-        // Clear password fields
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
+	  setError("");
+	  try {
+		const response = await fetch("http://localhost:5000/api/users/change-password", {
+		  method: "POST",
+		  headers: {
+			"Content-Type": "application/json",
+		  },
+		  credentials: "include",
+		  body: JSON.stringify({ oldPassword: currentPassword, newPassword }),
+		});
 
-        window.location.href = "/login";
-      } else {
-        enqueueSnackbar("Failed to change password. Please check your current password.", { variant: "error" });
-      }
-    } catch (error) {
-      console.error("Error changing password:", error);
-    }
-  };
+		const data = await response.json(); // ✅ Get backend response
+
+		if (response.ok) {
+		  enqueueSnackbar("Password changed successfully. Logging out...", { variant: "success" });
+		  handleLogoutBackend();
+		  setShowModal(false);
+		  // Clear password fields
+		  setCurrentPassword("");
+		  setNewPassword("");
+		  setConfirmPassword("");
+
+		  window.location.href = "/login";
+		} else {
+		  // ✅ Show backend error message if available
+		  enqueueSnackbar(data.message || "Failed to change password. Please try again.", { variant: "error" });
+		  console.error("Backend Error:", data);
+		}
+	  } catch (error) {
+		console.error("❌ Network Error Changing Password:", error);
+		enqueueSnackbar("Network error. Please check your connection and try again.", { variant: "error" });
+	  }
+	};
 
   const handleDocPasswordSubmit = async () => {
     try {

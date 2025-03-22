@@ -330,13 +330,13 @@
         formDataToServer.append("permanentAddress", formData.permanentAddress);
     
         // 🔹 File uploads
-        if (formData.candidateDocuments) {
+        if (formData.candidateDocuments instanceof File) {
           formDataToServer.append("candidateDocuments", formData.candidateDocuments);
-        }
-        if (formData.candidatePicture) {
+      }
+      if (formData.candidatePicture instanceof File) {
           formDataToServer.append("candidatePicture", formData.candidatePicture);
-        }
-    
+      }
+      
         // 🔹 Education Qualifications (as JSON)
         formDataToServer.append("educationQualification", JSON.stringify(formData.educationQualification));
     

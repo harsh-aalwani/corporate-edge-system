@@ -14,6 +14,7 @@ import appraisalRoutes from "./routes/appraisalRoutes.js";
 import leaveAllocationRoutes from "./routes/leaveAllocationRoutes.js"
 import leaveRoutes from "./routes/leaveRoutes.js"; 
 import policyRoutes from "./routes/policyRoutes.js";
+import scheduleRoutes from './routes/scheduleRoutes.js';
 import candidateRoutes from "./routes/candidateRoutes.js";
 import emailRoutes from "./routes/emailRoutes.js";
 import candidatePerformanceRoutes from './routes/candidatePerformanceRoutes.js';
@@ -45,6 +46,8 @@ app.use("/api/policies", policyRoutes);
 app.use("/api/concern", concernRoutes);
 app.use("/api/appraisals", appraisalRoutes);
 app.use("/api/leaveAllocation", leaveAllocationRoutes);
+app.use("/api/schedules", scheduleRoutes);
+
 // Initialize Socket.IO
 initializeSocket(server);
 // Serve static files
