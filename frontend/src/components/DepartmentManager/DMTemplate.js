@@ -214,42 +214,7 @@ const SUTemplate = ({ children }) => {
                 </Link>
               </li>
 
-              <li className="nav-item">
-                <Link to="/Logs" data-bs-toggle="collapse">
-                  <i className="fas fa-cogs"></i>
-                  <p>Logs</p>
-                  <span className="caret"></span>
-                </Link>
-                <div className="collapse" id="tables">
-                  <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/EmployeeLog">
-                        <span className="sub-item">Employee log</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/SystemAccessLog">
-                        <span className="sub-item">System Access log</span>
-                      </Link>
-                    </li>
-                    {/* <li>
-                      <Link to="/ProjectLog">
-                        <span className="sub-item">Project log</span>
-                      </Link>
-                    </li> */}
-                    <li>
-                      <Link to="/AnnocementLog">
-                        <span className="sub-item">Annocement log</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/LeaveLog">
-                        <span className="sub-item">Leave log</span>
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </li>
+              
             </ul>
           </div>
         </div>

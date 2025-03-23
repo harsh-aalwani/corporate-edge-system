@@ -160,7 +160,12 @@ const SUTemplate = ({ children }) => {
                   <p>My Profile</p>
                 </Link>
               </li>
-
+               <li className="nav-item">
+                <Link to="/OrganizationChart">
+                  <i className="fas fa-sitemap"></i>
+                  <p>Organization Chart</p>
+                </Link>
+              </li>
               <li className="nav-item">
                 <Link to="/EmployeeAssitances" data-bs-toggle="collapse">
                   <i className="fas fa-handshake"></i>

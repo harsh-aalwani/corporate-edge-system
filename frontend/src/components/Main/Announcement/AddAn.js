@@ -570,7 +570,7 @@ const AddAnnouncement = () => {
             />
           </div>
 
-          <div className="form-group">
+          {/* <div className="form-group">
             <label className="form-label">Send Announcement:</label>
             <div className="form-check">
               <input type="checkbox" className="form-check-input" name="sendDiscord" checked={formData.announcementSend.sendDiscord} onChange={handleCheckboxChange} />
@@ -580,7 +580,7 @@ const AddAnnouncement = () => {
               <input type="checkbox" className="form-check-input" name="sendEmail" checked={formData.announcementSend.sendEmail} onChange={handleCheckboxChange} />
               <label className="form-check-label"><FaEnvelope /> Send to Email</label>
             </div>
-          </div>
+          </div> */}
           <div className="d-flex justify-content-between w-100 mt-4">
             <button type="button" className="btn btn-danger px-4" onClick={handleGoBack}>Go Back</button>
             <button type="submit" className="btn btn-primary px-4" disabled={isLoading}>Submit</button>

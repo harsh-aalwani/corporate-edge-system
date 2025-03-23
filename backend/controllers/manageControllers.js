@@ -6,6 +6,8 @@ import EmployeeAppraisalModel from '../models/EmployeeAppraisalModel.js';
 import concernModel from '../models/concernModel.js';
 import Announcement from '../models/announcementModel.js';
 import UserLogModel from '../models/Log/UserLogModel.js';
+import { LeaveAllocation } from "../models/leaveAllocationModel.js"; // ✅ Fix: Import LeaveAllocation
+
 
 export const getSystemAdmin = async (req, res) => {
   try {
@@ -155,5 +157,54 @@ export const historyData = async (req, res) => {
   } catch (error) {
     console.error("Error fetching history:", error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getUserLeaveBalances = async (req, res) => {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized: No session found" });
+    }
+
+    const employeeId = req.session.userId; // ✅ Get logged-in user's ID
+
+    // ✅ Fetch all leave allocations
+    const leaveAllocations = await LeaveAllocation.find({}, "leaveId leaveName leaveNumber");
+
+    // ✅ Fetch taken leaves where status is "Approved" or "Completed"
+    const leaveTaken = await Leave.aggregate([
+      {
+        $match: {
+          employeeId,
+          status: { $in: ["Approved", "Completed"] },
+        },
+      },
+      {
+        $group: {
+          _id: "$leaveName",
+          totalTaken: { $sum: 1 }, // Adjust if leave duration is needed
+        },
+      },
+    ]);
+
+    // ✅ Convert taken leaves into a lookup map
+    const leaveTakenMap = {};
+    leaveTaken.forEach(({ _id, totalTaken }) => {
+      leaveTakenMap[_id] = totalTaken;
+    });
+
+    // ✅ Prepare response with remaining leaves
+    const leaveBalances = leaveAllocations.map((leave) => ({
+      leaveId: leave.leaveId,
+      leaveName: leave.leaveName,
+      totalAllocated: leave.leaveNumber,
+      totalTaken: leaveTakenMap[leave.leaveName] || 0,
+      remainingLeaves: Math.max(leave.leaveNumber - (leaveTakenMap[leave.leaveName] || 0), 0), // Avoid negative
+    }));
+
+    res.status(200).json(leaveBalances);
+  } catch (error) {
+    console.error("❌ Error fetching leave balances:", error);
+    res.status(500).json({ message: "Failed to fetch leave balances." });
   }
 };

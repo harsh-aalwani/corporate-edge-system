@@ -115,15 +115,15 @@ const SUTemplate = ({ children }) => {
                 <div className="collapse" id="sidebarLayouts">
                   <ul className="nav nav-collapse">
                     <li>
-                      <Link to="/ManageDepartmentHead">
+                      <Link to="/ManageDepartmentManager">
                         <span className="sub-item">Department-Manager</span>
                       </Link>
                     </li>
-                    <li>
+                    {/* <li>
                       <Link to="/ManageProjectManager">
                         <span className="sub-item">Project-Manager</span>
                       </Link>
-                    </li>
+                    </li> */}
                     <li>
                       <Link to="/ManageEmployee">
                         <span className="sub-item">Employee</span>
@@ -144,12 +144,12 @@ const SUTemplate = ({ children }) => {
                   <p>Set Policy</p>
                 </Link>
               </li>
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <Link to="/AddDepartment">
                   <i className="fas fa-clipboard-list"></i>
                   <p>Add Department</p>
                 </Link>
-              </li>
+              </li> */}
 
               <li className="nav-item">
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
@@ -203,12 +203,6 @@ const SUTemplate = ({ children }) => {
               </li>
 
               <li className="nav-item">
-                <Link to="/OrganizationChart">
-                  <i className="fas fa-chart-line"></i>
-                  <p>Employee Peformance</p>
-                </Link>
-              </li>
-              <li className="nav-item">
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
                   <i className="fas fa-handshake"></i>
                   <p>Employee Assistance </p>
@@ -236,7 +230,7 @@ const SUTemplate = ({ children }) => {
                 </Link>
               </li>
 
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <Link to="/Logs" data-bs-toggle="collapse">
                   <i className="fas fa-cogs"></i>
                   <p>Logs</p>
@@ -271,7 +265,7 @@ const SUTemplate = ({ children }) => {
                     </li>
                   </ul>
                 </div>
-              </li>
+              </li> */}
             </ul>
           </div>
         </div>
@@ -563,7 +557,6 @@ const SUTemplate = ({ children }) => {
                           "Set Policy",
                           "Organization Chart",
                           "Leave Management",
-                          "Employee Performance",
                           "Employee Asistance",
                           "Announcement",
                           "Logs",
@@ -637,7 +630,7 @@ const SUTemplate = ({ children }) => {
                 </div>
 
                 {/* Help Support Section */}
-                <div className="col-md-3 col-sm-4">
+                {/* <div className="col-md-3 col-sm-4">
                   <div
                     className="footer-widget"
                     style={{ marginBottom: "40px" }}
@@ -709,7 +702,7 @@ const SUTemplate = ({ children }) => {
                       }}
                     ></span>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

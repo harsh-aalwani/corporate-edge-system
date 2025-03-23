@@ -54,6 +54,9 @@ import SystemAdminAddAnnouncment from "./pages/SystemAdmin/Announcements/SYAddAn
 import SystemAdminAnnouncementList from "./pages/SystemAdmin/Announcements/SYAnnouncementList";
 import SystemAdminEditAnnouncements from "./pages/SystemAdmin/Announcements/SYEditAnnouncement";
 import SystemAdminReceiveAnnouncement from "./pages/SystemAdmin/Announcements/SYReceiveAnnouncement";
+import SystemAdminDepartmentsList from "./pages/SystemAdmin/Departments/DepartmentsList";
+import SystemAdminAddDepartments from "./pages/SystemAdmin/Departments/AddDepartments";
+import SystemAdminEditDepartments from "./pages/SystemAdmin/Departments/EditDepartments";
 // Leave
 import SystemAdminLeaveAllocation from "./pages/SystemAdmin/Leave/LeaveAllocation";
 import SystemAdminLeaveManagment from "./pages/SystemAdmin/Leave/LeaveManagement";
@@ -105,7 +108,7 @@ import DmManageAddUser from "./pages/DepartmentManager/Manage/AddUser";
 import DmManageEditUser from "./pages/DepartmentManager/Manage/EditUser";
 import DmManageEmp from "./pages/DepartmentManager/Manage/MngEmployee";
 import DmManageProjectManager from "./pages/DepartmentManager/Manage/MngProjectManager";
-
+import DMPrivateAnnouncment from "./pages/DepartmentManager/Announcements/PrivateAnnouncements"
 // Employee Dashboard Modules
 import EmployeeDashboard from "./pages/Employee/Dashboard";
 import EmployeePrivateAnnouncment from "./pages/Employee/Announcements/PrivateAnnouncements";
@@ -129,8 +132,8 @@ import EmpProfile from "./pages/Employee/MyProfile";
 
 // log
 import SuUSerLog from "./pages/SuperAdmin/Log/UserLog";
-// import SyUSerLog from './pages/SystemAdmin/Log/UserLog';
-// import HRUSerLog from './pages/HRManager/Log/UserLog';
+ import SyUSerLog from './pages/SystemAdmin/Log/UserLog';
+//  import HRUSerLog from './pages/HRManager/Log/UserLog';
 // import DMUSerLog from './pages/DepartmentManager/Log/UserLog';
 // import EmpUSerLog from './pages/Employee/Log/UserLog';
 
@@ -401,6 +404,8 @@ const App = () => {
                   switch (userRole) {
                     case "R1":
                       return <SuperAdminDepartmentsList />;
+                    case "R2":
+                      return <SystemAdminDepartmentsList />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -447,6 +452,8 @@ const App = () => {
                   switch (userRole) {
                     case "R1":
                       return <SuperAdminAddDepartments />;
+                    case "R2":
+                      return <SystemAdminAddDepartments />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -466,6 +473,8 @@ const App = () => {
                   switch (userRole) {
                     case "R1":
                       return <SuperAdminEditDepartments />;
+                    case "R2":
+                      return <SystemAdminAddAnnouncment />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -529,12 +538,14 @@ const App = () => {
             path="/PrivateAnnouncements"
             element={
               <ProtectedRoute
-                requiredRoles={["R1", "R2", "R3"]}
+                requiredRoles={["R1", "R2", "R3","R4"]}
                 Component={() => {
                   const userRole = getUserRoleCookie();
                   switch (userRole) {
                     case "R3":
                       return <HRAdminPrivateAnnouncment />;
+                      case "R4":
+                        return <DMPrivateAnnouncment />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -842,7 +853,7 @@ const App = () => {
                   switch (userRole) {
                     case "R1":
                       return <SuUSerLog />;
-                    // case 'R2': return <SyUSerLog/>;
+                     case 'R2': return <SyUSerLog/>;
                     // case 'R3': return <HRUSerLog/>;
                     // case 'R4': return <DMUSerLog/>;
                     // case 'R5': return <EmpUSerLog/>;

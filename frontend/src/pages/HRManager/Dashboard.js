@@ -281,19 +281,18 @@ const Dashboard = () => {
           </div>
 
           {/* Pending Requests */}
-          <div className="col-md-3">
+         {/* Departments */}
+         <div className="col-md-3">
             <div
-              className="card shadow-sm p-4 text-center border-danger clickable"
-              onClick={() => navigate("/List")}
-              style={{ cursor: "pointer" }}
+              className="card shadow-sm p-4 text-center border-success clickable"
             >
-              <div className="icon mb-3 text-danger">
-                <Bell size={30} />
+              <div className="icon mb-3 text-success">
+                <Briefcase size={30} />
               </div>
-              <h5 className="fw-bold mb-2">Pending Requests</h5>
+              <h5 className="fw-bold mb-2">Departments</h5>
               <p className="text-muted">
-                {pendingLeaveCount !== null
-                  ? `${pendingLeaveCount} Open Requests`
+                {departmentCount !== null
+                  ? `${departmentCount} Departments`
                   : "Loading..."}
               </p>
             </div>

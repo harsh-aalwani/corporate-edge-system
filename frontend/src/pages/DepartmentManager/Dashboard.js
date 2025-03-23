@@ -37,6 +37,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const ITEMS_PER_PAGE = 5;
+  const [leaveBalances, setLeaveBalances] = useState([]);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [history, setHistory] = useState([]);
   const handleLoadMore = () => {
@@ -72,6 +73,17 @@ const Dashboard = () => {
     }
   };
   
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/manage/leave-balances", { withCredentials: true }) // ✅ Sends session cookie
+      .then((response) => {
+        setLeaveBalances(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching leave balances:", error);
+        setLoading(false);
+      });
+  }, []);
 
   const handleCloseModal = () => {
     setSelectedSchedule(null);
@@ -241,10 +253,7 @@ const Dashboard = () => {
           {/* Departments */}
           <div className="col-md-3">
             <div
-              className="card shadow-sm p-4 text-center border-success clickable"
-              onClick={() => navigate("/departments")}
-              style={{ cursor: "pointer" }}
-            >
+              className="card shadow-sm p-4 text-center border-success clickable"            >
               <div className="icon mb-3 text-success">
                 <Briefcase size={30} />
               </div>
@@ -280,7 +289,7 @@ const Dashboard = () => {
           <div className="col-md-3">
             <div
               className="card shadow-sm p-4 text-center border-danger clickable"
-              onClick={() => navigate("/List")}
+              onClick={() => navigate("/DMList")}
               style={{ cursor: "pointer" }}
             >
               <div className="icon mb-3 text-danger">
@@ -328,20 +337,22 @@ const Dashboard = () => {
               </ul>
             </div>
             <div className="card shadow-sm p-4 mb-4">
-                <h5 className="fw-bold mb-3">System Logs</h5>
-                <ul className="list-group list-group-flush">
-                    {/* ✅ Redirect to User Access Logs */}
-                    <li
-                    className="list-group-item d-flex align-items-center py-3 clickable"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => navigate("/UserLog")}
-                    >
-                    <ShieldCheck className="text-primary me-2" size={18} /> 
-                    <span className="fw-semibold">User Access Logs</span>
-                    </li>
-                </ul>
-            </div>
-
+                <h5 className="fw-bold mb-3">Leave Balances</h5>
+                {loading ? (
+                  <p>Loading...</p>
+                ) : (
+                  <ul className="list-group list-group-flush">
+                    {leaveBalances.map((leave) => (
+                      <li key={leave.leaveId} className="list-group-item d-flex justify-content-between">
+                        <span className="fw-semibold">{leave.leaveName}</span>
+                        <span className={`badge ${leave.remainingLeaves > 0 ? "bg-success" : "bg-danger"}`}>
+                          {leave.remainingLeaves} Days Left
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             {/* History Section */}
             <div className="card shadow-sm p-4">
                 <h5 className="fw-bold mb-3">History</h5>

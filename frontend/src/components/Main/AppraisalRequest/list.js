@@ -67,23 +67,37 @@ const DepartmentPage = () => {
   
 
   const handleFinalAssessmentSubmit = async () => {
-    if (!selectedAppraisal || !selectedAppraisal.employeeId) {
-      enqueueSnackbar("Please select a user before submitting.", { variant: "warning" });
+    if (
+      !selectedAppraisal ||
+      !selectedAppraisal.employeeId ||
+      !selectedAppraisal.appraisalId
+    ) {
+      enqueueSnackbar("Please select a valid appraisal before submitting.", {
+        variant: "warning",
+      });
       return;
     }
   
     try {
       const payload = {
-        userId: selectedAppraisal.employeeId, // ✅ Ensure Correct User ID
+        appraisalId: selectedAppraisal.appraisalId, // Updated: Send appraisalId too
+        userId: selectedAppraisal.employeeId,         // Employee ID from selected appraisal
         finalAssessment,
-        performanceRatings, // ✅ Send Performance Ratings
+        performanceRatings,
       };
   
       console.log("📤 Submitting Assessment:", payload);
   
-      const response = await axios.post("http://localhost:5000/api/appraisals/submit-assessment", payload);
+      const response = await axios.post(
+        "http://localhost:5000/api/appraisals/submit-assessment",
+        payload
+      );
   
-      enqueueSnackbar("Assessment Submitted Successfully!", { variant: "success" });
+      console.log("✅ Assessment Response:", response.data);
+  
+      enqueueSnackbar("Assessment Submitted Successfully!", {
+        variant: "success",
+      });
       setShowAssessment(false);
       setFinalAssessment("");
       setPerformanceRatings({
@@ -95,12 +109,14 @@ const DepartmentPage = () => {
         Punctuality: "",
       });
   
-      fetchAppraisals(); // ✅ Refresh Appraisal List
+      // Refresh appraisal list to reflect updated data
+      fetchAppraisals();
     } catch (error) {
       console.error("❌ Error submitting assessment:", error);
       enqueueSnackbar("Failed to submit assessment!", { variant: "error" });
     }
   };
+  
   
 
   const confirmFinalAssessmentSubmit = async () => {

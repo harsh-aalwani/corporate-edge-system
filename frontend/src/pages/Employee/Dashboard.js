@@ -15,7 +15,7 @@ import {
   Clock as ClockIcon,
   ListOrdered,
   X,
-  ShieldCheck
+  ShieldCheck,
 } from "lucide-react";
 import styled from "styled-components";
 import axios from "axios";
@@ -33,6 +33,7 @@ const Dashboard = () => {
   const [departmentCount, setDepartmentCount] = useState(null);
   const [policyCount, setPolicyCount] = useState(null);
   const [pendingLeaveCount, setPendingLeaveCount] = useState(null);
+  const [leaveBalances, setLeaveBalances] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
@@ -43,35 +44,52 @@ const Dashboard = () => {
     setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
   };
 
-  
   const handleOpenModal = (schedule) => {
     setSelectedSchedule(schedule);
   };
   const handleDelete = async (scheduleId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/schedules/delete`, {
-        method: "POST", // 🔥 Use POST instead of DELETE
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: scheduleId }), // 🔥 Send ID in request body
-      });
-  
+      const response = await fetch(
+        `http://localhost:5000/api/schedules/delete`,
+        {
+          method: "POST", // 🔥 Use POST instead of DELETE
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: scheduleId }), // 🔥 Send ID in request body
+        }
+      );
+
       if (!response.ok) throw new Error("Failed to delete schedule");
-  
+
       // ✅ Remove schedule from UI after deletion
-      setSchedules((prevSchedules) => prevSchedules.filter((s) => s._id !== scheduleId));
+      setSchedules((prevSchedules) =>
+        prevSchedules.filter((s) => s._id !== scheduleId)
+      );
       setSelectedSchedule(null); // Close modal after deleting
-  
+
       // ✅ Show success notification
       enqueueSnackbar("Schedule deleted successfully!", { variant: "success" });
-  
     } catch (error) {
       console.error("Error deleting schedule:", error);
       enqueueSnackbar("Error deleting schedule!", { variant: "error" });
     }
   };
-  
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/manage/leave-balances", {
+        withCredentials: true,
+      }) // ✅ Sends session cookie
+      .then((response) => {
+        setLeaveBalances(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching leave balances:", error);
+        setLoading(false);
+      });
+  }, []);
 
   const handleCloseModal = () => {
     setSelectedSchedule(null);
@@ -242,8 +260,6 @@ const Dashboard = () => {
           <div className="col-md-3">
             <div
               className="card shadow-sm p-4 text-center border-success clickable"
-              onClick={() => navigate("/departments")}
-              style={{ cursor: "pointer" }}
             >
               <div className="icon mb-3 text-success">
                 <Briefcase size={30} />
@@ -280,8 +296,6 @@ const Dashboard = () => {
           <div className="col-md-3">
             <div
               className="card shadow-sm p-4 text-center border-danger clickable"
-              onClick={() => navigate("/List")}
-              style={{ cursor: "pointer" }}
             >
               <div className="icon mb-3 text-danger">
                 <Bell size={30} />
@@ -328,47 +342,61 @@ const Dashboard = () => {
               </ul>
             </div>
             <div className="card shadow-sm p-4 mb-4">
-                <h5 className="fw-bold mb-3">System Logs</h5>
+              <h5 className="fw-bold mb-3">Leave Balances</h5>
+              {loading ? (
+                <p>Loading...</p>
+              ) : (
                 <ul className="list-group list-group-flush">
-                    {/* ✅ Redirect to User Access Logs */}
+                  {leaveBalances.map((leave) => (
                     <li
-                    className="list-group-item d-flex align-items-center py-3 clickable"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => navigate("/UserLog")}
+                      key={leave.leaveId}
+                      className="list-group-item d-flex justify-content-between"
                     >
-                    <ShieldCheck className="text-primary me-2" size={18} /> 
-                    <span className="fw-semibold">User Access Logs</span>
+                      <span className="fw-semibold">{leave.leaveName}</span>
+                      <span
+                        className={`badge ${
+                          leave.remainingLeaves > 0 ? "bg-success" : "bg-danger"
+                        }`}
+                      >
+                        {leave.remainingLeaves} Days Left
+                      </span>
                     </li>
+                  ))}
                 </ul>
+              )}
             </div>
-
             {/* History Section */}
             <div className="card shadow-sm p-4">
-                <h5 className="fw-bold mb-3">History</h5>
-                <ul className="list-group list-group-flush">
-                    {loading ? (
-                    <li className="list-group-item text-center py-3 text-muted">
-                        <em>Loading history...</em>
+              <h5 className="fw-bold mb-3">History</h5>
+              <ul className="list-group list-group-flush">
+                {loading ? (
+                  <li className="list-group-item text-center py-3 text-muted">
+                    <em>Loading history...</em>
+                  </li>
+                ) : history.length > 0 ? (
+                  history.map((item) => (
+                    <li
+                      key={item.id}
+                      className="list-group-item d-flex align-items-center py-3"
+                    >
+                      <Clock className="text-info me-2" />
+                      <div>
+                        <span className="fw-semibold">{item.event}</span>
+                        <br />
+                        <small className="text-muted">
+                          {new Date(item.date).toLocaleString()}
+                        </small>
+                      </div>
                     </li>
-                    ) : history.length > 0 ? (
-                    history.map((item) => (
-                        <li key={item.id} className="list-group-item d-flex align-items-center py-3">
-                        <Clock className="text-info me-2" />
-                        <div>
-                            <span className="fw-semibold">{item.event}</span>
-                            <br />
-                            <small className="text-muted">{new Date(item.date).toLocaleString()}</small>
-                        </div>
-                        </li>
-                    ))
-                    ) : (
-                    <li className="list-group-item text-center py-3 text-muted">
-                        <em>No recent activity</em>
-                    </li>
-                    )}
-                </ul>
-                </div>
+                  ))
+                ) : (
+                  <li className="list-group-item text-center py-3 text-muted">
+                    <em>No recent activity</em>
+                  </li>
+                )}
+              </ul>
             </div>
+          </div>
 
           {/* Right Column: Clock, Calendar, Schedule */}
           <div className="col-md-6">
@@ -392,40 +420,43 @@ const Dashboard = () => {
             </div>
 
             <div className="card shadow-sm p-4">
-                <h5 className="fw-bold mb-3">Schedule</h5>
-                <ul className="list-group list-group-flush">
-                    {loading ? (
-                    <li className="list-group-item text-muted text-center py-3">
-                        <em>Loading schedules...</em>
-                    </li>
-                    ) : schedules.length > 0 ? (
-                    schedules.slice(0, visibleCount).map((schedule, index) => (
-                        <li
-                        key={index}
-                        className="list-group-item d-flex align-items-center py-3"
-                        onClick={() => handleOpenModal(schedule)}
-                        style={{ cursor: "pointer" }}
-                        >
-                        <input type="checkbox" className="me-3 form-check-input" />
-                        <span className="fw-semibold">{schedule.title}</span>
-                        </li>
-                    ))
-                    ) : (
-                    <li className="list-group-item text-muted text-center py-3">
-                        <em>No schedules available</em>
-                    </li>
-                    )}
-                </ul>
-
-                {/* Show More Button */}
-                {schedules.length > visibleCount && (
-                    <button
-                    className="btn btn-primary mt-3 w-100"
-                    onClick={handleLoadMore}
+              <h5 className="fw-bold mb-3">Schedule</h5>
+              <ul className="list-group list-group-flush">
+                {loading ? (
+                  <li className="list-group-item text-muted text-center py-3">
+                    <em>Loading schedules...</em>
+                  </li>
+                ) : schedules.length > 0 ? (
+                  schedules.slice(0, visibleCount).map((schedule, index) => (
+                    <li
+                      key={index}
+                      className="list-group-item d-flex align-items-center py-3"
+                      onClick={() => handleOpenModal(schedule)}
+                      style={{ cursor: "pointer" }}
                     >
-                    Show More
-                    </button>
+                      <input
+                        type="checkbox"
+                        className="me-3 form-check-input"
+                      />
+                      <span className="fw-semibold">{schedule.title}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="list-group-item text-muted text-center py-3">
+                    <em>No schedules available</em>
+                  </li>
                 )}
+              </ul>
+
+              {/* Show More Button */}
+              {schedules.length > visibleCount && (
+                <button
+                  className="btn btn-primary mt-3 w-100"
+                  onClick={handleLoadMore}
+                >
+                  Show More
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -468,47 +499,57 @@ const Dashboard = () => {
         )}
 
         {selectedSchedule && (
-        <ModalOverlay onClick={handleCloseModal}>
+          <ModalOverlay onClick={handleCloseModal}>
             <ModalContainer
-            onClick={(e) => e.stopPropagation()}
-            className="p-4 rounded shadow-lg bg-white"
+              onClick={(e) => e.stopPropagation()}
+              className="p-4 rounded shadow-lg bg-white"
             >
-            {/* Header */}
-            <ModalHeader className="d-flex justify-content-between align-items-center border-bottom pb-3">
+              {/* Header */}
+              <ModalHeader className="d-flex justify-content-between align-items-center border-bottom pb-3">
                 <h5 className="fw-bold mb-0">{selectedSchedule.title}</h5>
                 <div>
-                {/* Trash Bin Button */}
-                <button
+                  {/* Trash Bin Button */}
+                  <button
                     className="btn btn-outline-danger me-2 d-flex align-items-center"
                     onClick={() => handleDelete(selectedSchedule._id)}
-                >
-                    <BiTrash size={18} className="me-1" /> {/* React Trash Icon */}
-                </button>
-                <CloseButton onClick={handleCloseModal} className="btn-close"></CloseButton>
+                  >
+                    <BiTrash size={18} className="me-1" />{" "}
+                    {/* React Trash Icon */}
+                  </button>
+                  <CloseButton
+                    onClick={handleCloseModal}
+                    className="btn-close"
+                  ></CloseButton>
                 </div>
-            </ModalHeader>
+              </ModalHeader>
 
-            {/* Body */}
-            <div className="mt-4">
+              {/* Body */}
+              <div className="mt-4">
                 <div className="mb-3 border-bottom pb-2">
-                <p className="text-muted mb-1">📅 Date</p>
-                <p className="fw-semibold fs-6">{new Date(selectedSchedule.date).toLocaleDateString()}</p>
+                  <p className="text-muted mb-1">📅 Date</p>
+                  <p className="fw-semibold fs-6">
+                    {new Date(selectedSchedule.date).toLocaleDateString()}
+                  </p>
                 </div>
 
                 <div className="mb-3 border-bottom pb-2">
-                <p className="text-muted mb-1">🕒 Created At</p>
-                <p className="fw-semibold fs-6">{new Date(selectedSchedule.createdAt).toLocaleString()}</p>
+                  <p className="text-muted mb-1">🕒 Created At</p>
+                  <p className="fw-semibold fs-6">
+                    {new Date(selectedSchedule.createdAt).toLocaleString()}
+                  </p>
                 </div>
 
                 {selectedSchedule.description && (
-                <div className="mb-2">
+                  <div className="mb-2">
                     <p className="text-muted mb-1">📝 Description</p>
-                    <p className="fw-normal fs-6">{selectedSchedule.description}</p>
-                </div>
+                    <p className="fw-normal fs-6">
+                      {selectedSchedule.description}
+                    </p>
+                  </div>
                 )}
-            </div>
+              </div>
             </ModalContainer>
-        </ModalOverlay>
+          </ModalOverlay>
         )}
       </div>
     </SUTemplate>

@@ -102,26 +102,22 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="sidebarLayouts">
                   <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/ManageSystemAdmin">
-                        <span className="sub-item">System Admin</span>
-                      </Link>
-                    </li>
+                 
                     <li>
                       <Link to="/ManageHRManager">
                         <span className="sub-item">HR Manager</span>
                       </Link>
                     </li>
                     <li>
-                      <Link to="/ManageDepartmentHead">
+                      <Link to="/ManageDepartmentManager">
                         <span className="sub-item">Department-Manager</span>
                       </Link>
                     </li>
-                    <li>
+                    {/* <li>
                       <Link to="/ManageProjectManager">
                         <span className="sub-item">Project-Manager</span>
                       </Link>
-                    </li>
+                    </li> */}
                     <li>
                       <Link to="/ManageEmployee">
                         <span className="sub-item">Employee</span>
@@ -132,12 +128,12 @@ const SUTemplate = ({ children }) => {
               </li>
 
               <li className="nav-item">
-                <Link to="/AddDepartment">
+                <Link to="/departments">
                   <i className="fas fa-building"></i>
-                  <p>Add Department</p>
+                  <p>Departments</p>
                 </Link>
               </li>
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
                   <i className="	fa fa-cog"></i>
                   <p>Web Settings</p>
@@ -157,7 +153,7 @@ const SUTemplate = ({ children }) => {
                     </li>
                   </ul>
                 </div>
-              </li>
+              </li> */}
 
 
               <li className="nav-item">
@@ -234,51 +230,51 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
+                    {/* <li>
                       <Link to="/SystemAccessLog">
                         <span className="sub-item">System Access log</span>
                       </Link>
-                    </li>
+                    </li> */}
                     <li>
                       <Link to="/UserLog">
                         <span className="sub-item">User log</span>
                       </Link>
                     </li>
-                    <li>
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Department log</span>
                       </Link>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Announcement log</span>
                       </Link>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Vacancy Log
                         </span>
                       </Link>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Candidate Log
                         </span>
                       </Link>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Website settings log
                         </span>
                       </Link>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Leave log
                         </span>
                       </Link>
-                    </li>
-                    <li>
+                    </li> */}
+                    {/* <li>
                       <Link to="/DepartmentLog">
                         <span className="sub-item">Project log
                         </span>
@@ -295,7 +291,7 @@ const SUTemplate = ({ children }) => {
                         <span className="sub-item">Employee Appraisal log
                         </span>
                       </Link>
-                    </li>
+                    </li> */}
                   </ul>
                 </div>
               </li>
@@ -440,7 +436,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu footer-menu--1" style={{ paddingLeft: '48px' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Popular Category</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                        {['Dashboard', 'System Admin', 'HR manager', 'Department-Manager', 'Project-Manager','Employee','Manage Department','Employee Asistance','Announcement','Logs'].map((item) => (
+                        {['Dashboard', 'HR manager', 'Department-Manager', 'Project-Manager','Employee','Manage Department','Employee Asistance','Announcement','Logs'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>
@@ -472,7 +468,7 @@ const SUTemplate = ({ children }) => {
                     <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
                       <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-                      {['System Access log','User log','Department log','Announcement log','Vacancy Log','Candidate Log','Website update log','Leave log','Project Log','Employee Concerns log','Employee Appraisal log'].map((item) => (
+                      {['User log'].map((item) => (
                           <li key={item} style={{ lineHeight: '32px' }}>
                             <a href="#" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>
