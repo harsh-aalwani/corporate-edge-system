@@ -1,15 +1,47 @@
-import React, { useState, useEffect,useRef, useMemo} from "react";
+import Quill from "quill";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import BellCurveChart from "./BellCurveChart";
-import {FaCalendarAlt, FaCheckCircle, FaChartBar, FaTasks, FaHistory, FaCommentDots, FaFileAlt, FaExclamationCircle} from "react-icons/fa";
+import ReactQuill from "react-quill";
+import {
+  FaCalendarAlt,
+  FaCheckCircle,
+  FaChartBar,
+  FaTasks,
+  FaHistory,
+  FaCommentDots,
+  FaFileAlt,
+  FaExclamationCircle,
+} from "react-icons/fa";
 import styled from "styled-components";
 import { useSnackbar } from "notistack";
-import placeholderData from '../../data/data.json';
+import placeholderData from "../../data/data.json";
 import { AddUserForm } from "./AddUserForm";
 import axios from "axios";
 import ApprovalModal from "./ApprovalModal";
 
-const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab }) => {
+const Delta = Quill.import("delta");
 
+const modules = {
+  toolbar: [
+    [{ font: [] }, { size: [] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ color: [] }, { background: [] }],
+    [{ script: "sub" }, { script: "super" }],
+    [{ list: "ordered" }, { list: "bullet" }],
+    [{ align: [] }],
+    ["blockquote", "code-block"],
+    ["link"],
+    ["clean"],
+  ],
+};
+
+const OptionModal = ({
+  show,
+  onClose,
+  candidates = [],
+  setCandidates,
+  defaultTab,
+}) => {
   // Static Department Data
   const [departments, setDepartments] = useState([]);
   const [allCandidates, setAllCandidates] = useState("");
@@ -30,31 +62,32 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab
   const recordsPerPage = 4;
   const [isFull, setIsFull] = useState(false);
 
+  const fetchAnnouncement = async () => {
+    if (!candidates.length || !allUsers.length) return;
 
-    const fetchAnnouncement = async () => {
-      if (!candidates.length || !allUsers.length) return;
-    
-      const announcementIdFromCandidate = candidates[0]?.announcementId;
-      if (!announcementIdFromCandidate) return;
-    
-      try {
-        const response = await axios.post(
-          "http://localhost:5000/api/announcements/getAnnouncementInfoById",
-          { announcementId: announcementIdFromCandidate }
-        );
-    
-        const assignedEvaluatorIds = response.data.assignedEvaluators || [];
-    
-        // ✅ Filter multiple users from `allUsers`
-        const assignedUsersData = allUsers.filter(user => assignedEvaluatorIds.includes(user.userId));
-    
-        setAssignedUsers(assignedUsersData);
-        console.log(assignedUsers);
-      } catch (error) {
-        console.error("Error fetching announcement:", error);
-      }
-    };    
-    
+    const announcementIdFromCandidate = candidates[0]?.announcementId;
+    if (!announcementIdFromCandidate) return;
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/announcements/getAnnouncementInfoById",
+        { announcementId: announcementIdFromCandidate }
+      );
+
+      const assignedEvaluatorIds = response.data.assignedEvaluators || [];
+
+      // ✅ Filter multiple users from `allUsers`
+      const assignedUsersData = allUsers.filter((user) =>
+        assignedEvaluatorIds.includes(user.userId)
+      );
+
+      setAssignedUsers(assignedUsersData);
+      console.log(assignedUsers);
+    } catch (error) {
+      console.error("Error fetching announcement:", error);
+    }
+  };
+
   useEffect(() => {
     fetchAnnouncement();
   }, [allUsers]);
@@ -68,39 +101,48 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab
       setAvailableUsers([]);
     }
   }, [selectedDepartment, allUsers]);
-  
 
   // Manage Users & Departments
   const handleSaveEvaluators = async () => {
     if (!candidates.length) return; // ✅ Ensure candidates exist
-  
+
     const announcementIdFromCandidate = candidates[0]?.announcementId;
     if (!announcementIdFromCandidate) return; // ✅ Prevent saving if ID is missing
-  
+
     try {
-      await axios.post("http://localhost:5000/api/announcements/updateAssignedEvaluators", {
-        announcementId: announcementIdFromCandidate,
-        assignedEvaluators: assignedUsers.map((user) => user.userId), // ✅ Send only user IDs
-      });
-  
-      enqueueSnackbar("Assigned evaluators saved successfully!", { variant: "success" }); // ✅ Success Snackbar
+      await axios.post(
+        "http://localhost:5000/api/announcements/updateAssignedEvaluators",
+        {
+          announcementId: announcementIdFromCandidate,
+          assignedEvaluators: assignedUsers.map((user) => user.userId), // ✅ Send only user IDs
+        }
+      );
+
+      enqueueSnackbar("Assigned evaluators saved successfully!", {
+        variant: "success",
+      }); // ✅ Success Snackbar
     } catch (error) {
       console.error("Error saving assigned evaluators:", error);
-  
-      enqueueSnackbar("Failed to save evaluators. Please try again.", { variant: "error" }); // ✅ Error Snackbar
+
+      enqueueSnackbar("Failed to save evaluators. Please try again.", {
+        variant: "error",
+      }); // ✅ Error Snackbar
     }
   };
 
   // ✅ Search Filtering
-  const filteredUsers = availableUsers.filter((user) =>
-    user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-    user.userId.toLowerCase().includes(userSearchTerm.toLowerCase()) // ✅ Allow searching by ID
+  const filteredUsers = availableUsers.filter(
+    (user) =>
+      user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.userId.toLowerCase().includes(userSearchTerm.toLowerCase()) // ✅ Allow searching by ID
   );
 
   const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
 
   // ✅ Sort users by total experience before pagination
-  const sortedUsers = [...filteredUsers].sort((a, b) => b.totalExperience - a.totalExperience);
+  const sortedUsers = [...filteredUsers].sort(
+    (a, b) => b.totalExperience - a.totalExperience
+  );
 
   const paginatedUsers = sortedUsers.slice(
     (currentPage - 1) * recordsPerPage,
@@ -110,7 +152,9 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab
   const assignUserToDepartment = (user) => {
     setAssignedUsers((prevAssignedUsers) => {
       if (prevAssignedUsers.length >= 5) {
-        enqueueSnackbar("Maximum 5 evaluators allowed.", { variant: "warning" });
+        enqueueSnackbar("Maximum 5 evaluators allowed.", {
+          variant: "warning",
+        });
         return prevAssignedUsers;
       }
       if (!prevAssignedUsers.some((u) => u.userId === user.userId)) {
@@ -119,14 +163,13 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab
       return prevAssignedUsers;
     });
   };
-  
+
   const removeUserFromDepartment = (user) => {
     setAssignedUsers((prevAssignedUsers) =>
       prevAssignedUsers.filter((u) => u.userId !== user.userId)
     );
   };
-  
-  
+
   const [activeTab, setActiveTab] = useState(defaultTab || "Check List");
   const [localCandidates, setLocalCandidates] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
@@ -134,15 +177,16 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab
   const [announcementConcluded, setAnnouncementConcluded] = useState(false);
 
   //Add as New User
-  const [selectedNewCandidateId,setSelectedNewCandidateId] = useState('');
+  const [selectedNewCandidateId, setSelectedNewCandidateId] = useState("");
   const handleNewCandidateSelect = (event) => {
     setSelectedNewCandidateId(event.target.value);
   };
 
-
   // Candidate Performance
   const [selectedCandidateId, setSelectedCandidateId] = useState("");
-  const [previousPerformanceData, setPreviousCandidatePerformance] = useState({});
+  const [previousPerformanceData, setPreviousCandidatePerformance] = useState(
+    {}
+  );
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [approvalAction, setApprovalAction] = useState(null);
   const [approvalText, setApprovalText] = useState("");
@@ -157,80 +201,100 @@ const OptionModal = ({ show, onClose, candidates = [], setCandidates, defaultTab
     if (!selectedCandidateId) return;
 
     try {
-        const response = await axios.post("http://localhost:5000/api/candidates/toggleApproval", {
-            candidateId: selectedCandidateId
-        });
-
-        if (response.status === 200) {
-            enqueueSnackbar(`Candidate ${response.data.newStatus ? "Hire" : "Declined"} successfully!`, { variant: "success" });
-
-            // ✅ Update frontend UI
-            setCandidates((prevCandidates) =>
-                prevCandidates.map((candidate) =>
-                    candidate.candidateId === selectedCandidateId ? { ...candidate, result: response.data.newStatus } : candidate
-                )
-            );
-
-            // ✅ Update frontend UI
-            setLocalCandidates((prevCandidates) =>
-              prevCandidates.map((candidate) =>
-                  candidate.candidateId === selectedCandidateId ? { ...candidate, result: response.data.newStatus } : candidate
-              )
-            );
-
-            setIsApprovalModalOpen(false); // Close modal
-        } else {
-            enqueueSnackbar("Failed to update candidate status.", { variant: "error" });
+      const response = await axios.post(
+        "http://localhost:5000/api/candidates/toggleApproval",
+        {
+          candidateId: selectedCandidateId,
         }
-    } catch (error) {
-        console.error("Error updating candidate status:", error);
-        enqueueSnackbar("An error occurred while updating candidate status.", { variant: "error" });
+      );
+
+      if (response.status === 200) {
+        enqueueSnackbar(
+          `Candidate ${
+            response.data.newStatus ? "Hire" : "Declined"
+          } successfully!`,
+          { variant: "success" }
+        );
+
+        // ✅ Update frontend UI
+        setCandidates((prevCandidates) =>
+          prevCandidates.map((candidate) =>
+            candidate.candidateId === selectedCandidateId
+              ? { ...candidate, result: response.data.newStatus }
+              : candidate
+          )
+        );
+
+        // ✅ Update frontend UI
+        setLocalCandidates((prevCandidates) =>
+          prevCandidates.map((candidate) =>
+            candidate.candidateId === selectedCandidateId
+              ? { ...candidate, result: response.data.newStatus }
+              : candidate
+          )
+        );
+
+        setIsApprovalModalOpen(false); // Close modal
+      } else {
+        enqueueSnackbar("Failed to update candidate status.", {
+          variant: "error",
+        });
       }
+    } catch (error) {
+      console.error("Error updating candidate status:", error);
+      enqueueSnackbar("An error occurred while updating candidate status.", {
+        variant: "error",
+      });
+    }
   };
 
   // ✅ Open Confirmation Modal
   const handleOpenApprovalModal = () => {
-      const isApproved = candidates.find(c => c.candidateId === selectedCandidateId)?.result;
-      setApprovalText(isApproved ? "declined approval for" : "hire");
-      setApprovalAction(() => handleApproval);
-      setIsApprovalModalOpen(true);
+    const isApproved = candidates.find(
+      (c) => c.candidateId === selectedCandidateId
+    )?.result;
+    setApprovalText(isApproved ? "declined approval for" : "hire");
+    setApprovalAction(() => handleApproval);
+    setIsApprovalModalOpen(true);
   };
 
+  // ✅ Fetch candidate performance data when a candidate is selected
+  const handleCandidateSelect = async (event) => {
+    const candidateId = event.target.value;
+    setSelectedCandidateId(candidateId);
+    if (candidateId) {
+      fetchCandidatePerformanceData(candidateId); // 🔹 Fetch performance records when selected
+    }
+  };
 
-// ✅ Fetch candidate performance data when a candidate is selected
-const handleCandidateSelect = async (event) => {
-  const candidateId = event.target.value;
-  setSelectedCandidateId(candidateId);
-  if (candidateId) {
-    fetchCandidatePerformanceData(candidateId); // 🔹 Fetch performance records when selected
-  }
-};
+  const fetchCandidatePerformanceData = async (candidateId) => {
+    if (!candidateId) return;
 
-const fetchCandidatePerformanceData = async (candidateId) => {
-  if (!candidateId) return;
-
-  try {
-      const response = await fetch("http://localhost:5000/api/candPerformance/getPerformanceData", {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/candPerformance/getPerformanceData",
+        {
           method: "POST", // 🔹 Use POST for security
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ candidateId }),
           credentials: "include", // Ensures authentication
-      });
+        }
+      );
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.message || "Failed to fetch performance data.");
+      if (!response.ok)
+        throw new Error(data.message || "Failed to fetch performance data.");
 
       // ✅ Store fetched data in state
       setPreviousCandidatePerformance((prev) => ({
-          ...prev,
-          [candidateId]: data.performanceRecords, // Ensure backend returns `performanceRecords`
+        ...prev,
+        [candidateId]: data.performanceRecords, // Ensure backend returns `performanceRecords`
       }));
-
-  } catch (error) {
-    return;
-  }
-};
+    } catch (error) {
+      return;
+    }
+  };
 
   // Email
   const [subject, setSubject] = useState("");
@@ -240,7 +304,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [filteredOptions, setFilteredOptions] = useState([]);
-  const textareaRef = useRef(null);
+  const quillRef = useRef(null);
 
   const allPlaceholders = [
     "[[CandidateName]]",
@@ -249,8 +313,10 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     "[[OfficeAddress]]",
     "[[YourName]]",
     "[[YourPosition]]",
-    "[[CompanyEmail]]"
+    "[[CompanyEmail]]",
+    "[[JobConfirmationLink]]", // Added confirmation link placeholder
   ];
+
   const [placeholders, setPlaceholders] = useState([]);
 
   // Copy candidates to local state when modal opens
@@ -261,28 +327,29 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       if (!localCandidates.length) {
         setLocalCandidates(candidateArray.filter((c) => c.selected));
       }
-    
+
       // Define placeholder mappings from `placeholderData`
       const placeholderMappings = {
         "[[CompanyName]]": placeholderData?.Header?.Name?.trim() || "",
         "[[OfficeAddress]]": placeholderData?.Contact?.address?.trim() || "",
         "[[CompanyEmail]]": placeholderData?.Contact?.email?.trim() || "",
       };
-  
+
       // Filter out placeholders with missing values
       const filteredPlaceholders = allPlaceholders.filter(
-        (tag) => !(tag in placeholderMappings) || placeholderMappings[tag] !== ""
+        (tag) =>
+          !(tag in placeholderMappings) || placeholderMappings[tag] !== ""
       );
       setPlaceholders(filteredPlaceholders);
     }
   }, [show, placeholderData]);
-  
-  
-  
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.post("http://localhost:5000/api/users/getUserInfoAndExperience");
+        const response = await axios.post(
+          "http://localhost:5000/api/users/getUserInfoAndExperience"
+        );
         setAllUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -290,24 +357,47 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     };
     fetchUsers();
   }, []); // Runs once on mount
-  
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        quillRef.current &&
+        quillRef.current.getEditor &&
+        quillRef.current.getEditor().container &&
+        !quillRef.current.getEditor().container.contains(event.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   useEffect(() => {
     if (candidates && candidates.length > 0) {
       const announcementIdFromCandidate = candidates[0]?.announcementId;
       if (!announcementIdFromCandidate) return;
-    
+
       const fetchAnnouncementAndDepartments = async () => {
         try {
           const [announcementResponse, deptResponse] = await Promise.all([
-            axios.post("http://localhost:5000/api/announcements/getAnnouncementInfoById", { announcementId: announcementIdFromCandidate }),
+            axios.post(
+              "http://localhost:5000/api/announcements/getAnnouncementInfoById",
+              { announcementId: announcementIdFromCandidate }
+            ),
             axios.get("http://localhost:5000/api/departments/list"),
           ]);
           setAnnouncementConcluded(announcementResponse.data.concluded);
           setSelectedDepartment(announcementResponse.data.departmentd);
-          setDepartments(deptResponse.data.map((dept) => ({
-            id: dept.departmentid,
-            name: dept.departmentName,
-          })));
+          setDepartments(
+            deptResponse.data.map((dept) => ({
+              id: dept.departmentid,
+              name: dept.departmentName,
+            }))
+          );
         } catch (error) {
           console.error("Error fetching announcement or departments:", error);
         }
@@ -319,43 +409,53 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       const announcementId = candidates[0]?.announcementId;
       if (!announcementId) return;
       try {
-        const response = await axios.post("http://localhost:5000/api/candidates/List", { announcementId });
+        const response = await axios.post(
+          "http://localhost:5000/api/candidates/List",
+          { announcementId }
+        );
         // Filter the data to only include candidates with selected:true
-        const selectedCandidates = response.data.filter(candidate => candidate.selected);
+        const selectedCandidates = response.data.filter(
+          (candidate) => candidate.selected
+        );
         setAllCandidates(selectedCandidates);
       } catch (error) {
-        enqueueSnackbar("Failed to fetch data. Please try again.", { variant: "error" });
+        enqueueSnackbar("Failed to fetch data. Please try again.", {
+          variant: "error",
+        });
       }
     };
-    
 
     fetchAllCandidates();
   }, [candidates]);
-  
-  
+
   const handleFileChange = (e) => {
-    const allowedTypes = ["application/pdf", "application/msword", "image/png", "image/jpeg"];
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "image/png",
+      "image/jpeg",
+    ];
     const files = Array.from(e.target.files);
-  
+
     // Filter valid file types
-    const validFiles = files.filter(file => allowedTypes.includes(file.type));
-  
+    const validFiles = files.filter((file) => allowedTypes.includes(file.type));
+
     // Prevent duplicates
-    const uniqueFiles = validFiles.filter(file => 
-      !documents.some(doc => doc.file.name === file.name)
+    const uniqueFiles = validFiles.filter(
+      (file) => !documents.some((doc) => doc.file.name === file.name)
     );
-  
+
     if (uniqueFiles.length === 0) {
       enqueueSnackbar("No valid new files selected.", { variant: "warning" });
       return;
     }
-  
-    const filesWithMeta = uniqueFiles.map(file => ({
+
+    const filesWithMeta = uniqueFiles.map((file) => ({
       file,
       customName: file.name, // Default to original name
     }));
-  
-    setDocuments(prevDocs => [...prevDocs, ...filesWithMeta]);
+
+    setDocuments((prevDocs) => [...prevDocs, ...filesWithMeta]);
   };
 
   const handleDrop = (e) => {
@@ -364,7 +464,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     const files = Array.from(e.dataTransfer.files);
     addFiles(files);
   };
-  
+
   const removeFile = (index) => {
     setDocuments(documents.filter((_, i) => i !== index));
     enqueueSnackbar("File removed.", { variant: "info" });
@@ -372,7 +472,9 @@ const fetchCandidatePerformanceData = async (candidateId) => {
 
   const addFiles = (files) => {
     if (documents.length + files.length > 5) {
-      enqueueSnackbar("You can upload a maximum of 5 files.", { variant: "error" });
+      enqueueSnackbar("You can upload a maximum of 5 files.", {
+        variant: "error",
+      });
       return;
     }
     setDocuments([...documents, ...files]);
@@ -383,59 +485,91 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     setEmailBody(templates[templateKey].body);
   };
 
-  const handleInputChange = (e, setState, field) => {
-    const { value, selectionStart } = e.target;
+  const handleInputChange = (eventOrContent, setState, field) => {
+    // For regular inputs, eventOrContent is an event; for Quill, it’s a string
+    const value =
+      typeof eventOrContent === "string"
+        ? eventOrContent
+        : eventOrContent.target.value;
     setState(value);
-  
-    // Only apply placeholder logic to emailBody
-    if (field === "emailBody") {
-      const textBeforeCursor = value.substring(0, selectionStart);
-      if (textBeforeCursor.endsWith("[[")) {
+
+    if (field === "emailBody" && quillRef.current) {
+      const editor = quillRef.current.getEditor();
+      const selection = editor.getSelection();
+      if (!selection) return;
+
+      const insertionIndex = selection.index;
+      const textBeforeCursor = editor.getText(
+        Math.max(0, insertionIndex - 2),
+        2
+      );
+
+      if (textBeforeCursor === "[[") {
         setFilteredOptions(placeholders);
         setShowDropdown(true);
-  
-        // Get caret position for dropdown
-        const caretCoords = getCaretCoordinates(e.target, selectionStart);
-        const rect = e.target.getBoundingClientRect();
-  
+
+        // Get the local cursor bounds within the editor
+        const bounds = editor.getBounds(insertionIndex);
+
+        // Get the absolute position of the Quill container
+        // quillRef.current.container is the .ql-container element.
+        const containerRect =
+          quillRef.current.container.getBoundingClientRect();
+
+        // Calculate absolute page coordinates:
+        // Add container's top and left to bounds, and add page scroll offsets.
+        const absoluteTop = containerRect.top + bounds.top + window.scrollY;
+        const absoluteLeft = containerRect.left + bounds.left + window.scrollX;
+
+        // Optionally add a vertical offset (e.g. 30px) to show the dropdown below the cursor
         setDropdownPosition({
-          top: rect.top + caretCoords.top - e.target.scrollTop + window.scrollY - 100,
-          left: rect.left + caretCoords.left + window.scrollX,
+          top: absoluteTop + 30,
+          left: absoluteLeft,
         });
       } else {
         setShowDropdown(false);
       }
     }
   };
-  
+
   const handleSelectPlaceholder = (placeholder) => {
-    if (!textareaRef.current) return;
-  
-    const { selectionStart, selectionEnd } = textareaRef.current;
-  
-    // Only update emailBody, never subject
-    setEmailBody(
-      emailBody.substring(0, selectionStart - 2) +
-      placeholder +
-      emailBody.substring(selectionEnd)
-    );
-  
-    setShowDropdown(false);
-  
-    // Move cursor to after the inserted placeholder
+    if (!quillRef.current) return;
+
+    const editor = quillRef.current.getEditor();
+    const range = editor.getSelection();
+    if (!range) return;
+
+    let insertionIndex = range.index;
+
+    // Check if the last two characters before cursor are "[["
+    const textBeforeCursor = editor.getText(Math.max(0, insertionIndex - 2), 2);
+    if (textBeforeCursor === "[[") {
+      // Use Delta to remove "[[" and insert the placeholder
+      const delta = new Delta()
+        .retain(insertionIndex - 2) // Keep text before "[["
+        .delete(2) // Remove "[["
+        .insert(placeholder); // Insert the selected placeholder
+
+      editor.updateContents(delta);
+      editor.setSelection(insertionIndex - 2 + placeholder.length); // Move cursor after placeholder
+    } else {
+      // Just insert normally if "[[" is not detected
+      editor.insertText(insertionIndex, placeholder);
+      editor.setSelection(insertionIndex + placeholder.length);
+    }
+
+    setShowDropdown(false); // ✅ Ensure dropdown closes after selection
+
     setTimeout(() => {
-      textareaRef.current.selectionStart = selectionStart + placeholder.length - 2;
-      textareaRef.current.selectionEnd = selectionStart + placeholder.length - 2;
-      textareaRef.current.focus();
-    }, 0);
+      editor.focus(); // ✅ Refocus to avoid any loss of input
+    }, 100);
   };
-  
-  
+
   // Helper function to get caret position inside textarea
   const getCaretCoordinates = (textarea, position) => {
     const div = document.createElement("div");
     document.body.appendChild(div);
-  
+
     const computed = window.getComputedStyle(textarea);
     div.style.cssText = `
       position: absolute;
@@ -449,35 +583,35 @@ const fetchCandidatePerformanceData = async (candidateId) => {
       border: ${computed.border};
       line-height: ${computed.lineHeight};
     `;
-  
+
     // Copy text content up to cursor position
     const text = textarea.value.substring(0, position);
     div.textContent = text;
-  
+
     // Create a span at the end of the text to find cursor position
     const span = document.createElement("span");
     span.textContent = "​"; // Zero-width space to avoid extra width
     div.appendChild(span);
-  
+
     const { offsetTop: top, offsetLeft: left } = span;
     document.body.removeChild(div);
-  
+
     return { top, left };
   };
-  
+
   const handleClear = () => {
     setSubject("");
     setEmailBody("");
     setDocuments([]); // Clear uploaded files
   };
-  
+
   const handleSendMail = async () => {
     setLoading(true);
 
     // ✅ Prepare recipients list
-    const recipients = localCandidates.map(candidate => ({
-        candidateId: candidate.candidateId,
-        email: candidate.email
+    const recipients = localCandidates.map((candidate) => ({
+      candidateId: candidate.candidateId,
+      email: candidate.email,
     }));
 
     // ✅ Prepare FormData for file upload
@@ -487,62 +621,77 @@ const fetchCandidatePerformanceData = async (candidateId) => {
     formData.append("recipients", JSON.stringify(recipients));
 
     // ✅ Send `placeholderData` (CompanyName, OfficeAddress, CompanyEmail) to backend
-    formData.append("placeholderData", JSON.stringify({
+    formData.append(
+      "placeholderData",
+      JSON.stringify({
         CompanyName: placeholderData?.Header?.Name?.trim() || "",
         OfficeAddress: placeholderData?.Contact?.address?.trim() || "",
-        CompanyEmail: placeholderData?.Contact?.email?.trim() || ""
-    }));
+        CompanyEmail: placeholderData?.Contact?.email?.trim() || "",
+      })
+    );
 
     // ✅ Append files correctly
     documents.forEach(({ file }) => {
-        if (file && file.name) {
-            formData.append("documents", file, file.name);
-        } else {
-            console.warn("Skipping undefined file:", file);
-        }
+      if (file && file.name) {
+        formData.append("documents", file, file.name);
+      } else {
+        console.warn("Skipping undefined file:", file);
+      }
     });
 
     try {
-        const response = await fetch("http://localhost:5000/api/emails/send", {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-        });
+      const response = await fetch("http://localhost:5000/api/emails/send", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
 
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.message || "Failed to send email");
-        }
-            // ✅ Clear email fields after sending
-          setSubject("");
-          setEmailBody("");
-          setDocuments([]);
-        enqueueSnackbar("📧 Email sent successfully with attachments!", { variant: "success" });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send email");
+      }
+      // ✅ Clear email fields after sending
+      setSubject("");
+      setEmailBody("");
+      setDocuments([]);
+      enqueueSnackbar("📧 Email sent successfully with attachments!", {
+        variant: "success",
+      });
     } catch (error) {
-        console.error("❌ Error sending email:", error);
-        enqueueSnackbar(`❌ Error: ${error.message}`, { variant: "error" });
+      console.error("❌ Error sending email:", error);
+      enqueueSnackbar(`❌ Error: ${error.message}`, { variant: "error" });
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   const handleRemoveCandidate = (candidateId) => {
-    setLocalCandidates((prev) => prev.filter((c) => c.candidateId !== candidateId));
+    setLocalCandidates((prev) =>
+      prev.filter((c) => c.candidateId !== candidateId)
+    );
   };
-  
+
   if (!show) return null;
   return (
     <ModalOverlay>
       <ModalContent>
         <CloseButtonTop onClick={onClose}>&times;</CloseButtonTop>
         <TabsContainer>
-          {["Check List", "Send Email", "Manage Evaluator", ...(announcementConcluded ? ["Candidate Performance", "Add as User"] : [])].map(
-            (tab) => (
-              <Tab key={tab} active={activeTab === tab} onClick={() => setActiveTab(tab)}>
-                {tab}
-              </Tab>
-            )
-          )}
+          {[
+            "Check List",
+            "Manage Evaluator",
+            ...(announcementConcluded ? ["Candidate Performance"] : []),
+            "Send Email",
+            ...(announcementConcluded ? ["Add as User"] : []),
+          ].map((tab) => (
+            <Tab
+              key={tab}
+              active={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </Tab>
+          ))}
         </TabsContainer>
         <ContentContainer>
           {activeTab === "Check List" && (
@@ -561,12 +710,18 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   {localCandidates.map((candidate) => (
                     <CandidateItem key={candidate.candidateId}>
                       <span>{candidate.candidateId || "N/A"}</span>
-                      <span>{`${candidate.firstName || ""} ${candidate.surName || ""}`}</span>
+                      <span>{`${candidate.firstName || ""} ${
+                        candidate.surName || ""
+                      }`}</span>
                       <span>{candidate.email || "N/A"}</span>
                       <span className="fw-semibold text-dark">
                         {candidate.result ? "Yes" : "No"}
                       </span>
-                      <RemoveButton onClick={() => handleRemoveCandidate(candidate.candidateId)}>
+                      <RemoveButton
+                        onClick={() =>
+                          handleRemoveCandidate(candidate.candidateId)
+                        }
+                      >
                         Remove
                       </RemoveButton>
                     </CandidateItem>
@@ -582,63 +737,97 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               <Heading>SEND EMAIL</Heading>
               <hr id="title-line" className="mb-4" data-symbol="✈" />
 
-              <div className="mt-2"> {/* Added top spacing */}
-                {Object.keys(templates).map((key) => (
-                  <label
-                    key={key}
-                    style={{
-                      display: "block", // Ensures each template is on a new line
-                      fontSize: "14px", // Adjust font size
-                      fontWeight: "bold", // Make text bold
-                      letterSpacing: "1px", // Add space between capital letters
-                      padding: "8px 0", // Adds vertical spacing
-                      cursor: "pointer",
-                      marginLeft: "2rem",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="emailTemplate"
-                      onChange={() => handleTemplateSelect(key)}
-                      style={{ marginRight: "10px" }} // Adds space between radio and text
-                    />
-                    {key.replace(/([A-Z])/g, " $1").trim()} {/* Adds spacing between capital letters */}
-                  </label>
-                ))}
+              <div className="mt-2">
+                {Object.keys(templates)
+                  .filter((key) => key !== "JobOffer" || announcementConcluded)
+                  .map((key) => (
+                    <label
+                      key={key}
+                      style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        letterSpacing: "1px",
+                        padding: "8px 0",
+                        cursor: "pointer",
+                        marginLeft: "2rem",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="emailTemplate"
+                        onChange={() => handleTemplateSelect(key)}
+                        style={{ marginRight: "10px" }}
+                      />
+                      {key.replace(/([A-Z])/g, " $1").trim()}
+                    </label>
+                  ))}
               </div>
+
               <Input
                 type="text"
                 placeholder="Subject"
                 value={subject}
-                onChange={(e) => handleInputChange(e, setSubject, "subject")}
+                onChange={(e) => handleInputChange(e, setSubject, "subject")} // ✅ Pass event correctly
               />
 
-              <div>
-                <TextArea
-                  ref={textareaRef}
+              <div className="mb-5 pb-4" style={{ position: "relative" }}>
+                <ReactQuill
+                  ref={quillRef}
                   value={emailBody}
-                  onChange={(e) => handleInputChange(e, setEmailBody, "emailBody")}
-                  placeholder="User [[..]] for special functions..."
+                  placeholder="Use [[..]] for special functions..."
+                  modules={modules}
+                  
+                  style={{ height: "15rem" }}
+                  onChange={(content) => {
+                    // Update the state with the HTML content.
+                    setEmailBody(content);
+                    // Use the editor's plain text for placeholder detection.
+                    if (quillRef.current) {
+                      const editor = quillRef.current.getEditor();
+                      const plainText = editor.getText(); // plain text version
+                      const selection = editor.getSelection();
+                      let selectionStart = plainText.length;
+                      if (selection) {
+                        selectionStart = selection.index;
+                      }
+                      const textBeforeCursor = plainText.substring(
+                        0,
+                        selectionStart
+                      );
+                      if (textBeforeCursor.endsWith("[[")) {
+                        setFilteredOptions(placeholders);
+                        setShowDropdown(true);
+                        // Set a default dropdown position; adjust as needed.
+                        setDropdownPosition({ top: 100, left: 50 });
+                      } else {
+                        setShowDropdown(false);
+                      }
+                    }
+                  }}
                 />
+
                 {showDropdown && (
                   <ul
                     style={{
                       position: "absolute",
-                      top: dropdownPosition.top,
-                      left: dropdownPosition.left,
+                      top: `${dropdownPosition.top}px`,
+                      left: `${dropdownPosition.left}px`,
                       background: "white",
                       border: "1px solid #ccc",
-                      listStyle: "none",
-                      padding: "5px",
-                      zIndex: 10,
-                      width: "200px",
+                      borderRadius: "5px",
+                      padding: "8px",
+                      zIndex: 9999, // Make sure it's on top
                     }}
                   >
                     {filteredOptions.map((option) => (
                       <li
                         key={option}
-                        style={{ padding: "5px", cursor: "pointer" }}
-                        onClick={() => handleSelectPlaceholder(option)}
+                        style={{ padding: "8px", cursor: "pointer" }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectPlaceholder(option);
+                        }}
                       >
                         {option}
                       </li>
@@ -646,6 +835,7 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   </ul>
                 )}
               </div>
+
               <FileUploadContainer
                 className={dragging ? "dragging" : ""}
                 onDragOver={(e) => {
@@ -659,12 +849,16 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                 <input
                   type="file"
                   id="file-upload"
-                  name="documents" // ✅ Add name attribute
+                  name="documents"
                   multiple
                   onChange={handleFileChange}
                   style={{ display: "none" }}
                 />
-                <p>{dragging ? "Drop files here" : "Click or Drag files here (Max 5)"}</p>
+                <p>
+                  {dragging
+                    ? "Drop files here"
+                    : "Click or Drag files here (Max 5)"}
+                </p>
               </FileUploadContainer>
 
               <p
@@ -680,8 +874,10 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               <FileList>
                 {documents.map((file, index) => (
                   <FileItem key={index}>
-                    <span>{file.customName || file.name}</span> {/* ✅ Show as text instead of input */}
-                    <RemoveFileButton onClick={() => removeFile(index)}>Remove</RemoveFileButton>
+                    <span>{file.customName || file.name}</span>
+                    <RemoveFileButton onClick={() => removeFile(index)}>
+                      Remove
+                    </RemoveFileButton>
                   </FileItem>
                 ))}
               </FileList>
@@ -689,15 +885,20 @@ const fetchCandidatePerformanceData = async (candidateId) => {
               {loading ? (
                 <Loader />
               ) : (
-                <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                <div
+                  style={{ display: "flex", gap: "10px", marginTop: "15px" }}
+                >
                   <ClearButton onClick={handleClear}>Clear</ClearButton>
-                  <SendMailButton onClick={handleSendMail} disabled={!subject || !emailBody}>
+                  <SendMailButton
+                    onClick={handleSendMail}
+                    disabled={!subject || !emailBody}
+                  >
                     Send
                   </SendMailButton>
                 </div>
               )}
             </div>
-          )}    
+          )}
           {activeTab === "Manage Evaluator" && (
             <div>
               {/* Centered Title */}
@@ -727,7 +928,11 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   </div>
 
                   <div className="d-flex justify-content-between align-items-center">
-                    <h5 className={`fw-bold m-0 mt-4 ${assignedUsers.length >= 5 ? "text-danger" : ""}`}>
+                    <h5
+                      className={`fw-bold m-0 mt-4 ${
+                        assignedUsers.length >= 5 ? "text-danger" : ""
+                      }`}
+                    >
                       Assigned Evaluators [{assignedUsers.length}/5]
                     </h5>
                   </div>
@@ -740,25 +945,34 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                           className="d-flex justify-content-between align-items-center list-group-item p-2"
                           style={{ fontWeight: "600", color: "#212529" }}
                         >
-                          <span>{user.userId}: {user.fullName}</span>
+                          <span>
+                            {user.userId}: {user.fullName}
+                          </span>
                           {!announcementConcluded && (
-                            <button className="btn btn-danger btn-sm" onClick={() => removeUserFromDepartment(user)}>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => removeUserFromDepartment(user)}
+                            >
                               <i className="fas fa-trash"></i>
                             </button>
                           )}
                         </li>
                       ))
                     ) : (
-                      <li className="text-muted text-center list-group-item p-2">No assigned users.</li>
+                      <li className="text-muted text-center list-group-item p-2">
+                        No assigned users.
+                      </li>
                     )}
                   </ul>
 
                   {!announcementConcluded && (
-                    <button className="btn btn-success px-4 mt-4" onClick={handleSaveEvaluators}>
+                    <button
+                      className="btn btn-success px-4 mt-4"
+                      onClick={handleSaveEvaluators}
+                    >
                       Save
                     </button>
                   )}
-
                 </div>
 
                 {/* Available Users Table with Pagination */}
@@ -790,22 +1004,32 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                       <tbody>
                         {paginatedUsers.length > 0 ? (
                           paginatedUsers.map((user) => {
-                            const isAssigned = assignedUsers.some((u) => u.userId === user.userId);
+                            const isAssigned = assignedUsers.some(
+                              (u) => u.userId === user.userId
+                            );
                             return (
                               <tr key={user.userId}>
                                 <td>{user.userId}</td>
                                 <td>{user.fullName}</td>
-                                <td>{Math.floor(user.totalExperience)} years</td>
+                                <td>
+                                  {Math.floor(user.totalExperience)} years
+                                </td>
                                 <td className="text-center">
                                   <button
-                                    className={`btn btn-${isAssigned ? "secondary" : "success"} btn-sm`}
+                                    className={`btn btn-${
+                                      isAssigned ? "secondary" : "success"
+                                    } btn-sm`}
                                     onClick={() =>
                                       isAssigned
                                         ? removeUserFromDepartment(user)
                                         : assignUserToDepartment(user)
                                     }
                                   >
-                                    <i className={`fas fa-${isAssigned ? "check" : "plus"}`}></i>
+                                    <i
+                                      className={`fas fa-${
+                                        isAssigned ? "check" : "plus"
+                                      }`}
+                                    ></i>
                                   </button>
                                 </td>
                               </tr>
@@ -813,7 +1037,9 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                           })
                         ) : (
                           <tr>
-                            <td colSpan="4" className="text-center text-muted">No users found.</td>
+                            <td colSpan="4" className="text-center text-muted">
+                              No users found.
+                            </td>
                           </tr>
                         )}
                       </tbody>
@@ -824,7 +1050,9 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <button
                       className="btn btn-outline-primary"
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                     >
                       Prev
@@ -834,7 +1062,9 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                     </span>
                     <button
                       className="btn btn-outline-primary"
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                     >
                       Next
@@ -859,47 +1089,76 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   <option value="">-- Select Candidate --</option>
                   {localCandidates
                     .slice() // Create a copy to avoid mutating the state
-                    .sort((a, b) => (b.candidatePerformance || 0) - (a.candidatePerformance || 0)) // Sort descending
+                    .sort(
+                      (a, b) =>
+                        (b.candidatePerformance || 0) -
+                        (a.candidatePerformance || 0)
+                    ) // Sort descending
                     .map((candidate) => (
-                      <option key={candidate.candidateId} value={candidate.candidateId}>
+                      <option
+                        key={candidate.candidateId}
+                        value={candidate.candidateId}
+                      >
                         {`${candidate.candidateId} : ${candidate.firstName} ${candidate.surName}`}
-                        {candidate.result ? " ✅" : ""}  
-                        {candidate.candidatePerformance !== undefined ? ` (${candidate.candidatePerformance}%)` : ""}
+                        {candidate.result ? " ✅" : ""}
+                        {candidate.candidatePerformance !== undefined
+                          ? ` (${candidate.candidatePerformance}%)`
+                          : ""}
                       </option>
                     ))}
                 </select>
                 <button
-                  className={`btn ${selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "btn-danger" : "btn-primary"} px-4`}
+                  className={`btn ${
+                    selectedCandidateId &&
+                    localCandidates.find(
+                      (c) => c.candidateId === selectedCandidateId
+                    )?.result
+                      ? "btn-danger"
+                      : "btn-primary"
+                  } px-4`}
                   style={{ height: "42px", minWidth: "120px" }}
                   onClick={handleOpenApprovalModal}
                   disabled={!selectedCandidateId}
                 >
-                  {selectedCandidateId && localCandidates.find(c => c.candidateId === selectedCandidateId)?.result ? "Declined " : "Hire"}
+                  {selectedCandidateId &&
+                  localCandidates.find(
+                    (c) => c.candidateId === selectedCandidateId
+                  )?.result
+                    ? "Declined "
+                    : "Hire"}
                 </button>
               </div>
-
 
               {/* When no candidate is selected, show graph options */}
               {!selectedCandidateId && (
                 <div>
-                  <div className="graph-toggle" style={{ marginBottom: '20px' }}>
-                  <button 
-                    className={`btn ${graphView === "all" ? "btn-primary" : "btn-secondary"} me-2`}
-                    onClick={() => setGraphView(graphView === "all" ? "checked" : "all")}
+                  <div
+                    className="graph-toggle"
+                    style={{ marginBottom: "20px" }}
                   >
-                    {graphView === "all" ? "Only Checked Candidates" : "All Candidates"}
-                  </button>
+                    <button
+                      className={`btn ${
+                        graphView === "all" ? "btn-primary" : "btn-secondary"
+                      } me-2`}
+                      onClick={() =>
+                        setGraphView(graphView === "all" ? "checked" : "all")
+                      }
+                    >
+                      {graphView === "all"
+                        ? "Only Checked Candidates"
+                        : "All Candidates"}
+                    </button>
                   </div>
                   {graphView === "all" && (
-                    <BellCurveChart 
-                      candidates={allCandidates} 
-                      title="All Candidates Performance Distribution" 
+                    <BellCurveChart
+                      candidates={allCandidates}
+                      title="All Candidates Performance Distribution"
                     />
                   )}
                   {graphView === "checked" && (
-                    <BellCurveChart 
-                      candidates={localCandidates} 
-                      title="Checked Candidates Performance Distribution" 
+                    <BellCurveChart
+                      candidates={localCandidates}
+                      title="Checked Candidates Performance Distribution"
                     />
                   )}
                 </div>
@@ -915,50 +1174,92 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                   />
                   <div className="mt-5 p-3 border rounded bg-light shadow-sm record-container">
                     <h4 className="text-dark fw-bold mb-3 d-flex align-items-center">
-                      <FaHistory className="me-2 text-secondary" size={20} /> Previous Performance Records
+                      <FaHistory className="me-2 text-secondary" size={20} />{" "}
+                      Previous Performance Records
                     </h4>
-                    {previousPerformanceData[selectedCandidateId]?.length > 0 ? (
+                    {previousPerformanceData[selectedCandidateId]?.length >
+                    0 ? (
                       <div className="d-flex flex-column gap-2">
                         {previousPerformanceData[selectedCandidateId]
-                          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                          .sort(
+                            (a, b) =>
+                              new Date(b.createdAt) - new Date(a.createdAt)
+                          )
                           .map((record, index) => (
-                            <div className="card p-3 shadow-sm border rounded bg-white" key={index}>
+                            <div
+                              className="card p-3 shadow-sm border rounded bg-white"
+                              key={index}
+                            >
                               <div className="d-flex justify-content-between align-items-center mb-2">
                                 <h5 className="card-title text-dark fw-bold m-0">
-                                  <FaFileAlt className="me-2 text-secondary" size={16} /> {record.recordName.toUpperCase()}
+                                  <FaFileAlt
+                                    className="me-2 text-secondary"
+                                    size={16}
+                                  />{" "}
+                                  {record.recordName.toUpperCase()}
                                 </h5>
                                 <span className="text-muted fs-6">
-                                  <FaCalendarAlt className="me-1 text-secondary" size={14} /> {new Date(record.createdAt).toLocaleString()}
+                                  <FaCalendarAlt
+                                    className="me-1 text-secondary"
+                                    size={14}
+                                  />{" "}
+                                  {new Date(record.createdAt).toLocaleString()}
                                 </span>
                               </div>
                               <hr className="my-2" />
                               <div className="mb-1">
                                 <p className="mb-1 fs-5 d-flex align-items-center">
                                   <strong className="text-primary d-flex align-items-center">
-                                    <FaChartBar className="me-2 text-primary" size={18} /> Assessment:
-                                  </strong> 
-                                  <span className="fw-semibold ms-2 text-dark">{record.candidateAssessment} [{record.averageScore}%]</span>
+                                    <FaChartBar
+                                      className="me-2 text-primary"
+                                      size={18}
+                                    />{" "}
+                                    Assessment:
+                                  </strong>
+                                  <span className="fw-semibold ms-2 text-dark">
+                                    {record.candidateAssessment} [
+                                    {record.averageScore}%]
+                                  </span>
                                 </p>
                               </div>
                               <div className="mb-2">
                                 <p className="mb-1 fs-5 d-flex align-items-center">
                                   <strong className="text-muted d-flex align-items-center">
-                                    <FaCommentDots className="me-2 text-muted" size={18} /> Remarks:
-                                  </strong> 
-                                  <span className="fw-semibold ms-2 text-dark">{record.remarks}</span>
+                                    <FaCommentDots
+                                      className="me-2 text-muted"
+                                      size={18}
+                                    />{" "}
+                                    Remarks:
+                                  </strong>
+                                  <span className="fw-semibold ms-2 text-dark">
+                                    {record.remarks}
+                                  </span>
                                 </p>
                               </div>
                               <div className="mt-2">
                                 <h5 className="text-dark fw-bold d-flex align-items-center">
-                                  <FaTasks className="me-2 text-secondary" size={16} /> EVALUATION CRITERIA
+                                  <FaTasks
+                                    className="me-2 text-secondary"
+                                    size={16}
+                                  />{" "}
+                                  EVALUATION CRITERIA
                                 </h5>
                                 <ul className="list-group list-group-flush mt-1 criteria-list">
                                   {record.criteria.map((crit, idx) => (
-                                    <li key={idx} className="list-group-item d-flex justify-content-between align-items-center px-3 py-2 bg-light border rounded shadow-sm">
+                                    <li
+                                      key={idx}
+                                      className="list-group-item d-flex justify-content-between align-items-center px-3 py-2 bg-light border rounded shadow-sm"
+                                    >
                                       <span className="fs-6 fw-semibold d-flex align-items-center text-dark">
-                                        <FaCheckCircle className="me-2 text-success" size={18} /> {crit.type}
+                                        <FaCheckCircle
+                                          className="me-2 text-success"
+                                          size={18}
+                                        />{" "}
+                                        {crit.type}
                                       </span>
-                                      <span className="badge bg-secondary rounded-pill fs-6 px-3 py-1">{crit.score}/100</span>
+                                      <span className="badge bg-secondary rounded-pill fs-6 px-3 py-1">
+                                        {crit.score}/100
+                                      </span>
                                     </li>
                                   ))}
                                 </ul>
@@ -968,7 +1269,11 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                       </div>
                     ) : (
                       <p className="text-muted text-center fs-5 fw-bold mt-3">
-                        <FaExclamationCircle className="me-2 text-danger" size={18} /> No data available for candidate
+                        <FaExclamationCircle
+                          className="me-2 text-danger"
+                          size={18}
+                        />{" "}
+                        No data available for candidate
                       </p>
                     )}
                   </div>
@@ -989,19 +1294,28 @@ const fetchCandidatePerformanceData = async (candidateId) => {
                 >
                   <option value="">-- Choose New Candidate --</option>
                   {localCandidates
-                    .filter(candidate => candidate.result)
+                    .filter((candidate) => candidate.result)
                     .map((candidate) => (
-                      <option key={candidate.candidateId} value={candidate.candidateId}>
-                        {candidate.candidateId + " \u00A0:\u00A0\u00A0 " + candidate.firstName + " " + candidate.surName}
+                      <option
+                        key={candidate.candidateId}
+                        value={candidate.candidateId}
+                      >
+                        {candidate.candidateId +
+                          " \u00A0:\u00A0\u00A0 " +
+                          candidate.firstName +
+                          " " +
+                          candidate.surName}
                       </option>
                     ))}
                 </select>
               </div>
 
               {/* ✅ Pass Updated Selected Candidate to Form */}
-              <AddUserForm 
-                selectedNewCandidateId={selectedNewCandidateId} 
-                handleAddUser={() => console.log("User added:", selectedNewCandidateId)} 
+              <AddUserForm
+                selectedNewCandidateId={selectedNewCandidateId}
+                handleAddUser={() =>
+                  console.log("User added:", selectedNewCandidateId)
+                }
               />
             </div>
           )}
@@ -1127,7 +1441,6 @@ const Heading = styled.h2`
   color: #333;
 `;
 
-
 const RemoveButton = styled.button`
   background: #ff4d4d;
   color: white;
@@ -1179,7 +1492,7 @@ const FileUploadContainer = styled.div`
   cursor: pointer;
   background: #f9f9f9;
   transition: background 0.3s;
-  
+
   &:hover {
     background: #eef6ff;
   }
@@ -1261,106 +1574,118 @@ const Loader = styled.div`
   height: 30px;
   animation: spin 1s linear infinite;
   margin: 10px auto;
-  
+
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 `;
 
 const templates = {
-  InterviewInvitation: {
-    subject: "Interview Invitation – [[CompanyName]]",
-    body: `Hello [[CandidateName]],  
-
-We are pleased to invite you for an interview for the [[JobTitle]] position at [[CompanyName]].  
-
-**Interview Details:**  
-Date: [InsertDate]  
-Time: [InsertTime]  
-Location: [[OfficeAddress]] / [VideoCallLink]
-Additional Information: [AdditionalDetails]  
-
-Please confirm your availability by responding to this email at your earliest convenience. If you have any questions, feel free to reach out.  
-
-Best regards,  
-[[YourName]]  
-[[YourPosition]]  
-[[CompanyName]]  
-[[CompanyEmail]]`
-  },
-
   JobOffer: {
-    subject: "Employment Offer – [[CompanyName]]",
-    body: `Hello [[CandidateName]],  
-
-We are pleased to offer you the position of [[JobTitle]] at [[CompanyName]]. We were impressed with your qualifications and believe you will be a great addition to our team.  
-
-**Offer Details:**  
-Position: [[JobTitle]]  
-Department: [[DepartmentName]]  
-Start Date: [StartDate]  
-Compensation: [SalaryDetails]  
-Benefits: [BenefitsDetails]  
-
-Please find the attached offer letter with further details. Kindly review and confirm your acceptance by [DeadlineDate]. If you have any questions, feel free to reach out.  
-
-Best regards,  
-[[YourName]]  
-[[YourPosition]]  
-[[CompanyName]]  
-[[CompanyEmail]]`
+    subject: "Job Offer for [[JobTitle]] - [[CompanyName]]",
+    body: `
+      <p>Hello [[CandidateName]],</p>
+      <br>
+      <p>We are pleased to offer you the position of <strong>[[JobTitle]]</strong> at <strong>[[CompanyName]]</strong>. After reviewing your experience and skills, we believe you would be an excellent fit for our team.</p>
+      <br>
+      <p><strong>Offer Details:</strong></p>
+      <ul>
+        <li><strong>Position:</strong> [[JobTitle]]</li>
+        <li><strong>Department:</strong> [DepartmentName]</li>
+        <li><strong>Start Date:</strong> [StartDate]</li>
+        <li><strong>Compensation:</strong> [SalaryDetails]</li>
+        <li><strong>Benefits:</strong> [BenefitsDetails]</li>
+      </ul>
+      <br>
+      <p>Please find your official offer letter attached. Kindly review it and confirm your acceptance by <strong>[DeadlineDate]</strong>. To accept the offer, please click the link below: <strong>[[JobConfirmationLink]]</strong></p>
+      <br>
+      <p>If you have any questions, feel free to reach out. We look forward to welcoming you to our team.</p>
+      <br>
+      <p>Best regards,</p>
+      <p>[[YourName]]<br>
+      [[YourPosition]]<br>
+      [[CompanyEmail]]</p>
+    `,
   },
-
+  InterviewInvitation: {
+    subject: "Interview Invitation - [[CompanyName]]",
+    body: `
+      <p>Hello [[CandidateName]],</p>
+      <br>
+      <p>We are pleased to invite you for an interview for the <strong>[[JobTitle]]</strong> position at <strong>[[CompanyName]]</strong>. We were impressed with your application and look forward to learning more about you.</p>
+      <br>
+      <p><strong>Interview Details:</strong></p>
+      <ul>
+        <li><strong>Date:</strong> [InsertDate]</li>
+        <li><strong>Time:</strong> [InsertTime]</li>
+        <li><strong>Location:</strong> [[OfficeAddress]] / [VideoCallLink]</li>
+        <li><strong>Additional Information:</strong> [AdditionalDetails]</li>
+      </ul>
+      <br>
+      <p>Please confirm your availability by replying to this email at your earliest convenience. We look forward to speaking with you.</p>
+      <br>
+      <p>Best regards,</p>
+      <p>[[YourName]]<br>
+      [[YourPosition]]<br>
+      [[CompanyEmail]]</p>
+    `,
+  },
   RejectionLetter: {
-    subject: "Application Status Update – [[CompanyName]]",
-    body: `Hello [[CandidateName]],  
-
-Thank you for your interest in the [[JobTitle]] position at [[CompanyName]]. We appreciate the time and effort you put into the application and interview process.  
-
-After careful consideration, we have decided to proceed with another candidate. This decision was based on a highly competitive selection process.  
-
-We encourage you to apply for future opportunities at [[CompanyName]], as we were impressed by your skills and experience. We appreciate your time and wish you success in your job search.  
-
-Best regards,  
-[[YourName]]  
-[[YourPosition]]  
-[[CompanyName]]  
-[[CompanyEmail]]`
+    subject: "Application Update - [[CompanyName]]",
+    body: `
+      <p>Hello [[CandidateName]],</p>
+      <br>
+      <p>Thank you for your interest in the <strong>[[JobTitle]]</strong> position at <strong>[[CompanyName]]</strong>. We appreciate the time and effort you put into the application and interview process. After careful consideration, we have decided to move forward with another candidate. This decision was difficult, as we received applications from many talented professionals.</p>
+      <br>
+      <p>We sincerely appreciate your interest in [[CompanyName]] and encourage you to apply for future opportunities that align with your skills.</p>
+      <br>
+      <p>We wish you the best in your job search and career endeavors.</p>
+      <br>
+      <p>Best regards,</p>
+      <p>[[YourName]]<br>
+      [[YourPosition]]<br>
+      [[CompanyEmail]]</p>
+    `,
   },
-
   FollowUpAfterInterview: {
-    subject: "Follow-up on Your Interview – [[CompanyName]]",
-    body: `Hello [[CandidateName]],  
-
-Thank you for meeting with us to discuss the [[JobTitle]] position at [[CompanyName]]. It was a pleasure learning about your experience and skills.  
-
-We are currently evaluating all candidates and will provide an update soon. In the meantime, if you have any questions, feel free to reach out.  
-
-We appreciate your interest in joining [[CompanyName]] and will be in touch shortly.  
-
-Best regards,  
-[[YourName]]  
-[[YourPosition]]  
-[[CompanyName]]  
-[[CompanyEmail]]`
+    subject: "Thank You for Interviewing with [[CompanyName]]",
+    body: `
+      <p>Hello [[CandidateName]],</p>
+      <br>
+      <p>Thank you for taking the time to interview for the <strong>[[JobTitle]]</strong> position at <strong>[[CompanyName]]</strong>. It was a pleasure learning more about your experience and skills.</p>
+      <br>
+      <p>We are currently reviewing all candidates and will provide an update as soon as possible. If you have any questions in the meantime, please do not hesitate to reach out.</p>
+      <br>
+      <p>We appreciate your interest in [[CompanyName]] and look forward to staying in touch.</p>
+      <br>
+      <p>Best regards,</p>
+      <p>[[YourName]]<br>
+      [[YourPosition]]<br>
+      [[CompanyEmail]]</p>
+    `,
   },
-
   Others: {
-    subject: "- [[CompanyName]]", // No predefined subject
-    body: `Greetings [[CandidateName]],  
-
-I hope this email finds you well.  
-
-[Insert your message here.]  
-
-Best regards,  
-[[YourName]]  
-[[YourPosition]]  
-[[CompanyName]]  
-[[CompanyEmail]]`
-  }
+    subject: "Message from [[CompanyName]]",
+    body: `
+      <p>Hello [[CandidateName]],</p>
+      <br>
+      <p>I hope this email finds you well.</p>
+      <br>
+      <p>[Insert your message here.]</p>
+      <br>
+      <p>Best regards,</p>
+      <p>[[YourName]]<br>
+      [[YourPosition]]<br>
+      [[CompanyEmail]]</p>
+    `,
+  },
 };
+
 
 
 export default OptionModal;

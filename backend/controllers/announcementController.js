@@ -2,87 +2,118 @@ import Announcement from "../models/announcementModel.js";
 import Department from "../models/departmentsModel.js";
 import User from "../models/userModel.js";
 import Candidate from "../models/candidateModel.js";
+import bccLinkTextSendEmail from "../utils/bccLinkTextSendEmail.js";
+import { sendAnnouncement as sendBotAnnouncement } from "../discordbot/bot.js"; // Corrected import
 import sendEmail from "../utils/linkTextSendEmail.js"; 
 
 export const createAnnouncement = async (req, res) => {
   try {
-    // Retrieve createdBy from session
     const createdBy = req.session.userId;
     if (!createdBy) {
       return res.status(401).json({ error: "Unauthorized: Please log in to create an announcement." });
     }
 
-    // Destructure fields from req.body, including jobDescription
+    // 🔍 Fetch Active User Details
+    const user = await User.findOne({ userId: createdBy, activateAccount: true }, "userId userEmail fullName");
+    if (!user) {
+      return res.status(404).json({ error: "User not found or account not activated!" });
+    }
+
+    const creatorName = user.fullName; // ✅ Get Full Name
+    const creatorEmail = user.userEmail; // ✅ Get userEmail
+
     const {
       announcementTitle,
       announcementDescription,
       announcementTag,
       announcementScheduleTime,
       announcementPublic,
-      sendDiscord = false,
-      sendEmail = false,
+      sendDiscord,
+      sendEmail,
       jobPosition,
       jobType,
-      jobDescription,  // ✅ New field
+      jobDescription,
       salaryRange,
       requiredExperience,
       skillsRequired,
       educationQualification,
       totalVacancy,
       applicationDeadline,
-      departmentId
+      departmentId,
     } = req.body;
 
-    // Validate required fields
     if (!announcementTitle || !announcementDescription || !announcementTag) {
       return res.status(400).json({ error: "All required fields must be filled!" });
     }
-    
-    const scheduleTime = announcementScheduleTime
-      ? new Date(announcementScheduleTime)
-      : new Date(); // ✅ Defaults to current time if missing
-    
+
+    const scheduleTime = announcementScheduleTime ? new Date(announcementScheduleTime) : new Date();
     if (isNaN(scheduleTime.getTime())) {
       return res.status(400).json({ error: "Invalid schedule time format." });
     }
-    
 
-    // Convert announcementPublic to Boolean
     const isPublic = Boolean(announcementPublic);
 
-    // Create the announcement object
+    // ✅ Save announcement
     const newAnnouncement = new Announcement({
       announcementTitle,
       announcementDescription,
       announcementTag,
       announcementPublic: isPublic,
-      announcementScheduleTime: scheduleTime.toISOString(), // ✅ Uses default if missing
+      announcementScheduleTime: scheduleTime.toISOString(),
       announcementSend: { sendDiscord, sendEmail },
       createdBy,
+      ...(isPublic && {
+        jobPosition,
+        jobType,
+        jobDescription,
+        salaryRange,
+        requiredExperience,
+        skillsRequired: skillsRequired ? skillsRequired.split(",").map(s => s.trim()).filter(s => s) : [],
+        educationQualification,
+        totalVacancy,
+        applicationDeadline,
+        departmentId,
+      }),
     });
 
-    // Add job details only if the announcement is public
-    if (isPublic) {
-      newAnnouncement.jobPosition = jobPosition || null;
-      newAnnouncement.jobType = jobType || null;
-      newAnnouncement.jobDescription = jobDescription || null; // ✅ Store job description
-      newAnnouncement.salaryRange = salaryRange || { currency: null, min: null, max: null };
-      newAnnouncement.requiredExperience = requiredExperience || null;
-      newAnnouncement.skillsRequired = skillsRequired 
-        ? skillsRequired.split(",").map(s => s.trim()).filter(s => s) 
-        : [];
-      newAnnouncement.educationQualification = educationQualification || null;
-      newAnnouncement.totalVacancy = totalVacancy ? Number(totalVacancy) : null;
-      newAnnouncement.applicationDeadline = applicationDeadline 
-        ? new Date(applicationDeadline).toISOString() 
-        : null;
-      newAnnouncement.departmentId = departmentId || null;
+    const savedAnnouncement = await newAnnouncement.save();
+
+    // ✅ Format for Discord
+    const formattedTitle = `**${announcementTitle.toUpperCase()}**`;
+    const announcementLink = "http://localhost:3000/PublicAnnouncement";
+
+    const finalDiscordMessage = `
+      🚀🚀 **NEW ANNOUNCEMENT** 🚀🚀
+      👤 **Created by:** ${creatorName} (${creatorEmail})
+      
+      🔗 [View More](${announcementLink})
+    `;
+
+    // ✅ Send to Discord
+    if (sendDiscord) {
+      await sendBotAnnouncement(formattedTitle, finalDiscordMessage);
     }
 
-    // Save to the database
-    await newAnnouncement.save();
-    res.status(201).json({ message: "Announcement created successfully!", data: newAnnouncement });
+    // ✅ Send Email Notification using BCC
+    if (sendEmail) {
+      const activeUsers = await User.find({ activateAccount: true }, "userEmail");
+      const activeEmails = activeUsers.map(user => user.userEmail);
 
+      if (activeEmails.length > 0) {
+        const emailSubject = `📢 New Announcement: ${announcementTitle}`;
+        const emailHtml = `
+          <h2>New Announcement Created!</h2>
+          <p><strong>Title:</strong> ${announcementTitle}</p>
+          <p><strong>Created By:</strong> ${creatorName} (${creatorEmail})</p>
+          <p><a href="${announcementLink}" style="color: blue; text-decoration: underline;">🔗 View Announcement</a></p>
+        `;
+
+        // ✅ Send a single email using BCC
+        await bccLinkTextSendEmail(null, emailSubject, emailHtml, activeEmails);
+      }
+    }
+
+    res.status(201).json({ message: "✅ Announcement created successfully!", data: savedAnnouncement });
   } catch (error) {
     console.error("❌ Error creating announcement:", error);
     res.status(500).json({ error: "Error creating announcement" });
@@ -234,13 +265,15 @@ export const getAnnouncementById = async (req, res) => {
 // ✅ Get Public Announcements with User Details
 export const getPublicAnnouncements = async (req, res) => {
   try {
-    const publicAnnouncements = await Announcement.find({ announcementPublic: true });
+    // Fetch and sort announcements by the createdAt field in descending order
+    const publicAnnouncements = await Announcement.find({ announcementPublic: true })
+      .sort({ createdAt: -1 }); // -1 means descending order, latest first
+
     res.status(200).json(publicAnnouncements);
   } catch (error) {
     res.status(500).json({ error: "Error fetching public announcements" });
   }
 };
-
 
 // ✅ Get Private Announcements with User Details
 export const getPrivateAnnouncements = async (req, res) => {

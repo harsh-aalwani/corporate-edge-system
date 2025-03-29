@@ -44,7 +44,7 @@ announcementSchema.pre("save", async function (next) {
   if (!this.announcementId) {
     try {
       const lastAnnouncement = await this.constructor.findOne().sort({ _id: -1 });
-      const lastNumber = lastAnnouncement
+      const lastNumber = lastAnnouncement?.announcementId
         ? parseInt(lastAnnouncement.announcementId.replace("AN", ""), 10) || 0
         : 0;
       this.announcementId = `AN${lastNumber + 1}`;
@@ -56,6 +56,7 @@ announcementSchema.pre("save", async function (next) {
     next();
   }
 });
+
 
 const Announcement = mongoose.model("Announcement", announcementSchema);
 export default Announcement;

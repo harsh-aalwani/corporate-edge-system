@@ -51,6 +51,11 @@
 }
 
 hr#title-line {
+  background: black;
+  width: 100%;
+  top: 1px;
+}
+hr#title-line {
   @include background-image(linear-gradient(left, black, white));
   &:before {
     left: 90%;

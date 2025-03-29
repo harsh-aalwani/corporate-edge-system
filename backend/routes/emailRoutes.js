@@ -1,22 +1,50 @@
 import express from "express";
 import { sendEmails } from "../controllers/emailController.js";
 import multer from "multer";
+import fs from "fs";
+import path from "path";
 
 const router = express.Router();
 
-// Multer setup for file uploads (stores files in "uploads" folder)
+// 📂 Define the upload directory
+const uploadDir = "uploads/Candidate/emails";
+
+// ✅ Ensure the directory exists before uploading files
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 🛠 Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/Candidate/emails"); // Save files in 'uploads' directory
+    cb(null, uploadDir); // Use the pre-validated directory
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`); // Unique filename
+    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, "_")}`); // Prevents space issues
   }
 });
 
-const upload = multer({ storage });
+// 📌 Multer upload middleware (limits file size and count)
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max per file
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPG, PNG, and PDF files are allowed!"));
+    }
+  }
+});
 
-// Email sending route (accepts email data & file attachments)
-router.post("/send", upload.array("documents", 5), sendEmails);
+// 📧 Email sending route (accepts email data & up to 5 attachments)
+router.post("/send", upload.array("documents", 5), async (req, res, next) => {
+  try {
+    await sendEmails(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

@@ -25,6 +25,7 @@ import JobAnnouncement from "./components/Guest/JobAnnouncement";
 import JobVacancy from "./components/Guest/JobVacancy";
 import Policy from "./components/Guest/Policy";
 import DetailPage from "./components/Guest/DetailPage";
+import AnnouncementDetail from "./components/Guest/AnnouncementDetail";
 
 // SuperAdmin Modules
 import SuperAdminDashboard from "./pages/SuperAdmin/Dashboard";
@@ -199,6 +200,7 @@ const App = () => {
             <Route path="/JobApplicationForm" element={<JobVacancy />} />
             <Route path="/Policy" element={<Policy />} />
             <Route path="/DetailPage" element={<DetailPage />} />
+            <Route path="/AnnouncementDetail/:id" element={<AnnouncementDetail />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/EvaluatorLogin" element={<CandidateEvaluatorLogin />} />
@@ -474,7 +476,7 @@ const App = () => {
                     case "R1":
                       return <SuperAdminEditDepartments />;
                     case "R2":
-                      return <SystemAdminAddAnnouncment />;
+                      return <SystemAdminEditDepartments />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -734,23 +736,6 @@ const App = () => {
                   switch (userRole) {
                     case "R2":
                       return <SystemAdminAnnouncementList />;
-                    default:
-                      return <Navigate to="/login" />;
-                  }
-                }}
-              />
-            }
-          />
-          <Route
-            path="/SYEditAnnouncement/:announcementIds"
-            element={
-              <ProtectedRoute
-                requiredRoles={["R1", "R2", "R3"]}
-                Component={() => {
-                  const userRole = getUserRoleCookie();
-                  switch (userRole) {
-                    case "R2":
-                      return <SystemAdminEditAnnouncements />;
                     default:
                       return <Navigate to="/login" />;
                   }

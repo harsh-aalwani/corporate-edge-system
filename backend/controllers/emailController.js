@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import sendEmail from "../utils/multiSendEmail.js";
+import linkTextSendEmail from "../utils/linkTextSendEmail.js";
 import Candidate from "../models/candidateModel.js";
 import User from "../models/userModel.js";
 import Department from "../models/departmentsModel.js"; // ✅ Import Department Model
@@ -38,11 +38,11 @@ const sendEmails = async (req, res) => {
             "YourPosition": sender.userDesignation || "[YourPosition Not Found]",
         };
 
-        // ✅ Process attachments
-        const attachments = req.files?.map(file => {
-            const filePath = path.resolve("uploads/Candidate/emails", file.filename);
-            return fs.existsSync(filePath) ? { filename: file.originalname, path: filePath } : null;
-        }).filter(Boolean) || [];
+        // ✅ Process attachments correctly
+        const attachments = req.files?.map(file => ({
+            filename: file.originalname,
+            path: path.resolve("uploads/Candidate/emails", file.filename),
+        })) || [];
 
         // ✅ Iterate through recipients and process placeholders server-side
         for (const recipient of parsedRecipients) {
@@ -62,13 +62,17 @@ const sendEmails = async (req, res) => {
                 }
             }
 
+            // ✅ Generate a job confirmation link dynamically
+            const jobConfirmationLink = `http://localhost:3000/CandidateConfirmation?candidateId=${candidate.candidateId}`;
+
             // ✅ Candidate Data for Placeholder Replacement
             const candidateDetails = {
                 "CandidateName": candidate.firstName && candidate.surName
                     ? `${candidate.firstName} ${candidate.surName}`
                     : "[CandidateName Not Found]",
                 "JobTitle": candidate.position || "[JobTitle Not Found]",
-                "DepartmentName": departmentName, // ✅ Now replacing `[[DepartmentName]]`
+                "DepartmentName": departmentName,
+                "JobConfirmationLink": `<a href="${jobConfirmationLink}" target="_blank">Accept now</a>`
             };
 
             // ✅ Company & Contact Information from `placeholderData`
@@ -85,8 +89,8 @@ const sendEmails = async (req, res) => {
             const finalSubject = replacePlaceholders(subject, allPlaceholders);
             const finalEmailBody = replacePlaceholders(emailBody, allPlaceholders);
 
-            // ✅ Send email **sequentially** (await)
-            await sendEmail(recipient.email, finalSubject, finalEmailBody, attachments);
+            // ✅ Send email **with correct parameters**
+            await linkTextSendEmail(recipient.email, finalSubject, finalEmailBody, finalEmailBody, attachments);
             console.log(`✅ Email sent to: ${recipient.email}`);
         }
 
