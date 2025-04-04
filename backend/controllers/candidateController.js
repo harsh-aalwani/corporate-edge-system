@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import axios from "axios";
 import FormData from "form-data";
 import Candidate from "../models/candidateModel.js";
@@ -203,7 +204,7 @@ export const getCandidateList = async (req, res) => {
     // Find candidates matching job position and department
     const candidates = await Candidate.find(
       { position: jobPosition, departmentId: departmentId },
-      "candidateId firstName fatherName surName email phone dob age nativePlace nationality candidatePerformance gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result recruited candidateEvaluation detailedEvaluation"
+      "candidateId firstName fatherName surName email phone dob confirmationStatus age nativePlace nationality candidatePerformance gender maritalStatus languagesKnown candidateDocuments candidatePicture presentAddress permanentAddress educationQualification position departmentId skills specialization salary lastWorkPlace yearsOfExperience addressOfWorkPlace responsibilities referenceContact totalYearsOfExperience confirmInformation announcementId selected result recruited candidateEvaluation detailedEvaluation pastEmails"
     );
 
     // Convert file paths to URLs
@@ -328,6 +329,11 @@ export const toggleApproval = async (req, res) => {
 
     // ✅ Toggle `result` field (Approve/Rescind)
     candidate.result = !candidate.result;
+
+    // ✅ Reset `confirmationDeadline` and `confirmationStatus`
+    candidate.confirmationDeadline = null;
+    candidate.confirmationStatus = "No";
+
     await candidate.save();
 
     res.status(200).json({
@@ -337,5 +343,98 @@ export const toggleApproval = async (req, res) => {
   } catch (error) {
       console.error("Error updating candidate status:", error);
       res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Helper function to check if the confirmation deadline is still valid
+const isDeadlineValid = (deadline) => {
+  if (!deadline) return false; // No deadline set
+  const currentDate = new Date();
+  const deadlineDate = new Date(deadline);
+  return currentDate <= deadlineDate;
+};
+
+export const searchCandidate = async (req, res) => {
+  try {
+    const { email, candidateId, searchId } = req.body;
+
+    // Validate `searchId` as an ObjectId (if provided)
+    if (searchId && !mongoose.Types.ObjectId.isValid(searchId)) {
+      return res.status(400).json({ message: "Invalid Search ID." });
+    }
+
+    // Search candidate in DB
+    const candidate = await Candidate.findOne({ email, candidateId });
+
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found." });
+    }
+
+    // ✅ Ensure `result` is TRUE before allowing the search
+    if (!candidate.result) {
+      return res.status(400).json({ message: "You have not received a job letter." });
+    }
+
+    // ✅ Validate confirmation deadline
+    if (!isDeadlineValid(candidate.confirmationDeadline)) {
+      return res.status(400).json({ message: "⚠️ Confirmation deadline has expired." });
+    }
+
+    // ✅ Check if already confirmed or declined
+    if (candidate.confirmationStatus !== "Pending") {
+      return res.status(400).json({ message: "⚠️ Candidate has already confirmed or declined." });
+    }
+
+    // ✅ Send job details
+    res.status(200).json({
+      message: "✅ Candidate found and eligible.",
+      candidateName: `${candidate.firstName} ${candidate.surName}`,
+      position: candidate.position,
+      departmentId: candidate.departmentId,
+      salary: candidate.salary,
+      confirmationDeadline: candidate.confirmationDeadline,
+    });
+  } catch (error) {
+    console.error("Error in searchCandidate:", error);
+    res.status(500).json({ message: "❌ Server error." });
+  }
+};
+
+export const confirmJobOffer = async (req, res) => {
+  const { email, candidateId, decision } = req.body;
+
+  // Validate input
+  if (!email || !candidateId || !decision) {
+    return res.status(400).json({ message: 'Missing required fields.' });
+  }
+
+  try {
+    // Find the candidate
+    const candidate = await Candidate.findOne({ email, candidateId });
+
+    if (!candidate) {
+      return res.status(404).json({ message: 'Job offer not found.' });
+    }
+
+    // Process the decision
+    if (decision === 'accepted') {
+      candidate.confirmationStatus = 'Accepted';
+      candidate.recruited = true;  // Mark as recruited
+    } else if (decision === 'declined') {
+      candidate.confirmationStatus = 'Declined';
+    } else {
+      return res.status(400).json({ message: 'Invalid decision. Choose "accepted" or "declined".' });
+    }
+
+    // Save the updated candidate
+    await candidate.save();
+
+    // Respond with a success message
+    res.status(200).json({
+      message: `Job offer has been ${decision === 'accepted' ? 'accepted' : 'declined'} successfully.`,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error processing the decision.' });
   }
 };

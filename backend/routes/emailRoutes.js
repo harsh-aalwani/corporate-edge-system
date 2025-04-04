@@ -3,6 +3,7 @@ import { sendEmails } from "../controllers/emailController.js";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { contactUs } from "../controllers/emailController.js";
 
 const router = express.Router();
 
@@ -46,5 +47,7 @@ router.post("/send", upload.array("documents", 5), async (req, res, next) => {
     next(error);
   }
 });
+
+router.post("/contactUs", contactUs);
 
 export default router;

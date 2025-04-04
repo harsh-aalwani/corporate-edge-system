@@ -34,22 +34,22 @@ const candidateSchema = new mongoose.Schema({
   confirmInformation: Boolean,
 
   // ✅ Performance Evaluation (Percentage-Based)
-  candidateEvaluation: { 
-    type: Number, 
+  candidateEvaluation: {
+    type: Number,
     default: 0, // Default score is 0%
     min: 0, // Cannot be below 0%
-    max: 100 // Cannot exceed 100%
+    max: 100, // Cannot exceed 100%
   },
 
   // ✅ Store detailed evaluation breakdown
-  detailedEvaluation: { 
-    type: Object, 
-    default: {} // Store per-field evaluation scores (skills, specialization, etc.)
+  detailedEvaluation: {
+    type: Object,
+    default: {}, // Store per-field evaluation scores (skills, specialization, etc.)
   },
 
   // ✅ New: Candidate Performance Data
-  candidatePerformance: { 
-    type: Number, 
+  candidatePerformance: {
+    type: Number,
     default: 0,
   },
 
@@ -57,7 +57,14 @@ const candidateSchema = new mongoose.Schema({
   result: { type: Boolean, default: false },
 
   // ✅ New: Recruited Field
-  recruited: { type: Boolean, default: false } // Indicates if the candidate is officially recruited
+  recruited: { type: Boolean, default: false },
+
+  // ✅ New: Job Confirmation Fields
+  confirmationDeadline: { type: String, default: null }, // Default is null
+  confirmationStatus: { type: String, default: "No" }, // Default is "No"
+
+  // ✅ New: Store Past Emails Sent
+  pastEmails: { type: Array, default: [] }, // Stores email logs
 });
 
 const Candidate = mongoose.model("tableCandidate", candidateSchema);

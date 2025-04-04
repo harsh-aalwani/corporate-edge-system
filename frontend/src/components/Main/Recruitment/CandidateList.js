@@ -451,12 +451,12 @@ const CandidateList = () => {
 
       {announcement && announcement.concluded ? (
         <div className="d-flex gap-2"> 
-          <button 
+          {/* <button 
             className="btn btn-success px-4" 
             onClick={handleDownloadReport} // ✅ No need to pass parameters manually
           >
             📄 Download Report
-          </button>
+          </button> */}
           <button className="btn btn-dark px-4" onClick={handleReopen}>
             Reopen
           </button>

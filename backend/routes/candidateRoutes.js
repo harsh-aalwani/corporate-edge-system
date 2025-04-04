@@ -1,5 +1,5 @@
 import express from "express";
-import { createCandidate,getCandidateList, selectCandidatesUpdate ,getCandidateById, getCandidateByIdAndDepartment, toggleApproval} from "../controllers/candidateController.js";
+import { createCandidate,getCandidateList, selectCandidatesUpdate ,getCandidateById, confirmJobOffer, searchCandidate, getCandidateByIdAndDepartment, toggleApproval} from "../controllers/candidateController.js";
 import upload from "../middleware/multerConfig.js";
 
 const router = express.Router();
@@ -17,5 +17,7 @@ router.put("/select",selectCandidatesUpdate);
 router.post("/getCandidate", getCandidateById);
 router.post("/getCandidatewithDept",getCandidateByIdAndDepartment);
 router.post("/toggleApproval",toggleApproval);
+router.post("/searchCandidatesJob", searchCandidate);
+router.post('/confirmJobOffer', confirmJobOffer);
 
 export default router;

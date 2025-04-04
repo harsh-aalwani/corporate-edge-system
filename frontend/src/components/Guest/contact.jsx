@@ -1,11 +1,16 @@
 import { useState } from "react";
+import axios from 'axios';
 import React from "react";
 import "../../assets/css/guest/Contact.css";
+import ReCAPTCHA from "react-google-recaptcha";
+import { CAPTCHA_KEY } from "../../config.js";
+import { useSnackbar } from "notistack";
 
 const initialState = {
   name: "",
   email: "",
   message: "",
+  captchaToken: "", // ✅ Matches backend
 };
 
 const contactStyle = {
@@ -83,24 +88,54 @@ export const Contact = ({ data }) => {
   const [formData, setFormData] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const clearState = () => setFormData(initialState);
+  const handleRecaptcha = (token) => {
+    setFormData((prevState) => ({ ...prevState, captchaToken: token })); // ✅ Matches backend
+  };
+  
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setStatusMessage("");
-
-    setStatusMessage("Message sent successfully! ✅");
-    clearState();
-    setLoading(false);
+  const clearState = () => {
+    setFormData({ ...initialState });
+    setStatusMessage(""); // Clear previous messages
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatusMessage(""); // ✅ Clears previous messages before submission
+
+    if (!formData.captchaToken) {
+      setStatusMessage("Please verify the reCAPTCHA.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/emails/contactUs", formData);
+
+      if (response.status === 200) {
+        enqueueSnackbar("Message sent successfully! ✅", { variant: "success" }); // 🚀 Success Snackbar
+        clearState();
+
+        if (typeof window !== "undefined" && window.grecaptcha) {
+          window.grecaptcha.reset(); // ✅ Resets CAPTCHA
+        }
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setStatusMessage("Error sending message. Please try again. ❌");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
   return (
     <div id="contact" style={contactStyle}>
       <div className="container">
@@ -168,8 +203,17 @@ export const Contact = ({ data }) => {
                   style={formControlStyle}
                 ></textarea>
               </div>
-              <button type="submit" style={buttonStyle} class="btn btn-primary" disabled={loading}>
-                {loading ? "Sending..." : "Send Message"}
+              
+              {/* Center and properly space CAPTCHA */}
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+                <ReCAPTCHA sitekey={CAPTCHA_KEY} onChange={handleRecaptcha} />
+              </div>
+              <button type="submit" style={buttonStyle} className="btn btn-primary" disabled={loading}>
+                {loading ? (
+                  <div className="spinner-border spinner-border-sm text-light" role="status" style={{ width: "1rem", height: "1rem" }}>
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                ) : "Send Message"}
               </button>
               {statusMessage && <p className="status-message mt-2">{statusMessage}</p>}
             </form>

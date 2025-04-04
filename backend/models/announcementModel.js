@@ -13,8 +13,6 @@ const announcementSchema = new mongoose.Schema({
   announcementScheduleTime: { type: Date, required: true },
   createdBy: { type: String, required: true },
   createdAt: { type: Date, required: true, default: Date.now },
-
-  // Job details
   jobPosition: { type: String, default: null },
   jobType: { type: String, default: null },
   jobDescription: { type: String, default: null },

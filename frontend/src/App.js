@@ -26,6 +26,7 @@ import JobVacancy from "./components/Guest/JobVacancy";
 import Policy from "./components/Guest/Policy";
 import DetailPage from "./components/Guest/DetailPage";
 import AnnouncementDetail from "./components/Guest/AnnouncementDetail";
+import CandidateConfirmation from "./pages/Guest/CandidateConfirmation";
 
 // SuperAdmin Modules
 import SuperAdminDashboard from "./pages/SuperAdmin/Dashboard";
@@ -204,6 +205,7 @@ const App = () => {
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/EvaluatorLogin" element={<CandidateEvaluatorLogin />} />
+          <Route path="/CandidateConfirmation" element={<CandidateConfirmation />} />
 
           {/* Role-Based Dashboards */}
           <Route

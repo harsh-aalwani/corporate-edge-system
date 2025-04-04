@@ -299,6 +299,7 @@ const OptionModal = ({
   // Email
   const [subject, setSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
+  const [deadline, setDeadline] = useState("");
   const [documents, setDocuments] = useState([]);
   const [dragging, setDragging] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -314,7 +315,9 @@ const OptionModal = ({
     "[[YourName]]",
     "[[YourPosition]]",
     "[[CompanyEmail]]",
-    "[[JobConfirmationLink]]", // Added confirmation link placeholder
+    "[[JobConfirmationLink]]",
+    "[[DeadlineDate]]",
+    "[[CandidatesSearchID]]",
   ];
 
   const [placeholders, setPlaceholders] = useState([]);
@@ -480,7 +483,10 @@ const OptionModal = ({
     setDocuments([...documents, ...files]);
   };
 
+  const [selectedTemplate, setSelectedTemplate] = useState(""); // ✅ No localStorage
+
   const handleTemplateSelect = (templateKey) => {
+    setSelectedTemplate(templateKey); // ✅ Store in state only
     setSubject(templates[templateKey].subject);
     setEmailBody(templates[templateKey].body);
   };
@@ -600,27 +606,72 @@ const OptionModal = ({
   };
 
   const handleClear = () => {
+    setSelectedTemplate("");
     setSubject("");
     setEmailBody("");
     setDocuments([]); // Clear uploaded files
   };
 
-  const handleSendMail = async () => {
+  const [showSendOptionsModal, setShowSendOptionsModal] = useState(false);
+  const [sendOptionChosen, setSendOptionChosen] = useState(null); // "sendAll", "sendNew"
+  
+  const handleSendMail = async (sendOption = "sendAll") => {
     setLoading(true);
-
-    // ✅ Prepare recipients list
-    const recipients = localCandidates.map((candidate) => ({
+  
+    // ✅ Function to format date as `DD-MM-YYYY`
+    const formatDate = (date) => {
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+  
+    // ✅ Get all recipients from localCandidates
+    let recipients = localCandidates.map(candidate => ({
       candidateId: candidate.candidateId,
       email: candidate.email,
+      result: candidate.result, // Added result field for JobOffer filtering
     }));
+  
+    // ✅ If selectedTemplate is "JobOffer", filter out candidates where result is false
+    if (selectedTemplate === "JobOffer") {
+      recipients = recipients.filter(recipient => recipient.result === true);
+    }
+    // ✅ Extract past recipients based on selectedTemplate
+    const pastRecipients = localCandidates
+    .filter(candidate => candidate.pastEmails?.includes(selectedTemplate))
+    .map(candidate => candidate.email);
+  
+    // ✅ Filter out past recipients if "Send Only New" is selected
+    if (sendOption === "sendNew") {
+      recipients = recipients.filter(
+        recipient => !pastRecipients.includes(recipient.email)
+      );
+    }
+    // Remove extra fields (like `result`) before sending to the backend
+    recipients = recipients.map(({ candidateId, email }) => ({ candidateId, email }));
 
+    // ✅ Prevent sending if no new recipients left
+    if (recipients.length === 0) {
+      enqueueSnackbar("⚠️ No new recipients to send email to.");
+      setLoading(false);
+      return;
+    }
+  
+    // ✅ Calculate and format deadline (Set default if not provided)
+    const deadlineToSend =
+      formatDate(deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+  
     // ✅ Prepare FormData for file upload
     const formData = new FormData();
-    formData.append("subject", subject.trim()); // Ensure subject is not empty
-    formData.append("emailBody", emailBody.trim()); // Ensure email body is not empty
+    formData.append("subject", subject.trim());
+    formData.append("emailBody", emailBody.trim());
     formData.append("recipients", JSON.stringify(recipients));
-
-    // ✅ Send `placeholderData` (CompanyName, OfficeAddress, CompanyEmail) to backend
+    formData.append("deadline", deadlineToSend);
+    formData.append("selectedTemplate", selectedTemplate.trim());
+  
+    // ✅ Send `placeholderData` to backend
     formData.append(
       "placeholderData",
       JSON.stringify({
@@ -629,31 +680,34 @@ const OptionModal = ({
         CompanyEmail: placeholderData?.Contact?.email?.trim() || "",
       })
     );
-
+  
     // ✅ Append files correctly
     documents.forEach(({ file }) => {
       if (file && file.name) {
         formData.append("documents", file, file.name);
-      } else {
-        console.warn("Skipping undefined file:", file);
       }
     });
-
+  
     try {
       const response = await fetch("http://localhost:5000/api/emails/send", {
         method: "POST",
         body: formData,
         credentials: "include",
       });
-
+  
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Failed to send email");
       }
+  
       // ✅ Clear email fields after sending
+      setSelectedCandidateId("");
       setSubject("");
       setEmailBody("");
       setDocuments([]);
+      setDeadline("");
+      setSelectedTemplate("");
+  
       enqueueSnackbar("📧 Email sent successfully with attachments!", {
         variant: "success",
       });
@@ -665,6 +719,23 @@ const OptionModal = ({
     }
   };
 
+  const triggerSendMail = () => {
+    console.log("Triggered Send Click");
+  
+    const wasSentBefore = localCandidates.some(candidate =>
+      candidate.pastEmails?.includes(selectedTemplate)
+    );
+  
+    console.log("Was sent before?", wasSentBefore);
+  
+    if (wasSentBefore) {
+      setShowSendOptionsModal(true); // ✅ Show modal if template already sent
+    } else {
+      handleSendMail("sendAll"); // ✅ Send directly
+    }
+  };
+  
+  
   const handleRemoveCandidate = (candidateId) => {
     setLocalCandidates((prev) =>
       prev.filter((c) => c.candidateId !== candidateId)
@@ -756,6 +827,7 @@ const OptionModal = ({
                       <input
                         type="radio"
                         name="emailTemplate"
+                        checked={selectedTemplate === key} // ✅ Keeps selection in the same session
                         onChange={() => handleTemplateSelect(key)}
                         style={{ marginRight: "10px" }}
                       />
@@ -777,7 +849,6 @@ const OptionModal = ({
                   value={emailBody}
                   placeholder="Use [[..]] for special functions..."
                   modules={modules}
-                  
                   style={{ height: "15rem" }}
                   onChange={(content) => {
                     // Update the state with the HTML content.
@@ -806,7 +877,6 @@ const OptionModal = ({
                     }
                   }}
                 />
-
                 {showDropdown && (
                   <ul
                     style={{
@@ -881,20 +951,135 @@ const OptionModal = ({
                   </FileItem>
                 ))}
               </FileList>
-
+              {/* 🟢 Show Deadline Date Input Only for JobOffer */}
+              {selectedTemplate === "JobOffer" && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginTop: "20px",
+                  }}
+                >
+                  <label
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Set Deadline:
+                  </label>
+                  <input
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]} // Prevent past dates
+                    className="form-control"
+                    style={{
+                      flex: "1",
+                      padding: "5px",
+                      border: "1px solid #ccc",
+                      borderRadius: "5px",
+                    }}
+                  />
+                </div>
+              )}
               {loading ? (
                 <Loader />
               ) : (
                 <div
-                  style={{ display: "flex", gap: "10px", marginTop: "15px" }}
+                  style={{ display: "flex", gap: "10px", marginTop: "60px" }}
                 >
                   <ClearButton onClick={handleClear}>Clear</ClearButton>
                   <SendMailButton
-                    onClick={handleSendMail}
-                    disabled={!subject || !emailBody}
+                    onClick={triggerSendMail}
+                    disabled={!subject || !emailBody || (selectedTemplate === "JobOffer" && !deadline)}
                   >
                     Send
                   </SendMailButton>
+                  {showSendOptionsModal && (
+  <div style={{
+    position: "fixed",
+    top: 0, left: 0,
+    width: "100vw", height: "100vh",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    zIndex: 9999,
+  }}>
+    <div style={{
+      backgroundColor: "#fff",
+      borderRadius: "12px",
+      padding: "28px",
+      maxWidth: "450px",
+      width: "90%",
+      boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.2)",
+      textAlign: "center"
+    }}>
+      <h2 style={{ marginBottom: "10px", fontSize: "22px", color: "#333"}}><b>Email Already Sent</b></h2>
+      <p style={{ marginBottom: "20px", fontSize: "16px", color: "#555" }}>
+        This template has already been sent. What would you like to do?
+      </p>
+      
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <button
+          onClick={() => setShowSendOptionsModal(false)}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            backgroundColor: "#d32f2f", // Red
+            color: "#fff",
+            border: "none",
+            fontWeight: "bold",
+            fontSize: "15px",
+            cursor: "pointer"
+          }}
+        >
+          Cancel
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowSendOptionsModal(false);
+            handleSendMail("sendNew");
+          }}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            backgroundColor: "#1976d2", // Blue
+            color: "#fff",
+            border: "none",
+            fontWeight: "bold",
+            fontSize: "15px",
+            cursor: "pointer"
+          }}
+        >
+          Send Only to New Recipients
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowSendOptionsModal(false);
+            handleSendMail("sendAll");
+          }}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            backgroundColor: "#f5f5f5", // White
+            color: "#333",
+            border: "1px solid #ccc",
+            fontWeight: "bold",
+            fontSize: "15px",
+            cursor: "pointer"
+          }}
+        >
+          Send to Everyone Again
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
                 </div>
               )}
             </div>
@@ -1284,6 +1469,7 @@ const OptionModal = ({
           {activeTab === "Add as User" && (
             <div>
               <Heading>ADD AS USER</Heading>
+              <hr id="title-line" className="mb-4" data-symbol="✈" />
               {/* ✅ Select Candidate */}
               <div className="form-group full-width">
                 <label className="form-label">Select Candidate:</label>
@@ -1294,7 +1480,7 @@ const OptionModal = ({
                 >
                   <option value="">-- Choose New Candidate --</option>
                   {localCandidates
-                    .filter((candidate) => candidate.result)
+                    .filter((candidate) => candidate.result && candidate.confirmationStatus === "Accepted") // Add condition for confirmationStatus
                     .map((candidate) => (
                       <option
                         key={candidate.candidateId}
@@ -1308,6 +1494,7 @@ const OptionModal = ({
                       </option>
                     ))}
                 </select>
+
               </div>
 
               {/* ✅ Pass Updated Selected Candidate to Form */}
@@ -1323,6 +1510,17 @@ const OptionModal = ({
       </ModalContent>
     </ModalOverlay>
   );
+};
+
+const modalBtnStyle = {
+  flex: 1,
+  padding: "10px 14px",
+  borderRadius: "8px",
+  border: "none",
+  cursor: "pointer",
+  fontWeight: "bold",
+  backgroundColor: "#1976d2",
+  color: "#fff",
 };
 
 const ModalOverlay = styled.div`
@@ -1602,7 +1800,8 @@ const templates = {
         <li><strong>Benefits:</strong> [BenefitsDetails]</li>
       </ul>
       <br>
-      <p>Please find your official offer letter attached. Kindly review it and confirm your acceptance by <strong>[DeadlineDate]</strong>. To accept the offer, please click the link below: <strong>[[JobConfirmationLink]]</strong></p>
+      <p>Please find your official offer letter attached. Kindly review it and confirm your acceptance by <strong>[[DeadlineDate]]</strong>. To accept the offer, please click the link below: <strong>[[JobConfirmationLink]]</strong></p>
+      <p>Search ID: <strong> [[CandidatesSearchID]] </strong></p>
       <br>
       <p>If you have any questions, feel free to reach out. We look forward to welcoming you to our team.</p>
       <br>
@@ -1685,7 +1884,5 @@ const templates = {
     `,
   },
 };
-
-
 
 export default OptionModal;

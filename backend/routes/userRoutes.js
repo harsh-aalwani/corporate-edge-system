@@ -20,6 +20,7 @@ import {
   getUserDetailsById,
   updateUserWithDetails,
   getUserLogs,
+  getAllUsersSafe,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -52,6 +53,7 @@ router.post("/createUsersFromCandidates", createUsersFromCandidates);
 
 //Edit user
 router.get("/getAllUsers", getAllUsers); // ✅ Get all users
+router.get("/getAllUsersSafe", getAllUsersSafe); // ✅ Get all safe users
 router.get("/getUserById/:id", getUserById); // ✅ Get a single user by ID
 router.get("/getAllUserDetails", getAllUserDetails); // ✅ Get all user details
 router.get("/getUserDetailsById/:id", getUserDetailsById); // ✅ Get a single user's details
