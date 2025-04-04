@@ -141,7 +141,7 @@ import SuUSerLog from "./pages/SuperAdmin/Log/UserLog";
 
 // Organization Charts
 import SUOrgChart from "./pages/SuperAdmin/SUOrgChart";
-import SYOrgChart from "./pages/SystemAdmin/SYOrgChart.JS";
+import SYOrgChart from "./pages/SystemAdmin/SYOrgChart";
 import DMOrgChart from "./pages/DepartmentManager/DMOrgChart";
 import EMOrgChart from "./pages/Employee/EMOrgChart";
 import HROrgChart from "./pages/HRManager/HROrgChart";
@@ -548,8 +548,28 @@ const App = () => {
                   switch (userRole) {
                     case "R3":
                       return <HRAdminPrivateAnnouncment />;
-                      case "R4":
-                        return <DMPrivateAnnouncment />;
+                    case "R4":
+                      return <DMPrivateAnnouncment />;
+                    case "R5":
+                      return <EmployeePrivateAnnouncment />;
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+
+          <Route
+            path="/EMPrivateAnnouncements"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R5":
+                      return <EmployeePrivateAnnouncment />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -561,27 +581,14 @@ const App = () => {
             path="/PrivateAnnouncements"
             element={
               <ProtectedRoute
-                requiredRoles={["R1", "R2", "R3", "R4"]}
+                requiredRoles={["R4","R5"]}
                 Component={() => {
                   const userRole = getUserRoleCookie();
                   switch (userRole) {
                     case "R4":
                       return <DepartmentManagerPrivateAnnouncment />;
-                    default:
-                      return <Navigate to="/login" />;
-                  }
-                }}
-              />
-            }
-          />
-          <Route
-            path="/PrivateAnnouncements"
-            element={
-              <ProtectedRoute
-                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
-                Component={() => {
-                  const userRole = getUserRoleCookie();
-                  switch (userRole) {
+                    case "R5":
+                      return <EmployeePrivateAnnouncment />;
                     default:
                       return <Navigate to="/login" />;
                   }

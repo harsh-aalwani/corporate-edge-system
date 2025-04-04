@@ -166,7 +166,7 @@ const SUTemplate = ({ children }) => {
                     </li>
                     <li>
                       <Link to="/LeaveApply">
-                        <span className="sub-item">Leave Applye</span>
+                        <span className="sub-item">Leave Apply</span>
                       </Link>
                     </li>
                     <li>
@@ -286,72 +286,7 @@ const SUTemplate = ({ children }) => {
                 <div className="website-title">Corporate Edge System</div>
               </nav>
               <ul className="navbar-nav topbar-nav ms-md-auto align-items-center">
-                {/* Quick Actions */}
-                <li className="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    className="nav-link"
-                    data-bs-toggle="dropdown"
-                    href="#"
-                    aria-expanded="false"
-                  >
-                    <i className="fas fa-layer-group"></i>
-                  </a>
-                  <div className="dropdown-menu quick-actions animated fadeIn">
-                    <div className="quick-actions-header">
-                      <span className="title mb-1">Quick Actions</span>
-                      <span className="subtitle op-7">Shortcuts</span>
-                    </div>
-                    <div className="quick-actions-scroll scrollbar-outer">
-                      <div className="quick-actions-items">
-                        <div className="row m-0">
-                          {[
-                            "Calendar",
-                            "Maps",
-                            "Reports",
-                            "Emails",
-                            "Invoice",
-                            "Payments",
-                          ].map((action, index) => (
-                            <a
-                              key={index}
-                              className="col-6 col-md-4 p-0"
-                              href="#"
-                            >
-                              <div className="quick-actions-item">
-                                <div
-                                  className={`avatar-item bg-${
-                                    [
-                                      "danger",
-                                      "warning",
-                                      "info",
-                                      "success",
-                                      "primary",
-                                      "secondary",
-                                    ][index]
-                                  } rounded-circle`}
-                                >
-                                  <i
-                                    className={`fas fa-${
-                                      [
-                                        "calendar-alt",
-                                        "map",
-                                        "file-excel",
-                                        "envelope",
-                                        "file-invoice-dollar",
-                                        "credit-card",
-                                      ][index]
-                                    }`}
-                                  ></i>
-                                </div>
-                                <span className="text">{action}</span>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
+
 
                 {/* User Profile */}
                 <li className="nav-item topbar-user dropdown hidden-caret">
@@ -392,33 +327,9 @@ const SUTemplate = ({ children }) => {
                         <div className="dropdown-divider"></div>
                       </li>
                       <li>
-                        <a className="dropdown-item" href="#">
+                        <Link className="dropdown-item" to="/MyProfile">
                           My Profile
-                        </a>
-                      </li>
-                      <li>
-                        <div className="dropdown-divider"></div>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          My Balance
-                        </a>
-                      </li>
-                      <li>
-                        <div className="dropdown-divider"></div>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Inbox
-                        </a>
-                      </li>
-                      <li>
-                        <div className="dropdown-divider"></div>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Account Setting
-                        </a>
+                        </Link>
                       </li>
                       <li>
                         <div className="dropdown-divider"></div>

@@ -63,6 +63,43 @@ const CandidateList = () => {
     setSearchQuery(e.target.value);
   };
 
+// Helper function to get the correct class based on confirmation status
+const getConfirmationStatusClass = (status) => {
+  switch (status) {
+    case "Accepted":
+      return "text-success fw-bold";
+    case "Rejected":
+      return "text-danger fw-bold";
+    case "Pending":
+      return "text-warning fw-bold";
+    case "Hired":
+      return "text-primary fw-bold";
+    case "No":
+      return "text-muted fw-bold";
+    default:
+      return "text-muted fw-bold";
+  }
+};
+
+// Helper function to get the corresponding text based on confirmation status
+const getConfirmationStatusText = (status) => {
+  switch (status) {
+    case "Accepted":
+      return "Accepted";
+    case "Rejected":
+      return "Rejected";
+    case "Pending":
+      return "Pending";
+    case "Hired":
+      return "Hired";
+    case "No":
+      return "No";
+    default:
+      return "Unknown Status";
+  }
+};
+
+
   const handleConfirmAction = async () => {
     if (confirmAction) {
       await confirmAction();  // ✅ Execute the stored function
@@ -262,7 +299,8 @@ const CandidateList = () => {
       candidate.firstName.toLowerCase().includes(query) ||
       candidate.surName.toLowerCase().includes(query) ||
       candidate.email.toLowerCase().includes(query) ||
-      candidate.phone.toLowerCase().includes(query)
+      candidate.phone.toLowerCase().includes(query) ||
+      candidate.confirmationStatus.toLowerCase().includes(query)
     );
   });
   
@@ -390,10 +428,11 @@ const CandidateList = () => {
                     </td>
                   )}
                   {(showSelected && announcement.concluded) && (
-                    <td className={candidate.result ? "text-success fw-bold" : "text-danger fw-bold"}>
-                      {candidate.result ? "Yes" : "No"}
+                    <td className={getConfirmationStatusClass(candidate.confirmationStatus)}>
+                      {getConfirmationStatusText(candidate.confirmationStatus)}
                     </td>
-                  )} {/* ✅ Hide row content when showSelected is false */}
+                  )}
+
                   <td>
                     <button className="btn btn-success btn-sm" onClick={() => generatePDF(candidate)}>Download</button>
                   </td>

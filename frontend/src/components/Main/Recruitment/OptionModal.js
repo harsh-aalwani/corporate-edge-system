@@ -742,6 +742,10 @@ const OptionModal = ({
     );
   };
 
+  const hasAcceptedCandidate = localCandidates.some(
+    (candidate) => candidate.confirmationStatus === "Accepted"
+  );
+
   if (!show) return null;
   return (
     <ModalOverlay>
@@ -753,7 +757,7 @@ const OptionModal = ({
             "Manage Evaluator",
             ...(announcementConcluded ? ["Candidate Performance"] : []),
             "Send Email",
-            ...(announcementConcluded ? ["Add as User"] : []),
+            ...(hasAcceptedCandidate ? ["Add as User"] : []),
           ].map((tab) => (
             <Tab
               key={tab}
@@ -786,7 +790,7 @@ const OptionModal = ({
                       }`}</span>
                       <span>{candidate.email || "N/A"}</span>
                       <span className="fw-semibold text-dark">
-                        {candidate.result ? "Yes" : "No"}
+                        {candidate.confirmationStatus || "No"}
                       </span>
                       <RemoveButton
                         onClick={() =>
@@ -1274,11 +1278,11 @@ const OptionModal = ({
                   <option value="">-- Select Candidate --</option>
                   {localCandidates
                     .slice() // Create a copy to avoid mutating the state
+                    .filter((candidate) => candidate.confirmationStatus !== "Hired") // Exclude "Hired" candidates
                     .sort(
                       (a, b) =>
-                        (b.candidatePerformance || 0) -
-                        (a.candidatePerformance || 0)
-                    ) // Sort descending
+                        (b.candidatePerformance || 0) - (a.candidatePerformance || 0)
+                    ) // Sort descending by candidatePerformance
                     .map((candidate) => (
                       <option
                         key={candidate.candidateId}
@@ -1292,6 +1296,7 @@ const OptionModal = ({
                       </option>
                     ))}
                 </select>
+
                 <button
                   className={`btn ${
                     selectedCandidateId &&

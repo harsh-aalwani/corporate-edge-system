@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import SUTemplate from "../../../components/DepartmentManager/DMTemplate";
 
-import PrivateAn from '../../../components/Main/Announcement/PrivateAn';
+import ReAn from '../../../components/Main/Announcement/ReAn';
 
 
 
@@ -9,7 +9,7 @@ const PrivateAnnouncements = () => {
 
   return (
     <SUTemplate>
-     <PrivateAn />
+     <ReAn />
     </SUTemplate>
   );
 };

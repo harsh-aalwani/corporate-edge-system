@@ -1,15 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import SUTemplate from "../../../components/Employee/EMTemplate";
-
-import PrivateAn from '../../../components/Main/Announcement/PrivateAn';
-
-
+import ReAn from '../../../components/Main/Announcement/ReAn';
 
 const PrivateAnnouncements = () => {
 
   return (
     <SUTemplate>
-     <PrivateAn />
+     <ReAn />
     </SUTemplate>
   );
 };

@@ -963,7 +963,7 @@ export const createUsersFromCandidates = async (req, res) => {
           responsibilities: candidate.responsibilities,
           referenceContact: candidate.referenceContact,
           totalYearsOfExperience: candidate.totalYearsOfExperience,
-          createdBy: "System",
+          createdBy: req.session.userId,
           identityProof: candidate.candidateDocuments, // ✅ Attach candidate documents path
           picture: candidate.candidatePicture, // ✅ Attach candidate picture path
       };
@@ -972,8 +972,16 @@ export const createUsersFromCandidates = async (req, res) => {
       await User.create(newUser);
       await UserDetails.create(newUserDetails);
 
-      // ✅ Update Candidate Table to set recruited = true
-      await Candidate.updateOne({ email: userEmail }, { $set: { recruited: true } });
+      // ✅ Update Candidate Table to set recruited = true and confirmationStatus = "Hired"
+      await Candidate.updateOne(
+        { email: userEmail },
+        { 
+          $set: { 
+            recruited: true, 
+            confirmationStatus: "Hired" // Set the confirmationStatus to "Hired"
+          } 
+        }
+      );
 
       // ✅ Send Email Notification
       const emailSubject = "Welcome to Our System!";

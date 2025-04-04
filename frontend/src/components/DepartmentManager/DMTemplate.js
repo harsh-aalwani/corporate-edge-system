@@ -341,33 +341,9 @@ const SUTemplate = ({ children }) => {
                         <div className="dropdown-divider"></div>
                       </li>
                       <li>
-                        <a className="dropdown-item" href="#">
+                        <Link className="dropdown-item" to="/MyProfile">
                           My Profile
-                        </a>
-                      </li>
-                      <li>
-                        <div className="dropdown-divider"></div>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          My Balance
-                        </a>
-                      </li>
-                      <li>
-                        <div className="dropdown-divider"></div>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Inbox
-                        </a>
-                      </li>
-                      <li>
-                        <div className="dropdown-divider"></div>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="#">
-                          Account Setting
-                        </a>
+                        </Link>
                       </li>
                       <li>
                         <div className="dropdown-divider"></div>

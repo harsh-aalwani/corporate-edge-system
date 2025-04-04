@@ -357,23 +357,7 @@ const OrgChart = () => {
                               }
                               lineWidth="2px"
                               lineColor="black"
-                            >
-                              {users
-                                .filter(
-                                  (user) =>
-                                    user.userRoleid === "R5" &&
-                                    user.userDepartment === dept.departmentid
-                                )
-                                .map((user) => (
-                                  <TreeNode
-                                    key={user.userId}
-                                    label={renderNode(
-                                      "employee",
-                                      user.fullName,
-                                      user.userId
-                                    )}
-                                  />
-                                ))}
+                            > 
                             </TreeNode>
                           ) : (
                             <TreeNode
