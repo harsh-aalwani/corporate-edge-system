@@ -37,6 +37,7 @@
     "react-feather": "^2.0.10",
     "react-google-recaptcha": "^3.1.0",
     "react-icons": "^5.5.0",
+    "react-intersection-observer": "^9.16.0",
     "react-organizational-chart": "^2.2.1",
     "react-quill": "^2.0.0",
     "react-router-dom": "^7.1.1",

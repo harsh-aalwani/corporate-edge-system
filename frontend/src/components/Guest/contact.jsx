@@ -1,10 +1,11 @@
-import { useState } from "react";
-import axios from 'axios';
+import { useState , useEffect} from "react";
+import axios from "axios";
 import React from "react";
 import "../../assets/css/guest/Contact.css";
 import ReCAPTCHA from "react-google-recaptcha";
 import { CAPTCHA_KEY } from "../../config.js";
 import { useSnackbar } from "notistack";
+import { useInView } from "react-intersection-observer";
 
 const initialState = {
   name: "",
@@ -31,7 +32,7 @@ const h2Style = {
   marginTop: "10px",
   marginBottom: "15px",
   paddingBottom: "15px",
-  fontSize: "2.2rem"
+  fontSize: "2.2rem",
 };
 
 const pStyle = {
@@ -49,7 +50,6 @@ const labelStyle = {
   fontFamily: '"Open Sans", sans-serif',
   float: "left",
 };
-
 
 const formControlStyle = {
   display: "block",
@@ -89,43 +89,95 @@ export const Contact = ({ data }) => {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const { enqueueSnackbar } = useSnackbar();
+  const [captchaValid, setCaptchaValid] = useState(null);
+  const [captchaError, setCaptchaError] = useState("");
+  const captchaContainerRef = React.useRef(null);
+  const [captchaLoaded, setCaptchaLoaded] = useState(false);
+
+  const { ref: captchaRef, inView: isCaptchaVisible } = useInView({
+    triggerOnce: true,
+    threshold: 0.2,
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({ ...prevState, [name]: value }));
   };
 
-  const handleRecaptcha = (token) => {
-    setFormData((prevState) => ({ ...prevState, captchaToken: token })); // ✅ Matches backend
+  const handleRecaptcha = async (token) => {
+    if (!token) return;
+
+    setFormData((prevState) => ({ ...prevState, captchaToken: token }));
+    setCaptchaError(""); // Clear any previous error
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/manage/verify-captcha",
+        { token }
+      );
+      if (res.data.success) {
+        setCaptchaValid(true);
+      } else {
+        setCaptchaValid(false);
+        setCaptchaError("CAPTCHA verification failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("CAPTCHA verification error:", err);
+      setCaptchaValid(false);
+      setCaptchaError("An error occurred while verifying CAPTCHA.");
+    }
   };
-  
 
   const clearState = () => {
     setFormData({ ...initialState });
     setStatusMessage(""); // Clear previous messages
   };
 
+  const waitForRecaptchaAndReset = (maxRetries = 10, interval = 300) => {
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+      if (window.grecaptcha && typeof window.grecaptcha.reset === "function") {
+        try {
+          window.grecaptcha.reset();
+          clearInterval(intervalId);
+        } catch (err) {
+          console.warn("grecaptcha reset failed:", err);
+        }
+      } else {
+        attempts++;
+        if (attempts >= maxRetries) {
+          clearInterval(intervalId);
+          console.warn("grecaptcha not ready after retries");
+        }
+      }
+    }, interval);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setStatusMessage(""); // ✅ Clears previous messages before submission
+    setStatusMessage("");
 
-    if (!formData.captchaToken) {
-      setStatusMessage("Please verify the reCAPTCHA.");
+    if (!formData.captchaToken || !captchaValid) {
+      setStatusMessage("Please complete the reCAPTCHA verification.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/emails/contactUs", formData);
-
+      const response = await axios.post(
+        "http://localhost:5000/api/emails/contactUs",
+        formData
+      );
       if (response.status === 200) {
-        enqueueSnackbar("Message sent successfully! ✅", { variant: "success" }); // 🚀 Success Snackbar
+        enqueueSnackbar("Message sent successfully! ✅", {
+          variant: "success",
+        });
         clearState();
 
-        if (typeof window !== "undefined" && window.grecaptcha) {
-          window.grecaptcha.reset(); // ✅ Resets CAPTCHA
-        }
+        waitForRecaptchaAndReset(); // Much more reliable
+
+        setCaptchaValid(null); // reset validation status
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -134,8 +186,21 @@ export const Contact = ({ data }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isCaptchaVisible) return;
   
+    const interval = setInterval(() => {
+      const iframe = captchaContainerRef.current?.querySelector("iframe");
+      if (iframe) {
+        setCaptchaLoaded(true);
+        clearInterval(interval);
+      }
+    }, 200);
   
+    return () => clearInterval(interval);
+  }, [isCaptchaVisible]);
+
   return (
     <div id="contact" style={contactStyle}>
       <div className="container">
@@ -144,7 +209,8 @@ export const Contact = ({ data }) => {
             <div className="section-title" style={sectionTitleStyle}>
               <h2 style={h2Style}>Get In Touch</h2>
               <p style={pStyle}>
-                Please fill out the form below, and we will get back to you as soon as possible.
+                Please fill out the form below, and we will get back to you as
+                soon as possible.
               </p>
             </div>
             <form onSubmit={handleSubmit} style={formStyle}>
@@ -153,7 +219,7 @@ export const Contact = ({ data }) => {
                   <div className="form-group">
                     <label
                       htmlFor="name"
-                      style={{ ...labelStyle}}
+                      style={{ ...labelStyle }}
                       className="label-white" // Override for white text
                     >
                       Name
@@ -172,7 +238,13 @@ export const Contact = ({ data }) => {
                 </div>
                 <div className="col">
                   <div className="form-group">
-                    <label htmlFor="email" style={labelStyle} className="label-white">Email</label>
+                    <label
+                      htmlFor="email"
+                      style={labelStyle}
+                      className="label-white"
+                    >
+                      Email
+                    </label>
                     <input
                       type="email"
                       id="email"
@@ -187,11 +259,13 @@ export const Contact = ({ data }) => {
                 </div>
               </div>
               <div className="form-group mb-4">
-                <label htmlFor="message" 
-                  style={{ ...labelStyle}}
+                <label
+                  htmlFor="message"
+                  style={{ ...labelStyle }}
                   className="label-white" // Override for white text
                 >
-                  Message</label>
+                  Message
+                </label>
                 <textarea
                   name="message"
                   id="message"
@@ -203,19 +277,78 @@ export const Contact = ({ data }) => {
                   style={formControlStyle}
                 ></textarea>
               </div>
-              
+
               {/* Center and properly space CAPTCHA */}
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
-                <ReCAPTCHA sitekey={CAPTCHA_KEY} onChange={handleRecaptcha} />
-              </div>
-              <button type="submit" style={buttonStyle} className="btn btn-primary" disabled={loading}>
+<div
+  ref={captchaRef}
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: "20px",
+  }}
+>
+  {isCaptchaVisible && (
+    <div ref={captchaContainerRef}>
+      {!captchaLoaded && (
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "10px",
+          }}
+        >
+          <div
+            className="spinner-border text-light spinner-border-sm"
+            role="status"
+            style={{ width: "1rem", height: "1rem" }}
+          >
+            <span className="visually-hidden">Loading CAPTCHA...</span>
+          </div>
+          <span style={{ marginLeft: "8px", color: "#fff" }}>
+            Loading CAPTCHA...
+          </span>
+        </div>
+      )}
+      <ReCAPTCHA
+        sitekey={CAPTCHA_KEY}
+        onChange={handleRecaptcha}
+        onErrored={() => {
+          console.warn("reCAPTCHA error occurred");
+          setCaptchaError("Failed to load reCAPTCHA. Please refresh the page.");
+          setCaptchaValid(false);
+        }}
+      />
+    </div>
+  )}
+</div>
+
+              {/* Error below CAPTCHA, above the button */}
+              {captchaError && (
+                <p style={{ color: "salmon", marginBottom: "10px" }}>
+                  {captchaError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                style={buttonStyle}
+                className="btn btn-primary"
+                disabled={loading}
+              >
                 {loading ? (
-                  <div className="spinner-border spinner-border-sm text-light" role="status" style={{ width: "1rem", height: "1rem" }}>
+                  <div
+                    className="spinner-border spinner-border-sm text-light"
+                    role="status"
+                    style={{ width: "1rem", height: "1rem" }}
+                  >
                     <span className="visually-hidden">Loading...</span>
                   </div>
-                ) : "Send Message"}
+                ) : (
+                  "Send Message"
+                )}
               </button>
-              {statusMessage && <p className="status-message mt-2">{statusMessage}</p>}
+              {statusMessage && (
+                <p className="status-message mt-2">{statusMessage}</p>
+              )}
             </form>
           </div>
 
@@ -236,7 +369,7 @@ export const Contact = ({ data }) => {
                 <span style={contactItemSpanStyle}>
                   <i className="fa fa-map-marker" style={faStyle}></i> Address:
                 </span>
-                {data?.address|| "Loading..."}
+                {data?.address || "Loading..."}
               </p>
             </div>
             <div className="contact-item" style={contactItemStyle}>

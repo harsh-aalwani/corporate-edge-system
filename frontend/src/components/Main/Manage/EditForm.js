@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 
 const UserForm = () => {
 
@@ -10,7 +11,11 @@ const UserForm = () => {
   const [departments, setDepartments] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchDepartment, setFetchDepartment] = useState();
+  const [fetchUserRole, setFetchUserRole] = useState();
   const [systemAdminExtra, setSystemAdminExtra] = useState(false);
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: "",
@@ -154,18 +159,42 @@ const UserForm = () => {
           axios.get(`http://localhost:5000/api/users/getUserById/${id}`),
           axios.get(`http://localhost:5000/api/users/getUserDetailsById/${id}`)
         ]);
-
+  
         const userData = userResponse.data;
         const userDetailsData = userDetailsResponse.data;
-
-        // Split fullName into firstName, middleName, and surname
+  
+        // Define the mapping from role ID to descriptive value
+        const roleMapping = {
+          "R1": "Super Admin",
+          "R2": "System Admin",
+          "R3": "HR",
+          "R4": "Department-Manager",
+          "R5": "Employee"
+        };
+  
+        // Map the fetched userRoleid to the descriptive role value
+        const descriptiveRole = roleMapping[userData.userRoleid] || userData.userRoleid;
+  
+        // If the role is R1, R2, or R3, keep fetchDepartment empty; otherwise, set it from userData
+        if (["R1", "R2", "R3"].includes(userData.userRoleid)) {
+          setFetchDepartment("");
+        } else {
+          setFetchDepartment(userData.userDepartment);
+        }
+        setFetchUserRole(descriptiveRole);
+  
+        // Split fullName into firstName, fatherName, and surName
         const nameParts = userData.fullName.split(" ");
         const firstName = nameParts[0] || "";
-        const fatherName = nameParts.length > 2 ? nameParts[1] : ""; // Middle name if exists
-        const surName = nameParts.length > 2 ? nameParts[2] : nameParts[1] || ""; // Surname (handles 2-part names)
+        const fatherName = nameParts.length > 2 ? nameParts[1] : "";
+        const surName = nameParts.length > 2 ? nameParts[2] : (nameParts[1] || "");
+  
+        // Format date of birth if available
         const formattedDOB = userDetailsData.dob
-          ? new Date(userDetailsData.dob).toLocaleDateString("en-GB") // Converts to "dd/MM/yyyy"
+          ? new Date(userDetailsData.dob).toLocaleDateString("en-GB")
           : "";
+  
+        // Set form data. Notice that department is set directly from userData.
         setFormData({
           // Personal Information
           firstName,
@@ -184,16 +213,16 @@ const UserForm = () => {
           picture: userDetailsData.picture || "",
           presentAddress: userDetailsData.presentAddress || "",
           permanentAddress: userDetailsData.permanentAddress || "",
-
+  
           // Education Qualifications (Array)
           educationQualification: userDetailsData.educationQualification || [],
-
+  
           // In-Organization Information
-          userRoleid: userData.userRoleid || "",
-          department: userData.userDepartment || "",
+          userRoleid: userData.userRoleid || "", // remains as role ID
+          department: userData.userDepartment || "", // department value directly from user data
           specialization: userDetailsData.specialization || "",
           userDesignation: userData.userDesignation || "",
-
+  
           // Other Information
           lastWorkPlace: userDetailsData.lastWorkPlace || "",
           yearsOfExperience: userDetailsData.yearsOfExperience || "",
@@ -201,11 +230,10 @@ const UserForm = () => {
           responsibilities: userDetailsData.responsibilities || "",
           referenceContact: userDetailsData.referenceContact || "",
           totalYearsOfExperience: userDetailsData.totalYearsOfExperience || "",
-
+  
           // Confirmation
           confirmInformation: false
         });
-
         setLoading(false);
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -213,49 +241,23 @@ const UserForm = () => {
         setLoading(false);
       }
     };
-
+  
     if (id) fetchUserData();
   }, [id]);
+  
 
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault(); // Prevent the default form submission behavior
-
-  //   // Optional: Validate that the confirmation checkbox is checked
-  //   if (!formData.confirmInformation) {
-  //     enqueueSnackbar("Please confirm that the information provided is accurate.", { variant: "warning" });
-  //     return;
-  //   }
-  //   try {
-  //     // Use axios.put instead of axios.post to match the route method
-  //     const response = await axios.put("http://localhost:5000/api/users/update", formData, {
-  //       withCredentials: true, // Ensure cookies/session are sent
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     });
-
-
-  //     enqueueSnackbar("User updated successfully!", { variant: "success" });
-  //     console.log("Response:", response.data);
-  //   } catch (error) {
-  //     console.error("Error during submission:", error);
-  //     enqueueSnackbar("Error updating user!", { variant: "error" });
-  //   }
-  // };
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission behavior
-
+  
     // Validate that the confirmation checkbox is checked
     if (!formData.confirmInformation) {
       enqueueSnackbar("Please confirm that the information provided is accurate.", { variant: "warning" });
       return;
     }
-
+  
     // Merge the current formData with the id property.
-    // Replace 'currentUserId' with the actual variable holding your user's id.
     const updatedFormData = { ...formData, id };
-
+    console.log(updatedFormData);
     try {
       const response = await fetch("http://localhost:5000/api/users/update", {
         method: "PUT", // Use PUT to match the route method
@@ -265,12 +267,13 @@ const UserForm = () => {
         },
         body: JSON.stringify(updatedFormData),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         enqueueSnackbar("User updated successfully!", { variant: "success" });
         console.log("Response:", data);
+        navigate(-1); // Navigate back one step in the history
       } else {
         console.error("Error during submission:", data);
         enqueueSnackbar(data.message || "Error updating user!", { variant: "error" });
@@ -290,24 +293,12 @@ const UserForm = () => {
         console.error("Error fetching departments:", error);
       }
     };
-    // const fetchUserRoles = async () => {
-    //   try {
-    //     const response = await axios.get("http://localhost:5000/api/users/rolesList", {
-    //       withCredentials: true, // Ensure session is sent
-    //     });
-    //     setUserRoles(response.data.roles);
-    //     console.log(userRoles);
-    //     setSystemAdminExtra(response.data.systemAdminExtra);
-    //   } catch (error) {
-    //     console.error("Error fetching user roles:", error);
-    //   }
-    // };
+
     const fetchUserRoles = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/users/rolesList", {
           withCredentials: true,
         });
-        console.log(response.data);
         setUserRoles(response.data.roles);
         setSystemAdminExtra(response.data.systemAdminExtra);
       } catch (error) {
@@ -315,7 +306,6 @@ const UserForm = () => {
       }
     };
 
-    // console.log(id);
     fetchDepartments();
     fetchUserRoles();
   }, []);
@@ -553,32 +543,32 @@ const UserForm = () => {
             <h4 className="mb-1 mt-4">In-organization Information:</h4>
             <hr id="title-line" className="mb-4" data-symbol="✈" />
             <div className="col-md-6 mb-3">
-              <label className="form-label">User Role:</label>
+              <label className="form-label">User Role: {fetchUserRole} <span style={{ color: "red" }}>*</span></label>
               <select
                 name="userRoleid"
                 className="form-control"
                 value={formData.userRoleid}
                 onChange={(e) => {
                   const selectedRole = e.target.value;
-                  setFormData((prev) => {
-                    const isDeptRole = selectedRole === "Department-Manager" || selectedRole === "Employee";
-                    return {
-                      ...prev,
-                      userRoleid: selectedRole,
-                      department: isDeptRole ? prev.department || "" : "",
-                    };
-                  });
+                  setFormData((prev) => ({
+                    ...prev,
+                    userRoleid: selectedRole,
+                    department: selectedRole === "Department-Manager" || selectedRole === "Employee"
+                      ? prev.department // Keep the selected department if applicable
+                      : selectedRole === "HR"
+                      ? "HRManager"
+                      : "SystemAdmin", 
+                  }));
                 }}
                 required
               >
                 <option value="">Select Role</option>
-                {userRoles?.map((role) => (
+                {userRoles.map((role) => (
                   <option key={role} value={role}>
                     {role}
                   </option>
                 ))}
               </select>
-
             </div>
 
             {/* Conditionally Show "Give Permission to Add System-Admin" Dropdown */}
@@ -598,37 +588,26 @@ const UserForm = () => {
               </div>
             )}
 
+            {/* Conditionally show department dropdown only for Department-Manager & Employee */}
             {(formData.userRoleid === "Department-Manager" || formData.userRoleid === "Employee") && (
-
               <div className="col-md-6 mb-3">
-                <label className="form-label">Department:</label>
+                <label className="form-label">Department: {fetchDepartment}</label>
                 <select
-                  name="departmentId"
+                  name="department"
                   className="form-control"
-                  value={formData.departmentId}
-                  onChange={(e) => {
-                    const selectedDeptId = e.target.value;
-                    const selectedDept = departments.find(dept => String(dept.departmentid) === String(selectedDeptId));
-                    setFormData((prev) => ({
-                      ...prev,
-                      departmentId: selectedDeptId,
-                      departmentName: selectedDept ? selectedDept.departmentName : "",
-                    }));
-                  }}
+                  value={formData.department}
+                  onChange={handleChange}
                   required
                 >
                   <option value="">Select Department</option>
                   {departments.map((dept) => (
-                    <option key={dept.departmentid} value={dept.departmentid}
-                      selected={dept.departmentid === formData.departmentId}
-                    >
+                    <option key={dept._id} value={dept.departmentName}>
                       {dept.departmentName}
                     </option>
                   ))}
                 </select>
               </div>
             )}
-
             <div className="col-md-6 mb-3">
               <label className="form-label">Specialization:</label>
               <input type="text" name="specialization" className="form-control" value={formData.specialization} onChange={handleChange} required />

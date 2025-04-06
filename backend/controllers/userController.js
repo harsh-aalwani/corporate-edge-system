@@ -31,29 +31,44 @@ export const loginUser = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(userPassword, user.userPassword);
     if (!isPasswordValid) return res.status(401).json({ message: 'Invalid credentials' });
 
+    // Check if account is activated
+    if (!user.activateAccount) {
+      return res.status(403).json({
+        message: 'Account is not activated. Please contact your administrator.',
+      });
+    }
+
+    // Check if current time is after accountActivationTime
+    if (user.accountActivationTime && new Date(user.accountActivationTime) > new Date()) {
+      return res.status(403).json({
+        message: 'Account is not activated. Please contact your administrator.',
+      });
+    }
+
     // Create session
     req.session.userId = user.userId;
     req.session.userRoleid = user.userRoleid;
 
-    // Encrypt the userRoleid
-    const encryptedRole = CryptoJS.AES.encrypt(user.userRoleid.toString(), COOKIE_SECRET_KEY).toString();
+    const encryptedRole = CryptoJS.AES.encrypt(
+      user.userRoleid.toString(),
+      COOKIE_SECRET_KEY
+    ).toString();
 
     // Update user status to online
     user.userStatus = true;
     await user.save();
 
-    // Create a login log entry
+    // Create login log
     const logId = `${user.userId}-${Date.now()}`;
     await UserLog.create({
       logId,
       userId: user.userId,
-      event: "Login",
+      event: 'Login',
     });
 
-    // Send encrypted role to frontend
     return res.status(200).json({
       message: 'Login successful',
-      encryptedRole: encryptedRole,  // Send encrypted `userRoleid`
+      encryptedRole: encryptedRole,
     });
   } catch (error) {
     console.error('Error during login:', error);
@@ -581,7 +596,6 @@ export const getUserDetailsById = async (req, res) => {
     if (!userDetails) {
       return res.status(404).json({ message: "User details not found" });
     }
-    console.log(userDetails);
     res.status(200).json(userDetails);
   } catch (error) {
     console.error("Error fetching user details:", error);
@@ -681,23 +695,26 @@ export const updateUserWithDetails = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Determine if the role has changed and, if so, generate a new userId
     let newUserId = existingUser.userId;
     if (convertedRoleId !== existingUser.userRoleid) {
-      const lastUser = await User.findOne({ userRoleid: convertedRoleId })
-        .sort({ createdAt: -1 })
-        .lean();
+      let isUnique = false;
       let nextUserNumber = 1;
-      if (lastUser) {
-        const lastUserId = lastUser.userId;
-        const lastNumberMatch = lastUserId.match(/\d+$/);
-        if (lastNumberMatch) {
-          nextUserNumber = parseInt(lastNumberMatch[0]) + 1;
+      let tentativeUserId;
+    
+      while (!isUnique) {
+        tentativeUserId = `${rolePrefix}${nextUserNumber}`;
+    
+        const existingWithId = await User.findOne({ userId: tentativeUserId });
+        if (!existingWithId) {
+          isUnique = true;
+        } else {
+          nextUserNumber++;
         }
       }
-      newUserId = `${rolePrefix}${nextUserNumber}`;
+    
+      newUserId = tentativeUserId;
     }
-
+    
     // Update the User (usertable) fields
     existingUser.fullName = fullName;
     existingUser.userEmail = userEmail; // update email if changed
@@ -898,132 +915,139 @@ export const createUsersFromCandidates = async (req, res) => {
   console.log("Received data:", req.body);
 
   try {
-      const userEmail = req.body.userEmail;
-      if (!userEmail) {
-          return res.status(400).json({ message: "User email is required." });
+    const userEmail = req.body.userEmail;
+    if (!userEmail) {
+      return res.status(400).json({ message: "User email is required." });
+    }
+
+    // ✅ Fetch candidate for picture & documents only
+    const candidate = await Candidate.findOne({ email: userEmail });
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found." });
+    }
+
+    // ✅ Role + userId generation
+    const roleInfo = roleMapping[req.body.userRoleid] || {};
+    if (!roleInfo.id) {
+      return res.status(400).json({ message: "Invalid role." });
+    }
+
+    const lastUser = await User.findOne({ userRoleid: roleInfo.id }).sort({ createdAt: -1 }).lean();
+    const nextUserNumber = lastUser ? parseInt(lastUser.userId.match(/\d+$/)[0]) + 1 : 1;
+    const userId = `${roleInfo.prefix}${nextUserNumber}`;
+
+    // ✅ Password generation and hashing
+    const rawPassword = `${new Date().getFullYear()}#${userEmail.split("@")[0]}`;
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+    // ✅ Full Name formatting
+    const fullName = `${req.body.fullName || ""}`.trim();
+
+    // ✅ Construct User
+    const newUser = {
+      userId,
+      fullName,
+      userEmail,
+      userMobileNumber: req.body.userMobileNumber,
+      userStatus: false,
+      userPassword: hashedPassword,
+      userRoleid: roleInfo.id,
+      userDepartment: req.body.userDepartment,
+      userDesignation: req.body.userDesignation || "N/A",
+      userPermissions: req.body.userPermissions || { SystemAdminExtra: false },
+      activateAccount: true,
+      accountActivationTime: req.body.accountActivationTime
+        ? new Date(req.body.accountActivationTime)
+        : new Date(),
+      createdAt: new Date(),
+    };
+
+    // ✅ Format language array if string (fallback)
+    const formattedLanguages = Array.isArray(req.body.languagesKnown)
+      ? req.body.languagesKnown
+      : (req.body.languagesKnown || "").split(",").map(lang => lang.trim());
+
+    // ✅ Construct UserDetails
+    const newUserDetails = {
+      userdetailsId: `${userId}-D`,
+      userId,
+      dob: new Date(req.body.dob),
+      age: req.body.age || null,
+      nativePlace: req.body.nativePlace,
+      nationality: req.body.nationality,
+      gender: req.body.gender,
+      maritalStatus: req.body.maritalStatus,
+      languagesKnown: formattedLanguages,
+      presentAddress: req.body.presentAddress,
+      permanentAddress: req.body.permanentAddress,
+      educationQualification: req.body.educationQualification || [],
+      specialization: req.body.specialization,
+      lastWorkPlace: req.body.lastWorkPlace,
+      yearsOfExperience: req.body.yearsOfExperience,
+      addressOfWorkPlace: req.body.addressOfWorkPlace,
+      responsibilities: req.body.responsibilities,
+      referenceContact: req.body.referenceContact,
+      totalYearsOfExperience: req.body.totalYearsOfExperience,
+      createdBy: req.session.userId,
+      identityProof: candidate.candidateDocuments || "",
+      picture: candidate.candidatePicture || "",
+    };
+
+    // ✅ Insert into DB
+    await User.create(newUser);
+    await UserDetails.create(newUserDetails);
+
+    // ✅ Update Candidate Status
+    await Candidate.updateOne(
+      { email: userEmail },
+      {
+        $set: {
+          recruited: true,
+          confirmationStatus: "Hired",
+        },
       }
+    );
 
-      // ✅ Fetch candidate data including documents and picture
-      const candidate = await Candidate.findOne({ email: userEmail });
+    // ✅ Send Email Notification
+    const emailSubject = "Welcome to Our System!";
+    const emailMessage = `
+      Dear ${newUser.fullName},
 
-      if (!candidate) {
-          return res.status(404).json({ message: "Candidate not found." });
-      }
+      You have been successfully added to the system with the following credentials:
 
-      // ✅ Generate unique userId
-      const roleInfo = roleMapping[req.body.userRoleid] || {};
-      if (!roleInfo.id) {
-          return res.status(400).json({ message: "Invalid role." });
-      }
+      Email: ${userEmail}
+      Password: ${rawPassword}
 
-      const lastUser = await User.findOne({ userRoleid: roleInfo.id }).sort({ createdAt: -1 }).lean();
-      const nextUserNumber = lastUser ? parseInt(lastUser.userId.match(/\d+$/)[0]) + 1 : 1;
-      const userId = `${roleInfo.prefix}${nextUserNumber}`;
+      Please log in and change your password immediately.
 
-      // ✅ Hash password
-      const rawPassword = `${new Date().getFullYear()}#${candidate.email.split("@")[0]}`;
-      const hashedPassword = await bcrypt.hash(rawPassword, 10);
+      Regards,
+      Admin Team
+    `;
 
-      // ✅ Construct user object
-      const fullName = `${candidate.firstName} ${candidate.fatherName || ""} ${candidate.surName || ""}`.trim();
-      const newUser = {
-          userId,
-          fullName,
-          userEmail: candidate.email,
-          userMobileNumber: candidate.phone,
-          userStatus: false,
-          userPassword: hashedPassword,
-          userRoleid: roleInfo.id,
-          userDepartment: candidate.departmentId || "N/A",
-          userDesignation: candidate.specialization || "N/A",
-          userPermissions: { SystemAdminExtra: false },
-          activateAccount: true,
-          accountActivationTime: new Date(),
-          createdAt: new Date(),
-      };
+    const emailSent = await sendEmail(userEmail, emailSubject, emailMessage);
 
-      // ✅ Construct userDetails object (WITH DOCUMENT & IMAGE PATHS)
-      const newUserDetails = {
-          userdetailsId: `${userId}-D`,
-          userId,
-          dob: candidate.dob,
-          age: candidate.age,
-          nativePlace: candidate.nativePlace,
-          nationality: candidate.nationality,
-          gender: candidate.gender,
-          maritalStatus: candidate.maritalStatus,
-          languagesKnown: candidate.languagesKnown ? candidate.languagesKnown.split(",") : [],
-          presentAddress: candidate.presentAddress,
-          permanentAddress: candidate.permanentAddress,
-          educationQualification: candidate.educationQualification || [],
-          specialization: candidate.specialization,
-          lastWorkPlace: candidate.lastWorkPlace,
-          yearsOfExperience: candidate.yearsOfExperience,
-          addressOfWorkPlace: candidate.addressOfWorkPlace,
-          responsibilities: candidate.responsibilities,
-          referenceContact: candidate.referenceContact,
-          totalYearsOfExperience: candidate.totalYearsOfExperience,
-          createdBy: req.session.userId,
-          identityProof: candidate.candidateDocuments, // ✅ Attach candidate documents path
-          picture: candidate.candidatePicture, // ✅ Attach candidate picture path
-      };
-
-      // ✅ Insert into database
-      await User.create(newUser);
-      await UserDetails.create(newUserDetails);
-
-      // ✅ Update Candidate Table to set recruited = true and confirmationStatus = "Hired"
-      await Candidate.updateOne(
-        { email: userEmail },
-        { 
-          $set: { 
-            recruited: true, 
-            confirmationStatus: "Hired" // Set the confirmationStatus to "Hired"
-          } 
-        }
-      );
-
-      // ✅ Send Email Notification
-      const emailSubject = "Welcome to Our System!";
-      const emailMessage = `
-        Dear ${fullName},
-
-        You have been successfully added to the system with the following credentials:
-        
-        Email: ${userEmail}
-        Password: ${rawPassword}
-        
-        Please log in and change your password immediately.
-
-        Regards,
-        Admin Team
-      `;
-
-      const emailSent = await sendEmail(userEmail, emailSubject, emailMessage);
-
-      if (!emailSent) {
-          console.error("❌ Email sending failed, but user created successfully.");
-          return res.status(201).json({
-              message: "User created successfully, but email sending failed.",
-              user: newUser,
-              userDetails: newUserDetails,
-              rawPassword,
-          });
-      }
-
-      console.log(`🎉 Successfully inserted user ${userId} and updated candidate status`);
-      return res.status(201).json({ 
-          message: "Candidate converted to user successfully, and email sent!", 
-          documentPath: candidate.candidateDocuments, 
-          picturePath: candidate.candidatePicture 
+    if (!emailSent) {
+      console.error("❌ Email sending failed, but user created successfully.");
+      return res.status(201).json({
+        message: "User created, but email sending failed.",
+        user: newUser,
+        userDetails: newUserDetails,
+        rawPassword,
       });
+    }
+
+    console.log(`🎉 Successfully inserted user ${userId} and updated candidate status`);
+    return res.status(201).json({
+      message: "Candidate converted to user successfully, and email sent!",
+      documentPath: candidate.candidateDocuments,
+      picturePath: candidate.candidatePicture,
+    });
 
   } catch (error) {
-      console.error("❌ Error processing candidate:", error);
-      return res.status(500).json({ message: "Server error while processing candidate." });
+    console.error("❌ Error processing candidate:", error);
+    return res.status(500).json({ message: "Server error while processing candidate." });
   }
 };
-
 
 export const getUserLogs = async (req, res) => {
   try {

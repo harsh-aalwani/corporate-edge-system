@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../assets/css/guest/Forgot.css";
+import { useSnackbar } from "notistack";
 
 const Forgot = () => {
   const [email, setEmail] = useState("");
@@ -9,21 +10,21 @@ const Forgot = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleEmailSubmit = () => {
     // Handle email submission logic
     setStep(2);
   };
 
-  const handleResetPassword = () => {
-    // Handle password reset logic
-    if (newPassword === confirmPassword) {
-      alert("Password reset successfully!");
-      navigate("/login");
-    } else {
-      alert("Passwords do not match!");
-    }
-  };
+const handleResetPassword = () => {
+  if (newPassword === confirmPassword) {
+    enqueueSnackbar("Password reset successfully!", { variant: "success" });
+    navigate("/login");
+  } else {
+    enqueueSnackbar("Passwords do not match!", { variant: "error" });
+  }
+};
 
   return (
     <div className="forgot-password-container">

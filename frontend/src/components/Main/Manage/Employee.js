@@ -2,7 +2,26 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
+import "../../../assets/css/Main/ModalCss.css";
 import axios from "axios";
+import { useSnackbar } from "notistack";
+
+const ConfirmationModal = ({ isOpen, message, onConfirm, onClose }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content animate">
+        <span className="close-btn" onClick={onClose}>&times;</span>
+        <h2 className="modal-title">Confirm Action</h2>
+        <p className="modal-desc">{message}</p>
+        <div className="modal-actions">
+          <button className="modal-btn btn-danger" onClick={onClose}>Cancel</button>
+          <button className="modal-btn confirm" onClick={onConfirm}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const EmployeeManager = () => {
   const [employees, setEmployees] = useState([]);
@@ -10,6 +29,12 @@ const EmployeeManager = () => {
   const [checkedRows, setCheckedRows] = useState([]);
   const [checkAll, setCheckAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { enqueueSnackbar } = useSnackbar();
+
+  // Modal state for activation toggle
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [pendingToggle, setPendingToggle] = useState(null);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -50,12 +75,24 @@ const EmployeeManager = () => {
 
   const isRowChecked = (rowId) => checkedRows.includes(rowId);
 
-  const handleRemove = () => {
-    if (checkedRows.length === 0) {
-      alert("Please select at least one employee to remove.");
-      return;
+
+
+  // Toggle activation status for employee using a confirmation modal
+  const toggleStatus = async (userId, currentStatus) => {
+    try {
+      await axios.put(`http://localhost:5000/api/manage/employees/status/${userId}`, {
+        activateAccount: !currentStatus
+      });
+
+      // Update local state to reflect change
+      const updatedEmployees = employees.map(emp =>
+        emp.userId === userId ? { ...emp, activateAccount: !currentStatus } : emp
+      );
+      setEmployees(updatedEmployees);
+      setFilteredEmployees(updatedEmployees);
+    } catch (error) {
+      console.error("Error updating status:", error.message);
     }
-    console.log("Removing employees with IDs:", checkedRows);
   };
 
   return (
@@ -72,14 +109,16 @@ const EmployeeManager = () => {
             onClick={(e) => {
               if (checkedRows.length !== 1) {
                 e.preventDefault();
-                alert("Please select exactly one system admin to edit.");
-              }
+                enqueueSnackbar("Please select exactly one employee to edit.", {
+                  variant: "default",
+                });
+              }              
             }}
           >
             Edit
           </Link>
           <Link to="/AddUser" className="btn btn-primary btn-round me-2">Add</Link>
-          <button className="btn btn-dark btn-round" onClick={handleRemove}>Remove</button>
+         
         </div>
       </div>
 
@@ -105,6 +144,7 @@ const EmployeeManager = () => {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Mobile Number</th>
+                <th>Action</th>
                 <th>
                   <input type="checkbox" checked={checkAll} onChange={handleCheckAll} />
                 </th>
@@ -112,7 +152,7 @@ const EmployeeManager = () => {
             </thead>
             <tbody>
               {filteredEmployees.length > 0 ? (
-                filteredEmployees.map((emp) => (
+                filteredEmployees.map(emp => (
                   <tr key={emp.userId} className={isRowChecked(emp.userId) ? "active" : ""}>
                     <td>
                       <span style={{
@@ -120,13 +160,28 @@ const EmployeeManager = () => {
                         width: "10px",
                         height: "10px",
                         borderRadius: "50%",
-                        backgroundColor: emp.userStatus ? "green" : "red",
+                        backgroundColor: emp.activateAccount ? (emp.userStatus ? "#2eb774" : "red"): "black",
                       }}></span>
                     </td>
                     <td>{emp.userId}</td>
                     <td>{emp.fullName}</td>
                     <td>{emp.userEmail}</td>
                     <td>{emp.userMobileNumber}</td>
+                    <td>
+                      <button
+                        className={`btn btn-sm ${emp.activateAccount ? "btn-danger" : "btn-success"}`}
+                        onClick={() => {
+                          const msg = emp.activateAccount
+                            ? "Are you sure you want to deactivate this employee?"
+                            : "Are you sure you want to activate this employee?";
+                          setModalMessage(msg);
+                          setPendingToggle({ userId: emp.userId, currentStatus: emp.activateAccount });
+                          setModalOpen(true);
+                        }}
+                      >
+                        {emp.activateAccount ? "Deactivate" : "Activate"}
+                      </button>
+                    </td>
                     <td>
                       <input
                         type="checkbox"
@@ -138,13 +193,26 @@ const EmployeeManager = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center">No Employees found</td>
+                  <td colSpan="7" className="text-center">No Employees found</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={modalOpen}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => {
+          if (pendingToggle) {
+            toggleStatus(pendingToggle.userId, pendingToggle.currentStatus);
+            setModalOpen(false);
+          }
+        }}
+      />
     </div>
   );
 };

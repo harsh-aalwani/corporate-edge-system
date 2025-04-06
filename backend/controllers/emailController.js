@@ -6,45 +6,36 @@ import User from "../models/userModel.js";
 import Department from "../models/departmentsModel.js"; // ✅ Import Department Model
 import sendEmail from "../utils/sendEmail.js";
 import { EMAIL_USER,CAPTCHA_SECRET } from "../config.js";
-import axios from 'axios';
 
 export const contactUs = async (req, res) => {
-    const { name, email, message, captchaToken } = req.body;
-
-    if (!name || !email || !message || !captchaToken) {
-        return res.status(400).json({ message: "All fields and CAPTCHA verification are required." });
+    const { name, email, message } = req.body;
+  
+    if (!name || !email || !message) {
+      return res.status(400).json({ message: "All fields are required." });
     }
-
+  
     try {
-        // 🔍 **Verify CAPTCHA with Google**
-        const captchaResponse = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
-            params: {
-                secret: CAPTCHA_SECRET, // Secret key from Google reCAPTCHA
-                response: captchaToken,
-            },
-        });
-
-        if (!captchaResponse.data.success) {
-            return res.status(400).json({ message: "CAPTCHA verification failed. Please try again." });
-        }
-
-        // ✅ CAPTCHA Passed - Proceed with Email
-        const senderSubject = "Confirmation: Your message has been received";
-        const senderBody = `Dear ${name},\n\nThank you for reaching out! We have received your message and will get back to you soon.\n\nBest regards,\nSupport Team`;
-
-        await sendEmail(email, senderSubject, senderBody);
-
-        const adminSubject = `New Contact Form Submission from ${name}`;
-        const adminBody = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
-
-        await sendEmail(EMAIL_USER, adminSubject, adminBody);
-
-        res.status(200).json({ message: "Message sent successfully" });
+      // ✅ CAPTCHA already verified on frontend via separate route
+  
+      // Send confirmation to sender
+      const senderSubject = "Confirmation: Your message has been received";
+      const senderBody = `Dear ${name},\n\nThank you for reaching out! We have received your message and will get back to you soon.\n\nBest regards,\nSupport Team`;
+  
+      await sendEmail(email, senderSubject, senderBody);
+  
+      // Notify admin
+      const adminSubject = `New Contact Form Submission from ${name}`;
+      const adminBody = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+  
+      await sendEmail(EMAIL_USER, adminSubject, adminBody);
+  
+      res.status(200).json({ message: "Message sent successfully" });
     } catch (error) {
-        console.error("Email or CAPTCHA error:", error);
-        res.status(500).json({ message: "Error processing request" });
+      console.error("Email sending error:", error);
+      res.status(500).json({ message: "Error processing request" });
     }
-};
+  };
+  
 
 // ✅ Function to replace placeholders dynamically
 const replacePlaceholders = (text, placeholders) => {

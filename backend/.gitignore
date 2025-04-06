@@ -5,3 +5,5 @@ node_modules/
 config.js
 /uploads/userDocuments
 /uploads/userPictures
+
+ces_db/

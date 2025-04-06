@@ -1,3 +1,4 @@
+import axios from 'axios';
 import User from '../models/userModel.js';  // Import the User model
 import Department from '../models/departmentsModel.js';
 import Policy from '../models/policyModel.js';
@@ -7,7 +8,7 @@ import concernModel from '../models/concernModel.js';
 import Announcement from '../models/announcementModel.js';
 import UserLogModel from '../models/Log/UserLogModel.js';
 import { LeaveAllocation } from "../models/leaveAllocationModel.js"; // ✅ Fix: Import LeaveAllocation
-
+import { CAPTCHA_SECRET } from "../config.js";
 
 export const getSystemAdmin = async (req, res) => {
   try {
@@ -206,5 +207,131 @@ export const getUserLeaveBalances = async (req, res) => {
   } catch (error) {
     console.error("❌ Error fetching leave balances:", error);
     res.status(500).json({ message: "Failed to fetch leave balances." });
+  }
+};
+
+
+export const toggleSystemAdminStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { activateAccount } = req.body;
+
+    console.log("Request received:", { userId, activateAccount });
+
+    const user = await User.findOne({ userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.activateAccount = activateAccount;  // ✅ use the correct field
+    await user.save();
+
+    res.status(200).json({ message: "User status updated successfully" });
+  } catch (error) {
+    console.error("Toggle status error:", error);
+    res.status(500).json({ message: "Failed to update user status" });
+  }
+};
+
+export const toggleHRManagerStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { activateAccount } = req.body;
+
+    console.log("Request received for HR Manager:", { userId, activateAccount });
+
+    const hrManager = await User.findOne({ userId });
+    if (!hrManager) {
+      return res.status(404).json({ message: "HR Manager not found" });
+    }
+
+    // Update activation status using the User model
+    hrManager.activateAccount = activateAccount;
+    await hrManager.save();
+
+    res.status(200).json({ message: "HR Manager status updated successfully" });
+  } catch (error) {
+    console.error("Toggle HR Manager status error:", error);
+    res.status(500).json({ message: "Failed to update HR Manager status" });
+  }
+};
+
+export const toggleDepartmentManagerStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { activateAccount } = req.body;
+
+    console.log("Request received for Department Manager:", { userId, activateAccount });
+
+    const deptManager = await User.findOne({ userId });
+    if (!deptManager) {
+      return res.status(404).json({ message: "Department Manager not found" });
+    }
+
+    // Update activation status using the User model
+    deptManager.activateAccount = activateAccount;
+    await deptManager.save();
+
+    res.status(200).json({ message: "Department Manager status updated successfully" });
+  } catch (error) {
+    console.error("Toggle Department Manager status error:", error);
+    res.status(500).json({ message: "Failed to update Department Manager status" });
+  }
+};
+
+// In manageControllers.js (or your appropriate controller file)
+export const toggleEmployeeStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { activateAccount } = req.body;
+
+    console.log("Request received for Employee:", { userId, activateAccount });
+
+    const employee = await User.findOne({ userId });
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Update activation status using the User model
+    employee.activateAccount = activateAccount;
+    await employee.save();
+
+    res.status(200).json({ message: "Employee status updated successfully" });
+  } catch (error) {
+    console.error("Toggle Employee status error:", error);
+    res.status(500).json({ message: "Failed to update Employee status" });
+  }
+};
+
+export const verifyCaptcha = async (req, res) => {
+  console.log("Request body:", req.body); // Debug log
+
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ success: false, message: "Missing CAPTCHA token" });
+  }
+
+  try {
+    const captchaRes = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      null,
+      {
+        params: {
+          secret: CAPTCHA_SECRET,
+          response: token,
+        },
+      }
+    );
+
+    console.log("Google CAPTCHA response:", captchaRes.data); // Debug log
+
+    if (captchaRes.data.success) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(400).json({ success: false, message: "CAPTCHA validation failed" });
+    }
+  } catch (err) {
+    console.error("CAPTCHA verification error:", err);
+    res.status(500).json({ success: false, message: "Error verifying CAPTCHA" });
   }
 };

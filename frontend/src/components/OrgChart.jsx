@@ -4,7 +4,7 @@ import { Tree, TreeNode } from "react-organizational-chart";
 
 const OrgChart = () => {
   const [expandedNodes, setExpandedNodes] = useState({
-    superAdmin: true,
+    superAdmin: false,
     systemAdmins: false,
     hrManagers: false,
     departments: false,
@@ -116,7 +116,11 @@ const OrgChart = () => {
               user.userRoleid !== "R3"
           )
         );
-
+        setExpandedNodes((prev) => ({
+          ...prev,
+          superAdmin: true,
+        }));
+        
         setUsers(filteredUsers);
         setDepartments(deptsData);
       } catch (error) {
@@ -131,6 +135,7 @@ const OrgChart = () => {
 
   return (
     <div style={containerStyle} className="orgchart-container">
+      <h2 className="title text-center mt-2 mb-5" style={{fontSize:"2rem"}}>Organization Chart</h2>
       <Tree
         label={renderNode("superAdmin", "Super Admin", "superAdmin")}
         lineWidth={expandedNodes.superAdmin ? "2px" : "0px"}
@@ -169,13 +174,14 @@ const OrgChart = () => {
                           "systemAdmin",
                           <div>
                             <div>{user.fullName}</div>
-                            <div style={{ fontSize: "12px",color:"light"}}>{user.userDesignation}</div>
+                            <div style={{ fontSize: "12px", color: "light" }}>
+                              {user.userDesignation}
+                            </div>
                           </div>,
                           user.userId
                         )}
                       />
                     ))}
-
                 </TreeNode>
               ) : (
                 <TreeNode
@@ -214,13 +220,19 @@ const OrgChart = () => {
                 lineColor="black"
               >
                 {expandedNodes.hrManagers
-                  ? users.filter((user) => user.userRoleid === "R3")
+                  ? users
+                      .filter((user) => user.userRoleid === "R3")
                       .map((user) => (
                         <TreeNode
                           key={user.userId}
                           label={renderNode(
                             "hrManager",
-                            user.fullName,
+                            <div>
+                            <div>{user.fullName}</div>
+                            <div style={{ fontSize: "12px" }}>
+                              {user.userDesignation}
+                            </div>
+                          </div>,
                             user.userId
                           )}
                         />
@@ -283,25 +295,27 @@ const OrgChart = () => {
                               lineWidth="2px"
                               lineColor="black"
                             >
-{users
-  .filter(
-    (user) =>
-      user.userRoleid === "R4" && user.userDepartment === dept.departmentid
-  )
-  .map((user) => (
-    <TreeNode
-      key={user.userId}
-      label={renderNode(
-        "departmentManager",
-        <div>
-          <div>{user.fullName}</div>
-          <div style={{ fontSize: "12px"}}>{user.userDesignation}</div>
-        </div>,
-        user.userId
-      )}
-    />
-  ))}
-
+                              {users
+                                .filter(
+                                  (user) =>
+                                    user.userRoleid === "R4" &&
+                                    user.userDepartment === dept.departmentid
+                                )
+                                .map((user) => (
+                                  <TreeNode
+                                    key={user.userId}
+                                    label={renderNode(
+                                      "departmentManager",
+                                      <div>
+                                        <div>{user.fullName}</div>
+                                        <div style={{ fontSize: "12px" }}>
+                                          {user.userDesignation}
+                                        </div>
+                                      </div>,
+                                      user.userId
+                                    )}
+                                  />
+                                ))}
                             </TreeNode>
                           ) : (
                             <TreeNode
@@ -357,8 +371,7 @@ const OrgChart = () => {
                               }
                               lineWidth="2px"
                               lineColor="black"
-                            > 
-                            </TreeNode>
+                            ></TreeNode>
                           ) : (
                             <TreeNode
                               label={

@@ -1,15 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { useSnackbar } from "notistack";
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
-import axios from "axios";
+import "../../../assets/css/Main/ModalCss.css";
+
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, message }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content animate">
+        <span className="close-btn" onClick={onClose}>&times;</span>
+        <h2 className="modal-title">Confirm Action</h2>
+        <p className="modal-desc">{message}</p>
+        <div className="modal-actions">
+          <button className="modal-btn btn-danger" onClick={onClose}>Cancel</button>
+          <button className="modal-btn confirm" onClick={onConfirm}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const HRManager = () => {
-  const [hrManagers, setHrManagers] = useState([]);  // Store original HR Managers
-  const [filteredManagers, setFilteredManagers] = useState([]);  // Store filtered HR Managers
-  const [checkedRows, setCheckedRows] = useState([]);  // Track checked rows
-  const [checkAll, setCheckAll] = useState(false);  // Handle check-all checkbox
-  const [searchQuery, setSearchQuery] = useState("");  // Track search input
+  const [hrManagers, setHrManagers] = useState([]);
+  const [filteredManagers, setFilteredManagers] = useState([]);
+  const [checkedRows, setCheckedRows] = useState([]);
+  const [checkAll, setCheckAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { enqueueSnackbar } = useSnackbar();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+  const [pendingToggle, setPendingToggle] = useState(null);
 
   useEffect(() => {
     // Fetch HR Managers' data from the backend
@@ -17,7 +41,7 @@ const HRManager = () => {
       try {
         const response = await axios.get("http://localhost:5000/api/manage/hr-managers");
         setHrManagers(response.data.hrManagers);
-        setFilteredManagers(response.data.hrManagers);  // Initially set filteredManagers to all HR Managers
+        setFilteredManagers(response.data.hrManagers);
       } catch (error) {
         console.error("Error fetching HR Managers:", error.message);
       }
@@ -30,14 +54,11 @@ const HRManager = () => {
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-
-    // Filter HR managers based on name, email, or mobile number
     const filtered = hrManagers.filter((manager) =>
       manager.fullName.toLowerCase().includes(query) ||
       manager.userEmail.toLowerCase().includes(query) ||
       manager.userMobileNumber.includes(query)
     );
-
     setFilteredManagers(filtered);
   };
 
@@ -56,6 +77,26 @@ const HRManager = () => {
 
   const isRowChecked = (rowId) => checkedRows.includes(rowId);
 
+  // Toggle activation status using activateAccount property
+  const toggleStatus = async (userId, currentStatus) => {
+    try {
+      await axios.put(`http://localhost:5000/api/manage/hr-managers/status/${userId}`, {
+        activateAccount: !currentStatus
+      });
+
+      const updatedManagers = hrManagers.map(manager =>
+        manager.userId === userId ? { ...manager, activateAccount: !currentStatus } : manager
+      );
+      setHrManagers(updatedManagers);
+      setFilteredManagers(updatedManagers);
+
+      enqueueSnackbar(`HR Manager ${!currentStatus ? "activated" : "deactivated"} successfully.`, { variant: "success" });
+    } catch (error) {
+      console.error("Error updating status:", error.message);
+      enqueueSnackbar("Failed to update HR Manager status.", { variant: "error" });
+    }
+  };
+
   return (
     <div className="page-inner page-box page-start mt-5">
       <div className="d-flex align-items-center flex-column flex-md-row pt-2 pb-4">
@@ -70,14 +111,16 @@ const HRManager = () => {
             onClick={(e) => {
               if (checkedRows.length !== 1) {
                 e.preventDefault();
-                alert("Please select exactly one system admin to edit.");
-              }
+                enqueueSnackbar("Please select exactly one HR manager to edit.", {
+                  variant: "default",
+                });
+              }              
             }}
           >
             Edit
           </Link>
           <Link to="/AddUser" className="btn btn-primary btn-round me-2">Add</Link>
-          <button className="btn btn-dark btn-round">Remove</button>
+         
         </div>
       </div>
 
@@ -103,6 +146,7 @@ const HRManager = () => {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Mobile Number</th>
+                <th>Action</th>
                 <th>
                   <input
                     type="checkbox"
@@ -122,13 +166,28 @@ const HRManager = () => {
                         width: "10px",
                         height: "10px",
                         borderRadius: "50%",
-                        backgroundColor: manager.userStatus ? "green" : "red",
+                        backgroundColor: manager.activateAccount ? (manager.userStatus ? "#2eb774" : "red"): "black",
                       }}></span>
                     </td>
                     <td>{manager.userId}</td>
                     <td>{manager.fullName}</td>
                     <td>{manager.userEmail}</td>
                     <td>{manager.userMobileNumber}</td>
+                    <td>
+                      <button
+                        className={`btn btn-sm ${manager.activateAccount ? "btn-danger" : "btn-success"}`}
+                        onClick={() => {
+                          const msg = manager.activateAccount
+                            ? "Are you sure you want to deactivate this HR manager?"
+                            : "Are you sure you want to activate this HR manager?";
+                          setModalMessage(msg);
+                          setPendingToggle({ userId: manager.userId, currentStatus: manager.activateAccount });
+                          setModalOpen(true);
+                        }}
+                      >
+                        {manager.activateAccount ? "Deactivate" : "Activate"}
+                      </button>
+                    </td>
                     <td>
                       <input
                         type="checkbox"
@@ -140,12 +199,23 @@ const HRManager = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center">No HR Managers found</td>
+                  <td colSpan="7" className="text-center">No HR Managers found</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        <ConfirmationModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onConfirm={() => {
+            if (pendingToggle) {
+              toggleStatus(pendingToggle.userId, pendingToggle.currentStatus);
+              setModalOpen(false);
+            }
+          }}
+          message={modalMessage}
+        />
       </div>
     </div>
   );

@@ -890,7 +890,10 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                             </label>
                         </div>
                     )}
-                    <div className="d-flex justify-content-between w-100 mt-5">
+                    
+                    <hr id="title-line" className="mb-2" data-symbol="✈" />
+
+                    <div className="d-flex justify-content-between w-100 mt-1">
                         {/* Step Navigation Buttons */}
                         <div className="d-flex justify-content-between w-100 mt-4">
                             {/* Show Back button if not on Step 1 */}
@@ -903,7 +906,7 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                                 Back
                                 </button>
                             )}
-                            <button 
+                            {/* <button 
                             type="button" 
                             className="btn btn-danger px-4" 
                             onClick={() => {
@@ -958,7 +961,7 @@ export const AddUserForm = ({ selectedNewCandidateId, handleAddUser }) => {
                             }}
                             >
                             Clear All
-                            </button>
+                            </button> */}
 
                             {/* Show Next button if not on Step 4 */}
                             {currentStep < 4 && (

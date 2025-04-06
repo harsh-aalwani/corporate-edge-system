@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ".../../assets/css/guest/Login.css";
+import { useSnackbar } from "notistack";
 
 const Login = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -9,6 +10,7 @@ const Login = () => {
   const [generatedOtp, setGeneratedOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { enqueueSnackbar } = useSnackbar();
 
   // Open and Close Modal
   const openModal = () => {
@@ -22,29 +24,35 @@ const Login = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
-  // Handle Send OTP
-  const handleSendOtp = (e) => {
-    e.preventDefault();
-    const otpCode = generateOtp();
-    setGeneratedOtp(otpCode);
-    alert(`Your OTP is: ${otpCode}`); // Mock OTP send, replace with API call
-    setStep(2);
-  };
 
-  // Handle Reset Password
-  const handleResetPassword = (e) => {
-    e.preventDefault();
-    if (otp !== generatedOtp) {
-      alert("Invalid OTP. Please try again.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    alert("Password reset successfully!"); // Replace with API call
-    setIsModalOpen(false);
-  };
+// Handle Send OTP
+const handleSendOtp = (e) => {
+  e.preventDefault();
+  const otpCode = generateOtp();
+  setGeneratedOtp(otpCode);
+
+  // Replace alert with snackbar
+  enqueueSnackbar(`Your OTP is: ${otpCode}`, { variant: "info" }); // Or "success" if you prefer
+  setStep(2);
+};
+
+// Handle Reset Password
+const handleResetPassword = (e) => {
+  e.preventDefault();
+
+  if (otp !== generatedOtp) {
+    enqueueSnackbar("Invalid OTP. Please try again.", { variant: "error" });
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    enqueueSnackbar("Passwords do not match!", { variant: "error" });
+    return;
+  }
+
+  enqueueSnackbar("Password reset successfully!", { variant: "success" });
+  setIsModalOpen(false);
+};
 
   return (
     <div

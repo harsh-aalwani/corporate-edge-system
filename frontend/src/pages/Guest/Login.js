@@ -1,9 +1,9 @@
-import React, { useState , useEffect} from 'react';
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
-import { useNavigate } from 'react-router-dom';
-import { useSnackbar } from 'notistack'; // Import useSnackbar
-import { setUserRoleCookie , getUserRoleCookie } from '../../utils/cookieHelper';
+import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack"; // Import useSnackbar
+import { setUserRoleCookie, getUserRoleCookie } from "../../utils/cookieHelper";
 import backgroundImage from "../../assets/img/Login/background_login.jpg";
 import profileImage from "../../assets/img/Login/logo.jpg";
 
@@ -23,7 +23,7 @@ const Login = () => {
   useEffect(() => {
     const userRoleid = getUserRoleCookie();
     if (userRoleid) {
-      navigate('/dashboard'); 
+      navigate("/dashboard");
     }
   }, [navigate]);
 
@@ -32,85 +32,102 @@ const Login = () => {
 
     // Validate email and password
     if (!email || !password) {
-      enqueueSnackbar('Please enter both email and password', { variant: 'error' });
+      enqueueSnackbar("Please enter both email and password", {
+        variant: "error",
+      });
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://localhost:5000/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userEmail: email, userPassword: password }),
-        credentials: 'include', // Include credentials for session management
+        credentials: "include", // Include credentials for session management
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        enqueueSnackbar('Login successful!', { variant: 'success' });
+        enqueueSnackbar("Login successful!", { variant: "success" });
         const encryptedRole = data.encryptedRole;
         setUserRoleCookie(encryptedRole);
-        navigate('/dashboard'); // Redirect to dashboard after login
+        navigate("/dashboard"); // Redirect to dashboard after login
       } else {
-        enqueueSnackbar(data.message || 'Login failed!', { variant: 'error' });
+        enqueueSnackbar(data.message || "Login failed!", { variant: "error" });
       }
     } catch (error) {
-      enqueueSnackbar('An error occurred during login', { variant: 'error' });
+      enqueueSnackbar("An error occurred during login", { variant: "error" });
     }
   };
 
-    // Open and Close Modal
-    const openModal = () => {
-      setStep(1);
-      setIsModalOpen(true);
-    };
-    const closeModal = () => setIsModalOpen(false);
+  // Open and Close Modal
+  const openModal = () => {
+    setStep(1);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => setIsModalOpen(false);
 
   // Handle Send OTP (API call)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/authuser/sendotp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/authuser/sendotp",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
-        enqueueSnackbar(data.message, { variant: 'success' }); // Show success snackbar
+        enqueueSnackbar(data.message, { variant: "success" }); // Show success snackbar
         setStep(2);
       } else {
-        enqueueSnackbar(data.message || "Error sending OTP. Please try again.", { variant: 'error' }); // Show error snackbar
+        enqueueSnackbar(
+          data.message || "Error sending OTP. Please try again.",
+          { variant: "error" }
+        ); // Show error snackbar
       }
     } catch (error) {
-      enqueueSnackbar("Error sending OTP. Please try again.", { variant: 'error' }); // Show error snackbar
+      enqueueSnackbar("Error sending OTP. Please try again.", {
+        variant: "error",
+      }); // Show error snackbar
     }
   };
 
   // Handle Reset Password (API call)
   const handleResetPassword = async (e) => {
-
     try {
-      const response = await fetch("http://localhost:5000/api/authuser/resetpassword", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, otp, newPassword }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/authuser/resetpassword",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, otp, newPassword }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
-        enqueueSnackbar(data.message, { variant: 'success' }); // Show success snackbar
+        enqueueSnackbar(data.message, { variant: "success" }); // Show success snackbar
         setIsModalOpen(false); // Close modal
       } else {
-        enqueueSnackbar(data.message || "Error resetting password. Please try again.", { variant: 'error' }); // Show error snackbar
+        enqueueSnackbar(
+          data.message || "Error resetting password. Please try again.",
+          { variant: "error" }
+        ); // Show error snackbar
       }
     } catch (error) {
-      enqueueSnackbar("Error resetting password. Please try again.", { variant: 'error' }); // Show error snackbar
+      enqueueSnackbar("Error resetting password. Please try again.", {
+        variant: "error",
+      }); // Show error snackbar
     }
   };
 
@@ -134,7 +151,7 @@ const Login = () => {
             <div className="logo-container">
               <img src={profileImage} alt="User Logo" className="logo" />
             </div>
-            <p className="heading">Login</p>
+            <p className="heading mb-3">Login</p>
             <div className="input-group">
               <input
                 type="email"
@@ -156,7 +173,9 @@ const Login = () => {
               />
             </div>
             <div>
-              <button className="button-container" type="submit">Login</button>
+              <button className="button-container" type="submit">
+                Login
+              </button>
             </div>
             <div className="bottom-text">
               <p>
@@ -172,11 +191,15 @@ const Login = () => {
         {isModalOpen && (
           <div className="modal-overlay">
             <div className="modal-content animate">
-              <span className="close-btn" onClick={closeModal}>&times;</span>
+              <span className="close-btn" onClick={closeModal}>
+                &times;
+              </span>
               {step === 1 ? (
                 <>
                   <h2 className="modal-title">Reset Password</h2>
-                  <p className="modal-desc">Enter your email to receive an OTP.</p>
+                  <p className="modal-desc">
+                    Enter your email to receive an OTP.
+                  </p>
                   <form onSubmit={handleSendOtp}>
                     <input
                       type="email"
@@ -186,7 +209,9 @@ const Login = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
-                    <button type="submit" className="modal-btn">Send OTP</button>
+                    <button type="submit" className="modal-btn">
+                      Send OTP
+                    </button>
                   </form>
                 </>
               ) : (
@@ -217,15 +242,17 @@ const Login = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                     />
-                    <button type="submit" className="modal-btn">Reset Password</button>
+                    <button type="submit" className="modal-btn">
+                      Reset Password
+                    </button>
                   </form>
                 </>
               )}
             </div>
           </div>
-          )}
-        </div>
-      </StyledWrapper>
+        )}
+      </div>
+    </StyledWrapper>
   );
 };
 
@@ -241,9 +268,10 @@ const StyledWrapper = styled.div`
     border-radius: 8px;
     box-shadow: rgb(219, 207, 207) 0px -23px 25px 0px inset,
       rgb(108 108 108 / 23%) 0px -36px 30px 0px inset,
-      rgba(0, 0, 0, 0.1) 0px -79px 40px 0px inset, rgba(0, 0, 0, 0.06) 0px 2px 1px,
-      rgba(0, 0, 0, 0.09) 0px 4px 2px, rgba(0, 0, 0, 0.09) 0px 8px 4px,
-      rgba(0, 0, 0, 0.09) 0px 16px 8px, rgba(0, 0, 0, 0.09) 0px 32px 16px;
+      rgba(0, 0, 0, 0.1) 0px -79px 40px 0px inset,
+      rgba(0, 0, 0, 0.06) 0px 2px 1px, rgba(0, 0, 0, 0.09) 0px 4px 2px,
+      rgba(0, 0, 0, 0.09) 0px 8px 4px, rgba(0, 0, 0, 0.09) 0px 16px 8px,
+      rgba(0, 0, 0, 0.09) 0px 32px 16px;
     padding: 40px;
     max-width: 400px;
     width: 100%;
@@ -271,9 +299,9 @@ const StyledWrapper = styled.div`
 
   .heading {
     color: #110f0f;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 2.6rem;
-    margin-bottom: 5px;
+    margin-bottom: 0px; /* ✅ Reduced space */
   }
 
   .paragraph {
@@ -293,7 +321,7 @@ const StyledWrapper = styled.div`
     padding: 15px 23px;
     font-size: 18px;
     border-radius: 8px;
-    color:rgb(0, 0, 0);
+    color: rgb(0, 0, 0);
     width: 100%;
     box-shadow: rgb(136 136 136 / 17%) 0px -23px 25px 0px inset,
       rgb(81 81 81 / 23%) 0px -36px 30px 0px inset,

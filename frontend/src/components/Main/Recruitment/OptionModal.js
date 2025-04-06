@@ -614,10 +614,10 @@ const OptionModal = ({
 
   const [showSendOptionsModal, setShowSendOptionsModal] = useState(false);
   const [sendOptionChosen, setSendOptionChosen] = useState(null); // "sendAll", "sendNew"
-  
+
   const handleSendMail = async (sendOption = "sendAll") => {
     setLoading(true);
-  
+
     // ✅ Function to format date as `DD-MM-YYYY`
     const formatDate = (date) => {
       const d = new Date(date);
@@ -626,31 +626,34 @@ const OptionModal = ({
       const year = d.getFullYear();
       return `${day}-${month}-${year}`;
     };
-  
+
     // ✅ Get all recipients from localCandidates
-    let recipients = localCandidates.map(candidate => ({
+    let recipients = localCandidates.map((candidate) => ({
       candidateId: candidate.candidateId,
       email: candidate.email,
       result: candidate.result, // Added result field for JobOffer filtering
     }));
-  
+
     // ✅ If selectedTemplate is "JobOffer", filter out candidates where result is false
     if (selectedTemplate === "JobOffer") {
-      recipients = recipients.filter(recipient => recipient.result === true);
+      recipients = recipients.filter((recipient) => recipient.result === true);
     }
     // ✅ Extract past recipients based on selectedTemplate
     const pastRecipients = localCandidates
-    .filter(candidate => candidate.pastEmails?.includes(selectedTemplate))
-    .map(candidate => candidate.email);
-  
+      .filter((candidate) => candidate.pastEmails?.includes(selectedTemplate))
+      .map((candidate) => candidate.email);
+
     // ✅ Filter out past recipients if "Send Only New" is selected
     if (sendOption === "sendNew") {
       recipients = recipients.filter(
-        recipient => !pastRecipients.includes(recipient.email)
+        (recipient) => !pastRecipients.includes(recipient.email)
       );
     }
     // Remove extra fields (like `result`) before sending to the backend
-    recipients = recipients.map(({ candidateId, email }) => ({ candidateId, email }));
+    recipients = recipients.map(({ candidateId, email }) => ({
+      candidateId,
+      email,
+    }));
 
     // ✅ Prevent sending if no new recipients left
     if (recipients.length === 0) {
@@ -658,11 +661,12 @@ const OptionModal = ({
       setLoading(false);
       return;
     }
-  
+
     // ✅ Calculate and format deadline (Set default if not provided)
-    const deadlineToSend =
-      formatDate(deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
-  
+    const deadlineToSend = formatDate(
+      deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    );
+
     // ✅ Prepare FormData for file upload
     const formData = new FormData();
     formData.append("subject", subject.trim());
@@ -670,7 +674,7 @@ const OptionModal = ({
     formData.append("recipients", JSON.stringify(recipients));
     formData.append("deadline", deadlineToSend);
     formData.append("selectedTemplate", selectedTemplate.trim());
-  
+
     // ✅ Send `placeholderData` to backend
     formData.append(
       "placeholderData",
@@ -680,26 +684,26 @@ const OptionModal = ({
         CompanyEmail: placeholderData?.Contact?.email?.trim() || "",
       })
     );
-  
+
     // ✅ Append files correctly
     documents.forEach(({ file }) => {
       if (file && file.name) {
         formData.append("documents", file, file.name);
       }
     });
-  
+
     try {
       const response = await fetch("http://localhost:5000/api/emails/send", {
         method: "POST",
         body: formData,
         credentials: "include",
       });
-  
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Failed to send email");
       }
-  
+
       // ✅ Clear email fields after sending
       setSelectedCandidateId("");
       setSubject("");
@@ -707,7 +711,7 @@ const OptionModal = ({
       setDocuments([]);
       setDeadline("");
       setSelectedTemplate("");
-  
+
       enqueueSnackbar("📧 Email sent successfully with attachments!", {
         variant: "success",
       });
@@ -721,21 +725,20 @@ const OptionModal = ({
 
   const triggerSendMail = () => {
     console.log("Triggered Send Click");
-  
-    const wasSentBefore = localCandidates.some(candidate =>
+
+    const wasSentBefore = localCandidates.some((candidate) =>
       candidate.pastEmails?.includes(selectedTemplate)
     );
-  
+
     console.log("Was sent before?", wasSentBefore);
-  
+
     if (wasSentBefore) {
       setShowSendOptionsModal(true); // ✅ Show modal if template already sent
     } else {
       handleSendMail("sendAll"); // ✅ Send directly
     }
   };
-  
-  
+
   const handleRemoveCandidate = (candidateId) => {
     setLocalCandidates((prev) =>
       prev.filter((c) => c.candidateId !== candidateId)
@@ -998,92 +1001,124 @@ const OptionModal = ({
                   <ClearButton onClick={handleClear}>Clear</ClearButton>
                   <SendMailButton
                     onClick={triggerSendMail}
-                    disabled={!subject || !emailBody || (selectedTemplate === "JobOffer" && !deadline)}
+                    disabled={
+                      !subject ||
+                      !emailBody ||
+                      (selectedTemplate === "JobOffer" && !deadline)
+                    }
                   >
                     Send
                   </SendMailButton>
                   {showSendOptionsModal && (
-  <div style={{
-    position: "fixed",
-    top: 0, left: 0,
-    width: "100vw", height: "100vh",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    zIndex: 9999,
-  }}>
-    <div style={{
-      backgroundColor: "#fff",
-      borderRadius: "12px",
-      padding: "28px",
-      maxWidth: "450px",
-      width: "90%",
-      boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.2)",
-      textAlign: "center"
-    }}>
-      <h2 style={{ marginBottom: "10px", fontSize: "22px", color: "#333"}}><b>Email Already Sent</b></h2>
-      <p style={{ marginBottom: "20px", fontSize: "16px", color: "#555" }}>
-        This template has already been sent. What would you like to do?
-      </p>
-      
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        <button
-          onClick={() => setShowSendOptionsModal(false)}
-          style={{
-            padding: "12px",
-            borderRadius: "8px",
-            backgroundColor: "#d32f2f", // Red
-            color: "#fff",
-            border: "none",
-            fontWeight: "bold",
-            fontSize: "15px",
-            cursor: "pointer"
-          }}
-        >
-          Cancel
-        </button>
-        
-        <button
-          onClick={() => {
-            setShowSendOptionsModal(false);
-            handleSendMail("sendNew");
-          }}
-          style={{
-            padding: "12px",
-            borderRadius: "8px",
-            backgroundColor: "#1976d2", // Blue
-            color: "#fff",
-            border: "none",
-            fontWeight: "bold",
-            fontSize: "15px",
-            cursor: "pointer"
-          }}
-        >
-          Send Only to New Recipients
-        </button>
-        
-        <button
-          onClick={() => {
-            setShowSendOptionsModal(false);
-            handleSendMail("sendAll");
-          }}
-          style={{
-            padding: "12px",
-            borderRadius: "8px",
-            backgroundColor: "#f5f5f5", // White
-            color: "#333",
-            border: "1px solid #ccc",
-            fontWeight: "bold",
-            fontSize: "15px",
-            cursor: "pointer"
-          }}
-        >
-          Send to Everyone Again
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                    <div
+                      style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0, 0, 0, 0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                      }}
+                    >
+                      <div
+                        style={{
+                          backgroundColor: "#fff",
+                          borderRadius: "12px",
+                          padding: "28px",
+                          maxWidth: "450px",
+                          width: "90%",
+                          boxShadow: "0px 8px 16px rgba(0, 0, 0, 0.2)",
+                          textAlign: "center",
+                        }}
+                      >
+                        <h2
+                          style={{
+                            marginBottom: "10px",
+                            fontSize: "22px",
+                            color: "#333",
+                          }}
+                        >
+                          <b>Email Already Sent</b>
+                        </h2>
+                        <p
+                          style={{
+                            marginBottom: "20px",
+                            fontSize: "16px",
+                            color: "#555",
+                          }}
+                        >
+                          This template has already been sent. What would you
+                          like to do?
+                        </p>
 
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                          }}
+                        >
+                          <button
+                            onClick={() => setShowSendOptionsModal(false)}
+                            style={{
+                              padding: "12px",
+                              borderRadius: "8px",
+                              backgroundColor: "#d32f2f", // Red
+                              color: "#fff",
+                              border: "none",
+                              fontWeight: "bold",
+                              fontSize: "15px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Cancel
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setShowSendOptionsModal(false);
+                              handleSendMail("sendNew");
+                            }}
+                            style={{
+                              padding: "12px",
+                              borderRadius: "8px",
+                              backgroundColor: "#1976d2", // Blue
+                              color: "#fff",
+                              border: "none",
+                              fontWeight: "bold",
+                              fontSize: "15px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Send Only to New Recipients
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setShowSendOptionsModal(false);
+                              handleSendMail("sendAll");
+                            }}
+                            style={{
+                              padding: "12px",
+                              borderRadius: "8px",
+                              backgroundColor: "#f5f5f5", // White
+                              color: "#333",
+                              border: "1px solid #ccc",
+                              fontWeight: "bold",
+                              fontSize: "15px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Send to Everyone Again
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1278,10 +1313,13 @@ const OptionModal = ({
                   <option value="">-- Select Candidate --</option>
                   {localCandidates
                     .slice() // Create a copy to avoid mutating the state
-                    .filter((candidate) => candidate.confirmationStatus !== "Hired") // Exclude "Hired" candidates
+                    .filter(
+                      (candidate) => candidate.confirmationStatus !== "Hired"
+                    ) // Exclude "Hired" candidates
                     .sort(
                       (a, b) =>
-                        (b.candidatePerformance || 0) - (a.candidatePerformance || 0)
+                        (b.candidatePerformance || 0) -
+                        (a.candidatePerformance || 0)
                     ) // Sort descending by candidatePerformance
                     .map((candidate) => (
                       <option
@@ -1485,7 +1523,11 @@ const OptionModal = ({
                 >
                   <option value="">-- Choose New Candidate --</option>
                   {localCandidates
-                    .filter((candidate) => candidate.result && candidate.confirmationStatus === "Accepted") // Add condition for confirmationStatus
+                    .filter(
+                      (candidate) =>
+                        candidate.result &&
+                        candidate.confirmationStatus === "Accepted"
+                    ) // Add condition for confirmationStatus
                     .map((candidate) => (
                       <option
                         key={candidate.candidateId}
@@ -1499,7 +1541,6 @@ const OptionModal = ({
                       </option>
                     ))}
                 </select>
-
               </div>
 
               {/* ✅ Pass Updated Selected Candidate to Form */}

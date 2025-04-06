@@ -452,11 +452,9 @@ export const getJobListings = async (req, res) => {
   }
 };
 
-
 export const getAnnouncementInfoById = async (req, res) => {
   try {
     const { announcementId } = req.body; // ✅ Extract from request body
-
     if (!announcementId) {
       return res.status(400).json({ message: "announcementId is required." });
     }
