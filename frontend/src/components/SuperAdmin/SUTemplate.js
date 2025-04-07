@@ -241,7 +241,7 @@ const SUTemplate = ({ children }) => {
                       <span className="sub-item">User Access log</span>
                     </Link>
                   </li>
-                  {/* <li className={isActive(['/DepartmentLog']) ? 'active' : ''}>
+                   <li className={isActive(['/DepartmentLog']) ? 'active' : ''}>
                     <Link to="/DepartmentLog">
                       <span className="sub-item">Department log</span>
                     </Link>
@@ -251,6 +251,7 @@ const SUTemplate = ({ children }) => {
                       <span className="sub-item">Announcement log</span>
                     </Link>
                   </li>
+                  {/*
                   <li className={isActive(['/VacancyLog']) ? 'active' : ''}>
                     <Link to="/VacancyLog">
                       <span className="sub-item">Vacancy log</span>

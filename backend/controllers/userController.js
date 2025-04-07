@@ -1,47 +1,55 @@
 import mongoose from "mongoose";
 
 // controllers/userController.js
-import bcrypt from 'bcryptjs';
-import validator from 'validator';
-import User from '../models/userModel.js';
-import Announcement from '../models/announcementModel.js';
+import bcrypt from "bcryptjs";
+import validator from "validator";
+import User from "../models/userModel.js";
+import Department from "../models/departmentsModel.js";
+import Announcement from "../models/announcementModel.js";
 import UserDetails from "../models/userDetailsModel.js";
 import Candidate from "../models/candidateModel.js";
-import CryptoJS from 'crypto-js';
-import { COOKIE_SECRET_KEY } from '../config.js';
-import path from 'path';
-import fs from 'fs';
-import sendEmail from '../utils/sendEmail.js'
-import UserLog from '../models/Log/UserLogModel.js'
+import CryptoJS from "crypto-js";
+import { COOKIE_SECRET_KEY } from "../config.js";
+import path from "path";
+import fs from "fs";
+import sendEmail from "../utils/sendEmail.js";
+import UserLog from "../models/Log/UserLogModel.js";
 
 export const loginUser = async (req, res) => {
   const { userEmail, userPassword } = req.body;
 
   // Input validation and sanitization
   if (!userEmail || !userPassword || !validator.isEmail(userEmail)) {
-    return res.status(400).json({ message: 'Invalid input' });
+    return res.status(400).json({ message: "Invalid input" });
   }
 
   const sanitizedEmail = validator.normalizeEmail(userEmail);
 
   try {
     const user = await User.findOne({ userEmail: sanitizedEmail });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isPasswordValid = await bcrypt.compare(userPassword, user.userPassword);
-    if (!isPasswordValid) return res.status(401).json({ message: 'Invalid credentials' });
+    const isPasswordValid = await bcrypt.compare(
+      userPassword,
+      user.userPassword
+    );
+    if (!isPasswordValid)
+      return res.status(401).json({ message: "Invalid credentials" });
 
     // Check if account is activated
     if (!user.activateAccount) {
       return res.status(403).json({
-        message: 'Account is not activated. Please contact your administrator.',
+        message: "Account is not activated. Please contact your administrator.",
       });
     }
 
     // Check if current time is after accountActivationTime
-    if (user.accountActivationTime && new Date(user.accountActivationTime) > new Date()) {
+    if (
+      user.accountActivationTime &&
+      new Date(user.accountActivationTime) > new Date()
+    ) {
       return res.status(403).json({
-        message: 'Account is not activated. Please contact your administrator.',
+        message: "Account is not activated. Please contact your administrator.",
       });
     }
 
@@ -63,16 +71,16 @@ export const loginUser = async (req, res) => {
     await UserLog.create({
       logId,
       userId: user.userId,
-      event: 'Login',
+      event: "Login",
     });
 
     return res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       encryptedRole: encryptedRole,
     });
   } catch (error) {
-    console.error('Error during login:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Error during login:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -80,12 +88,12 @@ export const logoutUser = async (req, res) => {
   try {
     const userId = req.session.userId;
     if (!userId) {
-      return res.status(401).json({ message: 'User not logged in' });
+      return res.status(401).json({ message: "User not logged in" });
     }
 
     const user = await User.findOne({ userId });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Update user status to offline
@@ -101,14 +109,14 @@ export const logoutUser = async (req, res) => {
     });
 
     // Clear cookies and destroy session
-    res.clearCookie('userId');
-    res.clearCookie('roleId');
+    res.clearCookie("userId");
+    res.clearCookie("roleId");
     req.session.destroy(); // Destroy session
 
-    return res.status(200).json({ message: 'User logged out successfully' });
+    return res.status(200).json({ message: "User logged out successfully" });
   } catch (error) {
-    console.error('Error during logout:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Error during logout:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -116,79 +124,81 @@ export const updateUserStatus = async (req, res) => {
   try {
     const userId = req.cookies.userId;
     if (!userId) {
-      return res.status(401).json({ message: 'User not logged in' });
+      return res.status(401).json({ message: "User not logged in" });
     }
     const user = await User.findOne({ userId });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Update user status to online
     user.userStatus = true;
     await user.save();
 
-    return res.status(200).json({ message: 'User status updated to online' });
+    return res.status(200).json({ message: "User status updated to online" });
   } catch (error) {
-    console.error('Error updating user status:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Error updating user status:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const getUserProfile = async (req, res) => {
   try {
-      // Check if session contains userId
-      if (!req.session.userId) {
-          return res.status(401).json({ message: 'Unauthorized. Please log in.' });
-      }
+    // Check if session contains userId
+    if (!req.session.userId) {
+      return res.status(401).json({ message: "Unauthorized. Please log in." });
+    }
 
-      // Find user from tableUser
-      const user = await User.findOne({ userId: req.session.userId });
-      if (!user) {
-          return res.status(404).json({ message: 'User not found.' });
-      }
+    // Find user from tableUser
+    const user = await User.findOne({ userId: req.session.userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-      // Find user details from tableUserDetails
-      const userDetails = await UserDetails.findOne({ userId: req.session.userId });
+    // Find user details from tableUserDetails
+    const userDetails = await UserDetails.findOne({
+      userId: req.session.userId,
+    });
 
-      // Construct response object
-      const userProfile = {
-          fullName: user.fullName,
-          userEmail: user.userEmail,
-          userMobileNumber: user.userMobileNumber,
-          userDepartment: user.userDepartment,
-          userDesignation: user.userDesignation,
-          userStatus: user.userStatus,
-          activateAccount: user.activateAccount,
-          permissions: user.userPermissions,
-          createdAt: user.createdAt,
+    // Construct response object
+    const userProfile = {
+      fullName: user.fullName,
+      userEmail: user.userEmail,
+      userMobileNumber: user.userMobileNumber,
+      userDepartment: user.userDepartment,
+      userDesignation: user.userDesignation,
+      userStatus: user.userStatus,
+      activateAccount: user.activateAccount,
+      permissions: user.userPermissions,
+      createdAt: user.createdAt,
 
-          // Add details from userDetails if available
-          dob: userDetails?.dob || null,
-          age: userDetails?.age || null,
-          nativePlace: userDetails?.nativePlace || null,
-          nationality: userDetails?.nationality || null,
-          gender: userDetails?.gender || null,
-          maritalStatus: userDetails?.maritalStatus || null,
-          languagesKnown: userDetails?.languagesKnown || [],
-          identityProof: userDetails?.identityProof || null,
-          picture: userDetails?.picture || null,
-          presentAddress: userDetails?.presentAddress || null,
-          permanentAddress: userDetails?.permanentAddress || null,
-          educationQualification: userDetails?.educationQualification || [],
-          specialization: userDetails?.specialization || null,
-          lastWorkPlace: userDetails?.lastWorkPlace || null,
-          yearsOfExperience: userDetails?.yearsOfExperience || null,
-          totalYearsOfExperience: userDetails?.totalYearsOfExperience || null,
-          addressOfWorkPlace: userDetails?.addressOfWorkPlace || null,
-          responsibilities: userDetails?.responsibilities || null,
-          referenceContact: userDetails?.referenceContact || null,
-          // Designation: userDetails?.Designation || null
-      };
+      // Add details from userDetails if available
+      dob: userDetails?.dob || null,
+      age: userDetails?.age || null,
+      nativePlace: userDetails?.nativePlace || null,
+      nationality: userDetails?.nationality || null,
+      gender: userDetails?.gender || null,
+      maritalStatus: userDetails?.maritalStatus || null,
+      languagesKnown: userDetails?.languagesKnown || [],
+      identityProof: userDetails?.identityProof || null,
+      picture: userDetails?.picture || null,
+      presentAddress: userDetails?.presentAddress || null,
+      permanentAddress: userDetails?.permanentAddress || null,
+      educationQualification: userDetails?.educationQualification || [],
+      specialization: userDetails?.specialization || null,
+      lastWorkPlace: userDetails?.lastWorkPlace || null,
+      yearsOfExperience: userDetails?.yearsOfExperience || null,
+      totalYearsOfExperience: userDetails?.totalYearsOfExperience || null,
+      addressOfWorkPlace: userDetails?.addressOfWorkPlace || null,
+      responsibilities: userDetails?.responsibilities || null,
+      referenceContact: userDetails?.referenceContact || null,
+      // Designation: userDetails?.Designation || null
+    };
 
-      res.status(200).json({ data: userProfile });
+    res.status(200).json({ data: userProfile });
   } catch (error) {
-      console.error('Error fetching user profile:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -197,7 +207,7 @@ export const getUserAccess = async (req, res) => {
     // You can also return more session details if needed
     return res.status(200).json({ userRoleid: req.session.userRoleid });
   }
-  res.status(401).json({ message: 'No active session found' });
+  res.status(401).json({ message: "No active session found" });
 };
 
 export const getUserRoles = async (req, res) => {
@@ -209,11 +219,16 @@ export const getUserRoles = async (req, res) => {
     }
 
     let availableRoles = [];
-    let systemAdminExtra = false; 
+    let systemAdminExtra = false;
 
     switch (userRoleid) {
       case "R1":
-        availableRoles = ["System-Admin", "HR", "Department-Manager", "Employee"];
+        availableRoles = [
+          "System-Admin",
+          "HR",
+          "Department-Manager",
+          "Employee",
+        ];
         systemAdminExtra = true;
         break;
 
@@ -221,7 +236,12 @@ export const getUserRoles = async (req, res) => {
         // Check userPermissions.SystemAdminExtra from tableUser
         const user = await User.findOne({ userRoleid: "R2" });
         if (user && user.userPermissions.SystemAdminExtra) {
-          availableRoles = ["System-Admin", "HR", "Department-Manager", "Employee"];
+          availableRoles = [
+            "System-Admin",
+            "HR",
+            "Department-Manager",
+            "Employee",
+          ];
         } else {
           availableRoles = ["HR", "Department-Manager", "Employee"];
         }
@@ -248,15 +268,36 @@ export const getUserRoles = async (req, res) => {
 export const createUserWithDetails = async (req, res) => {
   try {
     let {
-      fullName, userEmail, userMobileNumber, userRoleid, userDepartment, userDesignation, userPermissions,
-      dob, age, nativePlace, nationality, gender, maritalStatus, languagesKnown,
-      presentAddress, permanentAddress, educationQualification, specialization,
-      lastWorkPlace, yearsOfExperience, addressOfWorkPlace, responsibilities,
-      referenceContact, totalYearsOfExperience
+      fullName,
+      userEmail,
+      userMobileNumber,
+      userRoleid,
+      userDepartment,
+      userDesignation,
+      userPermissions,
+      dob,
+      age,
+      nativePlace,
+      nationality,
+      gender,
+      maritalStatus,
+      languagesKnown,
+      presentAddress,
+      permanentAddress,
+      educationQualification,
+      specialization,
+      lastWorkPlace,
+      yearsOfExperience,
+      addressOfWorkPlace,
+      responsibilities,
+      referenceContact,
+      totalYearsOfExperience,
     } = req.body;
 
     if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized: Please log in first." });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Please log in first." });
     }
 
     const createdBy = req.session.userId;
@@ -266,12 +307,16 @@ export const createUserWithDetails = async (req, res) => {
       try {
         educationQualification = JSON.parse(educationQualification);
       } catch (error) {
-        return res.status(400).json({ message: "Invalid educationQualification format." });
+        return res
+          .status(400)
+          .json({ message: "Invalid educationQualification format." });
       }
     }
 
     if (!Array.isArray(educationQualification)) {
-      return res.status(400).json({ message: "Education Qualification should be an array." });
+      return res
+        .status(400)
+        .json({ message: "Education Qualification should be an array." });
     }
 
     // ✅ Extract file paths
@@ -304,7 +349,9 @@ export const createUserWithDetails = async (req, res) => {
     // ✅ Check if email already exists
     const existingUser = await User.findOne({ userEmail });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already registered. Try a different email." });
+      return res
+        .status(400)
+        .json({ message: "Email already registered. Try a different email." });
     }
 
     // ✅ Find the last user with the same role to determine the next ID
@@ -372,6 +419,16 @@ export const createUserWithDetails = async (req, res) => {
       createdBy,
     });
 
+    // ✅ Log user creation
+    const logId = `${userId}-${Date.now()}`;
+    await UserLog.create({
+      logId,
+      userId,
+      fullName,
+      event: "AddUser",
+      timestamp: new Date(),
+    });
+
     // ✅ Send Email Notification
     const emailSubject = "Welcome to Our System!";
     const emailMessage = `
@@ -408,7 +465,9 @@ export const createUserWithDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating user:", error);
-    res.status(500).json({ message: "Server error. Please try again later.", error });
+    res
+      .status(500)
+      .json({ message: "Server error. Please try again later.", error });
   }
 };
 
@@ -432,7 +491,10 @@ export const changePassword = async (req, res) => {
     console.log("🔒 Stored Hashed Password:", user.userPassword);
 
     // 🔹 Validate old password
-    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.userPassword);
+    const isOldPasswordValid = await bcrypt.compare(
+      oldPassword,
+      user.userPassword
+    );
     console.log("✅ Password Match:", isOldPasswordValid);
 
     if (!isOldPasswordValid) {
@@ -441,7 +503,9 @@ export const changePassword = async (req, res) => {
 
     // Validate new password length
     if (newPassword.length < 6) {
-      return res.status(400).json({ message: "New password must be at least 6 characters long." });
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters long." });
     }
 
     // Hash new password
@@ -464,32 +528,41 @@ export const verifyPassword = async (req, res) => {
 
     // Ensure session has userId
     if (!req.session.userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized. Please log in." });
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized. Please log in." });
     }
 
     const userId = req.session.userId; // ✅ Get userId from session
     console.log(`🔍 Fetching user with userId: ${userId}`);
 
     // 🔥 FIX: Use `findOne` instead of `findById` (since `userId` is a string, not an ObjectId)
-    const user = await User.findOne({ userId }); 
+    const user = await User.findOne({ userId });
 
     if (!user) {
       console.log(`❌ User not found for ID: ${userId}`);
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    console.log(`🔍 Found user: ${userId}, Hashed Password: ${user.userPassword}`);
+    console.log(
+      `🔍 Found user: ${userId}, Hashed Password: ${user.userPassword}`
+    );
 
     // Compare input password with stored hashed password
     const isMatch = await bcrypt.compare(password, user.userPassword);
     console.log(`🔍 Password Match: ${isMatch}`);
 
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: "Incorrect password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Incorrect password" });
     }
 
-    res.status(200).json({ success: true, message: "Password verified successfully" });
-
+    res
+      .status(200)
+      .json({ success: true, message: "Password verified successfully" });
   } catch (error) {
     console.error("❌ Error verifying password:", error);
     res.status(500).json({ success: false, message: "Server error" });
@@ -525,7 +598,10 @@ export const updateProfilePicture = async (req, res) => {
       { new: true }
     );
 
-    res.json({ message: "Profile picture updated successfully", picture: newPicturePath });
+    res.json({
+      message: "Profile picture updated successfully",
+      picture: newPicturePath,
+    });
     console.log("Profile Picture Updated:", newPicturePath);
   } catch (error) {
     console.error("Error updating profile picture:", error);
@@ -535,7 +611,7 @@ export const updateProfilePicture = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();  // Get all users
+    const users = await User.find(); // Get all users
     res.json({ users });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -544,7 +620,10 @@ export const getAllUsers = async (req, res) => {
 
 export const getAllUsersSafe = async (req, res) => {
   try {
-    const users = await User.find({}, "userId fullName userRoleid userDepartment userDesignation userStatus");
+    const users = await User.find(
+      {},
+      "userId fullName userRoleid userDepartment userDesignation userStatus"
+    );
     res.json({ users });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -610,10 +689,10 @@ export const updateUserWithDetails = async (req, res) => {
       firstName,
       fatherName,
       surName,
-      email,        // front-end field, maps to userEmail
-      phone,        // front-end field, maps to userMobileNumber
+      email, // front-end field, maps to userEmail
+      phone, // front-end field, maps to userMobileNumber
       userRoleid,
-      department,   // front-end field, maps to userDepartment
+      department, // front-end field, maps to userDepartment
       userDesignation,
       userPermissions,
       dob,
@@ -622,7 +701,7 @@ export const updateUserWithDetails = async (req, res) => {
       nationality,
       gender,
       maritalStatus,
-      languagesKnown,  // may be comma-separated
+      languagesKnown, // may be comma-separated
       presentAddress,
       permanentAddress,
       educationQualification,
@@ -632,7 +711,7 @@ export const updateUserWithDetails = async (req, res) => {
       addressOfWorkPlace,
       responsibilities,
       referenceContact,
-      totalYearsOfExperience
+      totalYearsOfExperience,
     } = req.body;
 
     // Map front-end keys to backend keys
@@ -644,7 +723,9 @@ export const updateUserWithDetails = async (req, res) => {
     const fullName = `${firstName} ${fatherName} ${surName}`.trim();
 
     if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized: Please log in first." });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Please log in first." });
     }
 
     // Convert dob from "DD/MM/YYYY" to a Date object if needed
@@ -660,25 +741,41 @@ export const updateUserWithDetails = async (req, res) => {
       try {
         educationQualification = JSON.parse(educationQualification);
       } catch (error) {
-        return res.status(400).json({ message: "Invalid educationQualification format." });
+        return res
+          .status(400)
+          .json({ message: "Invalid educationQualification format." });
       }
     }
     if (!Array.isArray(educationQualification)) {
-      return res.status(400).json({ message: "Education Qualification should be an array." });
+      return res
+        .status(400)
+        .json({ message: "Education Qualification should be an array." });
     }
 
     // Convert languagesKnown from a comma-separated string into an array if necessary
     if (typeof languagesKnown === "string") {
-      languagesKnown = languagesKnown.split(",").map(lang => lang.trim());
+      languagesKnown = languagesKnown.split(",").map((lang) => lang.trim());
     }
 
     // Determine convertedRoleId and rolePrefix based on the provided userRoleid
     let convertedRoleId, rolePrefix;
     switch (userRoleid) {
-      case "System-Admin": convertedRoleId = "R2"; rolePrefix = "SY"; break;
-      case "HR": convertedRoleId = "R3"; rolePrefix = "HR"; break;
-      case "Department-Manager": convertedRoleId = "R4"; rolePrefix = "DM"; break;
-      case "Employee": convertedRoleId = "R5"; rolePrefix = "EM"; break;
+      case "System-Admin":
+        convertedRoleId = "R2";
+        rolePrefix = "SY";
+        break;
+      case "HR":
+        convertedRoleId = "R3";
+        rolePrefix = "HR";
+        break;
+      case "Department-Manager":
+        convertedRoleId = "R4";
+        rolePrefix = "DM";
+        break;
+      case "Employee":
+        convertedRoleId = "R5";
+        rolePrefix = "EM";
+        break;
       default:
         return res.status(400).json({ message: "Invalid user role selected." });
     }
@@ -686,7 +783,9 @@ export const updateUserWithDetails = async (req, res) => {
     // Check if the new email is already registered to another user
     const emailExists = await User.findOne({ userEmail, userId: { $ne: id } });
     if (emailExists) {
-      return res.status(400).json({ message: "Email already registered. Try a different email." });
+      return res
+        .status(400)
+        .json({ message: "Email already registered. Try a different email." });
     }
 
     // Find the existing user record in the user table
@@ -700,10 +799,10 @@ export const updateUserWithDetails = async (req, res) => {
       let isUnique = false;
       let nextUserNumber = 1;
       let tentativeUserId;
-    
+
       while (!isUnique) {
         tentativeUserId = `${rolePrefix}${nextUserNumber}`;
-    
+
         const existingWithId = await User.findOne({ userId: tentativeUserId });
         if (!existingWithId) {
           isUnique = true;
@@ -711,21 +810,27 @@ export const updateUserWithDetails = async (req, res) => {
           nextUserNumber++;
         }
       }
-    
+
       newUserId = tentativeUserId;
     }
-    
+
     // Update the User (usertable) fields
     existingUser.fullName = fullName;
     existingUser.userEmail = userEmail; // update email if changed
-    existingUser.userMobileNumber = userMobileNumber ?? existingUser.userMobileNumber;
+    existingUser.userMobileNumber =
+      userMobileNumber ?? existingUser.userMobileNumber;
     // Ensure userDepartment is not updated with an empty string:
-    existingUser.userDepartment = 
-      (department && department.trim() !== "") ? department : existingUser.userDepartment;
+    existingUser.userDepartment =
+      department && department.trim() !== ""
+        ? department
+        : existingUser.userDepartment;
     existingUser.userRoleid = convertedRoleId;
-    existingUser.userDesignation = userDesignation ?? existingUser.userDesignation;
+    existingUser.userDesignation =
+      userDesignation ?? existingUser.userDesignation;
     existingUser.userPermissions = {
-      SystemAdminExtra: userPermissions?.SystemAdminExtra ?? existingUser.userPermissions.SystemAdminExtra,
+      SystemAdminExtra:
+        userPermissions?.SystemAdminExtra ??
+        existingUser.userPermissions.SystemAdminExtra,
     };
 
     // If a new userId was generated (role change), update it
@@ -735,7 +840,9 @@ export const updateUserWithDetails = async (req, res) => {
       await existingUser.save();
 
       // Also update the UserDetails record in the user detail table for the old userId
-      const userDetailsByOldId = await UserDetails.findOne({ userId: oldUserId });
+      const userDetailsByOldId = await UserDetails.findOne({
+        userId: oldUserId,
+      });
       if (userDetailsByOldId) {
         userDetailsByOldId.userId = newUserId;
         userDetailsByOldId.userdetailsId = `${newUserId}-D`;
@@ -792,7 +899,16 @@ export const updateUserWithDetails = async (req, res) => {
       });
       await existingUserDetails.save();
     }
-
+    const logId = `${id}-${Date.now()}`;
+    await UserLog.create({
+      logId,
+      userId: id,
+      fullName,
+      event: "EditUser",
+      timestamp: new Date(),
+    });
+    
+    
     res.status(200).json({
       message: "User and details updated successfully!",
       user: existingUser,
@@ -800,10 +916,11 @@ export const updateUserWithDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error updating user:", error);
-    res.status(500).json({ message: "Server error. Please try again later.", error });
+    res
+      .status(500)
+      .json({ message: "Server error. Please try again later.", error });
   }
 };
-
 
 export const getUserInfoAndExperience = async (req, res) => {
   try {
@@ -821,11 +938,19 @@ export const getUserInfoAndExperience = async (req, res) => {
       {
         $addFields: {
           yearsSinceCreation: {
-            $divide: [{ $subtract: [new Date(), "$createdAt"] }, 1000 * 60 * 60 * 24 * 365],
+            $divide: [
+              { $subtract: [new Date(), "$createdAt"] },
+              1000 * 60 * 60 * 24 * 365,
+            ],
           },
           totalExperience: {
             $add: [
-              { $divide: [{ $subtract: [new Date(), "$createdAt"] }, 1000 * 60 * 60 * 24 * 365] },
+              {
+                $divide: [
+                  { $subtract: [new Date(), "$createdAt"] },
+                  1000 * 60 * 60 * 24 * 365,
+                ],
+              },
               { $ifNull: ["$userDetails.totalYearsOfExperience", 0] },
             ],
           },
@@ -865,8 +990,12 @@ export const evaluatorsLogin = async (req, res) => {
     const user = await User.findOne({ userEmail: sanitizedEmail });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isPasswordValid = await bcrypt.compare(userPassword, user.userPassword);
-    if (!isPasswordValid) return res.status(401).json({ message: "Invalid credentials" });
+    const isPasswordValid = await bcrypt.compare(
+      userPassword,
+      user.userPassword
+    );
+    if (!isPasswordValid)
+      return res.status(401).json({ message: "Invalid credentials" });
 
     console.log("Checking for userId:", user.userId); // Debugging
 
@@ -877,7 +1006,9 @@ export const evaluatorsLogin = async (req, res) => {
     });
 
     if (!isAssigned) {
-      return res.status(403).json({ message: "Not assigned to any evaluation" });
+      return res
+        .status(403)
+        .json({ message: "Not assigned to any evaluation" });
     }
 
     // ✅ Step 3: Create Session for Evaluator
@@ -885,7 +1016,10 @@ export const evaluatorsLogin = async (req, res) => {
     req.session.userRoleid = user.userRoleid;
 
     // ✅ Step 4: Encrypt Role
-    const encryptedRole = CryptoJS.AES.encrypt(user.userRoleid.toString(), COOKIE_SECRET_KEY).toString();
+    const encryptedRole = CryptoJS.AES.encrypt(
+      user.userRoleid.toString(),
+      COOKIE_SECRET_KEY
+    ).toString();
 
     // ✅ Step 5: Update User Status & Save
     user.userStatus = true;
@@ -901,13 +1035,12 @@ export const evaluatorsLogin = async (req, res) => {
   }
 };
 
-
 // ✅ Define role mapping outside to avoid re-initialization
 const roleMapping = {
   "System-Admin": { id: "R2", prefix: "SY" },
-  "HR": { id: "R3", prefix: "HR" },
+  HR: { id: "R3", prefix: "HR" },
   "Department-Manager": { id: "R4", prefix: "DM" },
-  "Employee": { id: "R5", prefix: "EM" },
+  Employee: { id: "R5", prefix: "EM" },
 };
 
 export const createUsersFromCandidates = async (req, res) => {
@@ -920,11 +1053,16 @@ export const createUsersFromCandidates = async (req, res) => {
       return res.status(400).json({ message: "User email is required." });
     }
 
-    // ✅ Fetch candidate for picture & documents only
-    const candidate = await Candidate.findOne({ email: userEmail });
+    const candidateId = req.body.candidateId;
+    if (!candidateId) {
+      return res.status(400).json({ message: "Candidate ID is required." });
+    }
+    
+    const candidate = await Candidate.findOne({ candidateId });
     if (!candidate) {
       return res.status(404).json({ message: "Candidate not found." });
     }
+    
 
     // ✅ Role + userId generation
     const roleInfo = roleMapping[req.body.userRoleid] || {};
@@ -932,16 +1070,37 @@ export const createUsersFromCandidates = async (req, res) => {
       return res.status(400).json({ message: "Invalid role." });
     }
 
-    const lastUser = await User.findOne({ userRoleid: roleInfo.id }).sort({ createdAt: -1 }).lean();
-    const nextUserNumber = lastUser ? parseInt(lastUser.userId.match(/\d+$/)[0]) + 1 : 1;
-    const userId = `${roleInfo.prefix}${nextUserNumber}`;
+    // ✅ Generate a unique userId with role prefix
+    let isUnique = false;
+    let nextUserNumber = 1;
+    let userId;
+
+    while (!isUnique) {
+      const tentativeUserId = `${roleInfo.prefix}${nextUserNumber}`;
+      const existingWithId = await User.findOne({ userId: tentativeUserId });
+
+      if (!existingWithId) {
+        userId = tentativeUserId;
+        isUnique = true;
+      } else {
+        nextUserNumber++;
+      }
+    }
 
     // ✅ Password generation and hashing
-    const rawPassword = `${new Date().getFullYear()}#${userEmail.split("@")[0]}`;
+    const rawPassword = `${new Date().getFullYear()}#${
+      userEmail.split("@")[0]
+    }`;
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // ✅ Full Name formatting
     const fullName = `${req.body.fullName || ""}`.trim();
+
+    // ✅ Fetch department name from departmentid
+    const departmentRecord = await Department.findOne({
+      departmentid: req.body.userDepartment,
+    }).lean();
+    const departmentName = departmentRecord?.departmentName || "N/A";
 
     // ✅ Construct User
     const newUser = {
@@ -952,7 +1111,7 @@ export const createUsersFromCandidates = async (req, res) => {
       userStatus: false,
       userPassword: hashedPassword,
       userRoleid: roleInfo.id,
-      userDepartment: req.body.userDepartment,
+      userDepartment: departmentName,
       userDesignation: req.body.userDesignation || "N/A",
       userPermissions: req.body.userPermissions || { SystemAdminExtra: false },
       activateAccount: true,
@@ -965,7 +1124,7 @@ export const createUsersFromCandidates = async (req, res) => {
     // ✅ Format language array if string (fallback)
     const formattedLanguages = Array.isArray(req.body.languagesKnown)
       ? req.body.languagesKnown
-      : (req.body.languagesKnown || "").split(",").map(lang => lang.trim());
+      : (req.body.languagesKnown || "").split(",").map((lang) => lang.trim());
 
     // ✅ Construct UserDetails
     const newUserDetails = {
@@ -999,14 +1158,14 @@ export const createUsersFromCandidates = async (req, res) => {
 
     // ✅ Update Candidate Status
     await Candidate.updateOne(
-      { email: userEmail },
+      { candidateId },
       {
         $set: {
           recruited: true,
           confirmationStatus: "Hired",
         },
       }
-    );
+    );    
 
     // ✅ Send Email Notification
     const emailSubject = "Welcome to Our System!";
@@ -1036,18 +1195,22 @@ export const createUsersFromCandidates = async (req, res) => {
       });
     }
 
-    console.log(`🎉 Successfully inserted user ${userId} and updated candidate status`);
+    console.log(
+      `🎉 Successfully inserted user ${userId} and updated candidate status`
+    );
     return res.status(201).json({
       message: "Candidate converted to user successfully, and email sent!",
       documentPath: candidate.candidateDocuments,
       picturePath: candidate.candidatePicture,
     });
-
   } catch (error) {
     console.error("❌ Error processing candidate:", error);
-    return res.status(500).json({ message: "Server error while processing candidate." });
+    return res
+      .status(500)
+      .json({ message: "Server error while processing candidate." });
   }
 };
+
 
 export const getUserLogs = async (req, res) => {
   try {
@@ -1056,24 +1219,49 @@ export const getUserLogs = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const sortField = req.query.sortField || "timestamp";
     const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
-    const event = req.query.event; // e.g., "Login" or "Logout"
-
+    const event = req.query.event; // e.g., "Login", "Logout", "AddUser", "EditUser"
     const skip = (page - 1) * limit;
 
     // Build a query object. If an event filter is provided, include it.
     let query = {};
     if (event) {
-      query.event = event;
+      query.event = { $in: [event] }; // Support filtering by any event type
+    } else {
+      query.event = { $in: ["Login", "Logout", "AddUser", "EditUser"] }; // ✅ Include new events
     }
 
     // Count the total number of logs that match the filter
     const totalLogs = await UserLog.countDocuments(query);
 
-    // Fetch logs with sorting and pagination
-    const logs = await UserLog.find(query)
-      .sort({ [sortField]: sortOrder })
-      .skip(skip)
-      .limit(limit);
+    // Fetch logs using an aggregation pipeline to lookup the user's full name
+    const logs = await UserLog.aggregate([
+      { $match: query },
+      { $sort: { [sortField]: sortOrder } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "tableUser",    // collection name in MongoDB for users
+          localField: "userId", // field in UserLog that references the user
+          foreignField: "userId", // field in the User collection
+          as: "user",
+        },
+      },
+      {
+        $addFields: {
+          fullName: { $arrayElemAt: ["$user.fullName", 0] } // ✅ Safely extract user full name
+        }
+      },
+      {
+        $project: {
+          logId: 1,
+          userId: 1,
+          fullName: 1, // Fetch full name from the joined user document
+          event: 1,
+          timestamp: 1,
+        },
+      },
+    ]);
 
     // Return logs along with pagination metadata
     res.status(200).json({
@@ -1082,8 +1270,31 @@ export const getUserLogs = async (req, res) => {
       currentPage: page,
       totalPages: Math.ceil(totalLogs / limit),
     });
+
   } catch (error) {
     console.error("Error fetching logs:", error);
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// controllers/userController.js
+export const getLoggedInUserDepartment = async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const user = await User.findOne({ userId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ department: user.userDepartment });
+  } catch (error) {
+    console.error("Error fetching user department:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

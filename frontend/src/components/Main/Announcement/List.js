@@ -75,6 +75,7 @@ const AnnouncementList = () => {
   const deleteAnnouncements = async () => {
     try {
       const response = await axios.delete("http://localhost:5000/api/announcements/delete", {
+        withCredentials:true,
         data: { ids: checkedRows },
       });
       if (response.status === 200) {

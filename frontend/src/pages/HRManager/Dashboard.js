@@ -285,6 +285,8 @@ const Dashboard = () => {
          <div className="col-md-3">
             <div
               className="card shadow-sm p-4 text-center border-success clickable"
+              onClick={() => navigate("/OrganizationChart")}
+              style={{ cursor: "pointer" }}
             >
               <div className="icon mb-3 text-success">
                 <Briefcase size={30} />

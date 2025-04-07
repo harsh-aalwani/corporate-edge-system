@@ -21,6 +21,7 @@ import {
   updateUserWithDetails,
   getUserLogs,
   getAllUsersSafe,
+  getLoggedInUserDepartment,
 } from "../controllers/userController.js";
 
 const router = express.Router();
@@ -58,6 +59,7 @@ router.get("/getUserById/:id", getUserById); // ✅ Get a single user by ID
 router.get("/getAllUserDetails", getAllUserDetails); // ✅ Get all user details
 router.get("/getUserDetailsById/:id", getUserDetailsById); // ✅ Get a single user's details
 router.put("/update", updateUserWithDetails);
+router.get("/getLoggedInUserDepartment", getLoggedInUserDepartment);
 
 // user log
 router.get("/getUserLogs", getUserLogs);

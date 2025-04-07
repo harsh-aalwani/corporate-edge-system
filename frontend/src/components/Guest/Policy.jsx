@@ -22,6 +22,13 @@ const imageStyle = {
   borderTopRightRadius: "20px",
 };
 
+const heading2Style = {
+  position: "relative",
+  fontFamily: '"Raleway", sans-serif',
+  fontSize: "2.4rem",
+  textAlign: "center", // 👈 Add this line to center the heading
+};
+
 const contentStyle = {
   padding: "16px",
   background: "linear-gradient(135deg, #f5f7fa, #c3cfe2)",
@@ -84,7 +91,11 @@ const PolicyCard = ({ policy }) => {
 
   return (
     <div style={cardContainer}>
-      <img style={imageStyle} src="/img/policies1.png" alt={policy.policyTitle} />
+      <img
+        style={imageStyle}
+        src="/img/policies1.png"
+        alt={policy.policyTitle}
+      />
       <div style={contentStyle}>
         <h2 style={titleStyle}>{policy.policyTitle}</h2>
         <div style={tagContainerStyle}>
@@ -128,10 +139,15 @@ const Policy = () => {
   }, []);
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-      {policies.map((policy, index) => (
-        <PolicyCard key={index} policy={policy} />
-      ))}
+    <div style={{ padding: "40px 20px" }}>
+      <h2 style={heading2Style}>Policies</h2>
+      <div
+        style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}
+      >
+        {policies.map((policy, index) => (
+          <PolicyCard key={index} policy={policy} />
+        ))}
+      </div>
     </div>
   );
 };

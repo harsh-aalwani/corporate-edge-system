@@ -13,11 +13,10 @@ export const addPerformanceRecord = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized: Session expired or invalid" });
         }
 
-        // ✅ Find the last candidatePerformanceId to generate the next ID
         const lastRecord = await CandidatePerformance.findOne()
-            .sort({ candidatePerformanceId: -1 }) // Sort by the highest CAP ID
-            .select("candidatePerformanceId"); // Select only the ID
-
+        .sort({ createdAt: -1 }) // ✅ NEW: Get the most recently created record
+        .select("candidatePerformanceId");
+    
         let nextPerformanceNumber = 1;
         if (lastRecord?.candidatePerformanceId) {
             const lastNumberMatch = lastRecord.candidatePerformanceId.match(/\d+$/); // Extract numeric part

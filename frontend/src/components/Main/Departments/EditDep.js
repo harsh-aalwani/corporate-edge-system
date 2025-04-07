@@ -26,6 +26,7 @@ const EditDep = () => {
     try {
       const response = await fetch("http://localhost:5000/api/departments/getDepartment", {
         method: "POST",
+        credentials:"include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ departmentIds: ids }), // Send array of department IDs
       });
@@ -93,6 +94,7 @@ const EditDep = () => {
     try {
       const response = await fetch("http://localhost:5000/api/departments/updateDepartment", {
         method: "PUT",
+        credentials:"include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           departmentid: selectedDepartmentId, // Sending departmentid in req.body

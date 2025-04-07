@@ -48,6 +48,7 @@ const replacePlaceholders = (text, placeholders) => {
 const sendEmails = async (req, res) => {
     try {
         const { subject, emailBody, recipients, placeholderData, deadline, selectedTemplate } = req.body;
+        console.log(req.body);
         const parsedRecipients = JSON.parse(recipients);
         const parsedPlaceholderData = JSON.parse(placeholderData); // ✅ Parse placeholder data
 
@@ -140,7 +141,6 @@ const sendEmails = async (req, res) => {
 
             // ✅ Send email **with correct parameters**
             await linkTextSendEmail(recipient.email, finalSubject, finalEmailBody, finalEmailBody, attachments);
-            console.log(`✅ Email sent to: ${recipient.email} (Deadline: ${finalDeadline})`);
         }
 
         res.status(200).json({ message: "Emails sent successfully with updated placeholders, deadline, confirmation status, and optional stored template!" });

@@ -17,7 +17,7 @@ const modules = {
     [{ list: "ordered" }, { list: "bullet" }],
     [{ align: [] }],
     ["blockquote", "code-block"],
-    ["link", "image", "video"],
+    ["link"],
     ["clean"],
   ],
 };
@@ -25,14 +25,16 @@ const modules = {
 const AddAnnouncement = () => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
-  
+
   const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     // Fetch Departments from API
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/departments/list");
+        const response = await axios.get(
+          "http://localhost:5000/api/departments/list"
+        );
         setDepartments(response.data); // Store department data
       } catch (error) {
         console.error("Error fetching departments:", error);
@@ -49,8 +51,7 @@ const AddAnnouncement = () => {
       jobDetails: { ...prev.jobDetails, departmentId: selectedDeptId }, // Store department ID correctly
     }));
   };
-  
-  
+
   const [formData, setFormData] = useState({
     announcementTitle: "",
     announcementDescription: "",
@@ -67,123 +68,177 @@ const AddAnnouncement = () => {
       skillsRequired: "",
       educationQualification: "",
       totalVacancy: "",
-      applicationDeadline: ""
+      applicationDeadline: "",
     },
     disableSalary: false,
     showJobDetails: false,
-    jobAdded: false
+    jobAdded: false,
   });
-  
+
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const toggleCollapse = () => {
     setFormData((prev) => ({
       ...prev,
-      showJobDetails: !prev.showJobDetails
+      showJobDetails: !prev.showJobDetails,
     }));
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-  
-    setFormData((prevFormData) => {
-      let updatedFormData = { ...prevFormData };
-  
-      if (type === "checkbox") {
-        if (name === "disableSalary") {
-          updatedFormData = {
-            ...updatedFormData,
-            disableSalary: checked,
-            jobDetails: {
-              ...updatedFormData.jobDetails,
-              salaryRange: checked
-                ? { currency: "", min: "", max: "" }
-                : { ...prevFormData.jobDetails.salaryRange }
-            }
-          };
-        }
-      } else if (name === "announcementPublic") {
-        const isPublic = value === "Yes";
-  
-        updatedFormData = {
-          ...updatedFormData,
-          announcementPublic: isPublic,
-          jobDetails: isPublic
-            ? { ...prevFormData.jobDetails }
-            : {
-                jobPosition: "",
-                jobType: "",
-                departmentId: "", // Reset department when not public
-                salaryRange: { currency: "", min: "", max: "" },
-                requiredExperience: "",
-                skillsRequired: "",
-                educationQualification: "",
-                totalVacancy: "",
-                applicationDeadline: ""
-              }
-        };
-      } else if (name === "announcementScheduleTime") {
-        updatedFormData = {
-          ...updatedFormData,
-          announcementScheduleTime: value
-        };
-      } else if (name === "salaryRange.currency") {
-        const currencyCode = value.toUpperCase();
-        const isValidCurrency = currencyCodes.code(currencyCode) !== undefined;
-  
-        updatedFormData = {
-          ...updatedFormData,
-          jobDetails: {
-            ...updatedFormData.jobDetails,
-            salaryRange: {
-              ...updatedFormData.jobDetails.salaryRange,
-              currency: currencyCode
-            }
-          }
-        };
-  
-        setErrors((prevErrors) => ({
-          ...prevErrors,
-          currency: isValidCurrency || value === "" ? undefined : "Invalid currency code. Use standard 3-letter codes (e.g., USD, EUR, INR)."
+
+    // Validate applicationDeadline so that past dates are not allowed
+    if (name === "applicationDeadline") {
+      const inputDate = new Date(value);
+      const now = new Date();
+      now.setSeconds(0, 0);
+      if (inputDate < now) {
+        setErrors((prev) => ({
+          ...prev,
+          applicationDeadline: "Application deadline cannot be in the past",
         }));
-      } else if (name.startsWith("salaryRange.")) {
-        const field = name.split(".")[1];
-        updatedFormData = {
-          ...updatedFormData,
-          jobDetails: {
-            ...updatedFormData.jobDetails,
-            salaryRange: {
-              ...updatedFormData.jobDetails.salaryRange,
-              [field]: value
-            }
-          }
-        };
-      } else if (name === "departmentId") {
-        updatedFormData = {
-          ...updatedFormData,
-          jobDetails: {
-            ...updatedFormData.jobDetails,
-            departmentId: value // Store department ID correctly
-          }
-        };
-      } else if (Object.keys(prevFormData.jobDetails).includes(name) || name === "jobDescription") {
-        updatedFormData = {
-          ...updatedFormData,
-          jobDetails: { ...updatedFormData.jobDetails, [name]: value }
-        };
+        return; // Prevent updating state if invalid
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.applicationDeadline;
+          return newErrors;
+        });
       }
-       else {
-        updatedFormData = {
-          ...updatedFormData,
-          [name]: value
-        };
+    }
+
+    if (name === "announcementScheduleTime") {
+      const inputDate = new Date(value);
+      const now = new Date();
+      now.setSeconds(0, 0);
+    
+      if (inputDate < now) {
+        setErrors((prev) => ({
+          ...prev,
+          announcementScheduleTime: "Schedule time cannot be in the past",
+        }));
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.announcementScheduleTime;
+          return newErrors;
+        });
       }
-  
-      return updatedFormData;
-    });
+    
+      // Update schedule time regardless of error so the user can see it
+      setFormData((prev) => ({ ...prev, announcementScheduleTime: value }));
+      return;
+    }
+    
+
+    // Process checkboxes and other fields
+    if (type === "checkbox") {
+      if (name === "disableSalary") {
+        setFormData((prev) => ({
+          ...prev,
+          disableSalary: checked,
+          jobDetails: {
+            ...prev.jobDetails,
+            salaryRange: checked
+              ? { currency: "", min: "", max: "" }
+              : { ...prev.jobDetails.salaryRange },
+          },
+        }));
+        return;
+      }
+    }
+
+    if (name === "announcementPublic") {
+      const isPublic = value === "Yes";
+      setFormData((prev) => ({
+        ...prev,
+        announcementPublic: isPublic,
+        jobDetails: isPublic
+          ? { ...prev.jobDetails }
+          : {
+              jobPosition: "",
+              jobType: "",
+              departmentId: "",
+              salaryRange: { currency: "", min: "", max: "" },
+              requiredExperience: "",
+              skillsRequired: "",
+              educationQualification: "",
+              totalVacancy: "",
+              applicationDeadline: "",
+            },
+      }));
+      return;
+    }
+
+    if (name === "salaryRange.currency") {
+      const currencyCode = value.toUpperCase();
+      const isValidCurrency = currencyCodes.code(currencyCode) !== undefined;
+      setFormData((prev) => ({
+        ...prev,
+        jobDetails: {
+          ...prev.jobDetails,
+          salaryRange: {
+            ...prev.jobDetails.salaryRange,
+            currency: currencyCode,
+          },
+        },
+      }));
+      if (isValidCurrency || value === "") {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.currency;
+          return newErrors;
+        });
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          currency: "Invalid currency code. Use standard 3-letter codes (e.g., USD, EUR, INR).",
+        }));
+      }
+      
+      return;
+    }
+
+    if (name.startsWith("salaryRange.")) {
+      const field = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        jobDetails: {
+          ...prev.jobDetails,
+          salaryRange: {
+            ...prev.jobDetails.salaryRange,
+            [field]: value,
+          },
+        },
+      }));
+      return;
+    }
+
+    if (name === "departmentId") {
+      setFormData((prev) => ({
+        ...prev,
+        jobDetails: { ...prev.jobDetails, departmentId: value },
+      }));
+      return;
+    }
+
+    if (
+      Object.keys(formData.jobDetails).includes(name) ||
+      name === "jobDescription"
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        jobDetails: { ...prev.jobDetails, [name]: value },
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
-  
 
   // When the tag input loses focus, add any remaining text as a tag
   const handleTagBlur = (e) => {
@@ -191,8 +246,8 @@ const AddAnnouncement = () => {
     if (newTag && !formData.announcementTag.split(",").includes(newTag)) {
       setFormData((prev) => ({
         ...prev,
-        announcementTag: prev.announcementTag 
-          ? `${prev.announcementTag},${newTag}` 
+        announcementTag: prev.announcementTag
+          ? `${prev.announcementTag},${newTag}`
           : newTag,
       }));
     }
@@ -220,9 +275,9 @@ const AddAnnouncement = () => {
         skillsRequired: "",
         educationQualification: "",
         totalVacancy: "",
-        applicationDeadline: ""
+        applicationDeadline: "",
       },
-      jobAdded: false
+      jobAdded: false,
     }));
   };
 
@@ -233,7 +288,7 @@ const AddAnnouncement = () => {
       announcementSend: { ...prevFormData.announcementSend, [name]: checked },
     }));
   };
-  
+
   const handleDescriptionChange = (value) => {
     setFormData((prev) => ({ ...prev, announcementDescription: value }));
   };
@@ -249,21 +304,20 @@ const AddAnnouncement = () => {
       jobDetails: {
         jobPosition: "",
         jobType: "",
-        departmentId: "",  // ✅ Reset departmentId
+        departmentId: "", // ✅ Reset departmentId
         salaryRange: { currency: "", min: "", max: "" },
         requiredExperience: "",
         skillsRequired: "",
         educationQualification: "",
         totalVacancy: "",
-        applicationDeadline: ""
+        applicationDeadline: "",
       },
       disableSalary: false,
       showJobDetails: false,
-      jobAdded: false
+      jobAdded: false,
     });
     setErrors({});
   };
-  
 
   const handleGoBack = () => {
     navigate("/AnnouncementList");
@@ -271,14 +325,14 @@ const AddAnnouncement = () => {
 
   const validateForm = (formData) => {
     let errors = {};
-  
+
     if (!formData.announcementTitle.trim()) {
       errors.announcementTitle = "Title is required";
     }
     if (!formData.announcementDescription.trim()) {
       errors.announcementDescription = "Description is required";
     }
-  
+
     return errors;
   };
 
@@ -286,15 +340,17 @@ const AddAnnouncement = () => {
     e.preventDefault();
     setIsLoading(true);
     setErrors({});
-  
+
     const validationErrors = validateForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      enqueueSnackbar(`❌ ${Object.values(validationErrors).join("\n")}`, { variant: "error" });
+      enqueueSnackbar(`❌ ${Object.values(validationErrors).join("\n")}`, {
+        variant: "error",
+      });
       setIsLoading(false);
       return;
     }
-  
+
     const formDataToSend = {
       announcementTitle: formData.announcementTitle,
       announcementDescription: formData.announcementDescription,
@@ -316,35 +372,44 @@ const AddAnnouncement = () => {
             educationQualification: formData.jobDetails.educationQualification,
             totalVacancy: formData.jobDetails.totalVacancy,
             applicationDeadline: formData.jobDetails.applicationDeadline,
-            departmentId: formData.jobDetails.departmentId
+            departmentId: formData.jobDetails.departmentId,
           }
-        : {})
+        : {}),
     };
-  
+
     try {
-      await axios.post("http://localhost:5000/api/announcements/create", formDataToSend, {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true
+      await axios.post(
+        "http://localhost:5000/api/announcements/create",
+        formDataToSend,
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
+        }
+      );
+
+      enqueueSnackbar("✅ Announcement added successfully!", {
+        variant: "success",
       });
-  
-      enqueueSnackbar("✅ Announcement added successfully!", { variant: "success" });
       handleClear();
       navigate("/AnnouncementList");
     } catch (error) {
       console.error("Submission Error:", error);
-      const errorMessage = error.response?.data?.error || "Failed to add announcement. Please try again.";
+      const errorMessage =
+        error.response?.data?.error ||
+        "Failed to add announcement. Please try again.";
       enqueueSnackbar(errorMessage, { variant: "error" });
-  
+
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
-        enqueueSnackbar(`${Object.values(error.response.data.errors).join("\n")}`, { variant: "error" });
+        enqueueSnackbar(
+          `${Object.values(error.response.data.errors).join("\n")}`,
+          { variant: "error" }
+        );
       }
     } finally {
       setIsLoading(false);
     }
   };
-  
-  
 
   const handleTagKeyDown = (e) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -353,8 +418,8 @@ const AddAnnouncement = () => {
       if (newTag && !formData.announcementTag.split(",").includes(newTag)) {
         setFormData((prev) => ({
           ...prev,
-          announcementTag: prev.announcementTag 
-            ? `${prev.announcementTag},${newTag}` 
+          announcementTag: prev.announcementTag
+            ? `${prev.announcementTag},${newTag}`
             : newTag,
         }));
       }
@@ -379,16 +444,22 @@ const AddAnnouncement = () => {
         <form className="custom-form" onSubmit={handleSubmit}>
           <div className="form-group full-width">
             <label className="form-label">Title:</label>
-            <input type="text" name="announcementTitle" className="form-control" value={formData.announcementTitle} onChange={handleChange} />
+            <input
+              type="text"
+              name="announcementTitle"
+              className="form-control"
+              value={formData.announcementTitle}
+              onChange={handleChange}
+            />
           </div>
 
           <div className="form-group full-width">
             <label className="form-label">Description:</label>
-            <ReactQuill 
-              theme="snow" 
-              value={formData.announcementDescription} 
-              onChange={handleDescriptionChange} 
-              modules={modules} 
+            <ReactQuill
+              theme="snow"
+              value={formData.announcementDescription}
+              onChange={handleDescriptionChange}
+              modules={modules}
             />
           </div>
 
@@ -399,10 +470,15 @@ const AddAnnouncement = () => {
                 formData.announcementTag.split(",").map((tag, index) => (
                   <span key={index} className="tag-bubble">
                     {tag}
-                    <button type="button" className="tag-close" onClick={() => removeTag(tag)}>×</button>
+                    <button
+                      type="button"
+                      className="tag-close"
+                      onClick={() => removeTag(tag)}
+                    >
+                      ×
+                    </button>
                   </span>
-                ))
-              }
+                ))}
               <input
                 type="text"
                 onKeyDown={handleTagKeyDown}
@@ -415,35 +491,56 @@ const AddAnnouncement = () => {
 
           <div className="form-group full-width">
             <label className="form-label">Public Announcement:</label>
-              <select
-                name="announcementPublic"
-                className="form-control"
-                value={formData.announcementPublic ? "Yes" : "No"}
-                onChange={handleChange}
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
+            <select
+              name="announcementPublic"
+              className="form-control"
+              value={formData.announcementPublic ? "Yes" : "No"}
+              onChange={handleChange}
+            >
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
           </div>
 
           {formData.announcementPublic && (
-            <div className={`p-3 mb-3 rounded border border-secondary shadow-sm ${formData.showJobDetails ? 'w-100' : ''}`} style={{ backgroundColor: "#f8f9fa" }}>
+            <div
+              className={`p-3 mb-3 rounded border border-secondary shadow-sm ${
+                formData.showJobDetails ? "w-100" : ""
+              }`}
+              style={{ backgroundColor: "#f8f9fa" }}
+            >
               <button
                 type="button"
                 className="btn btn-light border-dark btn-sm mb-2"
                 onClick={toggleCollapse}
               >
-                {formData.jobAdded ? "Vacancy Added" : formData.showJobDetails ? "Adding Vacancy" : "No Vacancy Added"}
+                {formData.jobAdded
+                  ? "Vacancy Added"
+                  : formData.showJobDetails
+                  ? "Adding Vacancy"
+                  : "No Vacancy Added"}
               </button>
               {formData.showJobDetails && (
                 <>
                   <div className="form-group w-100">
                     <label className="form-label">Job Position:</label>
-                    <input type="text" name="jobPosition" placeholder="Available Job Position" className="form-control" value={formData.jobDetails.jobPosition} onChange={handleChange} />
+                    <input
+                      type="text"
+                      name="jobPosition"
+                      placeholder="Available Job Position"
+                      className="form-control"
+                      value={formData.jobDetails.jobPosition}
+                      onChange={handleChange}
+                    />
                   </div>
                   <div className="form-group full-width">
                     <label className="form-label">Job Type:</label>
-                    <select name="jobType" className="form-control" value={formData.jobDetails.jobType} onChange={handleChange}>
+                    <select
+                      name="jobType"
+                      className="form-control"
+                      value={formData.jobDetails.jobType}
+                      onChange={handleChange}
+                    >
                       <option value="">-- Select Job Type --</option>
                       <option value="Full-Time">Full-Time</option>
                       <option value="Part-Time">Part-Time</option>
@@ -460,78 +557,108 @@ const AddAnnouncement = () => {
                       placeholder="Enter Job Description"
                       value={formData.jobDetails.jobDescription}
                       onChange={handleChange}
-                      rows="4" 
+                      rows="4"
                     ></textarea>
                   </div>
 
                   <div className="form-group full-width">
                     <label className="form-label">Skills Required:</label>
-                    <input type="text" name="skillsRequired" className="form-control" placeholder="Enter Skills" value={formData.jobDetails.skillsRequired} onChange={handleChange} />
+                    <input
+                      type="text"
+                      name="skillsRequired"
+                      className="form-control"
+                      placeholder="Enter Skills"
+                      value={formData.jobDetails.skillsRequired}
+                      onChange={handleChange}
+                    />
                   </div>
                   <div className="form-group full-width">
                     <label className="form-label">Required Experience:</label>
-                    <input type="text" name="requiredExperience" className="form-control" placeholder="Experience required" value={formData.jobDetails.requiredExperience} onChange={handleChange} />
+                    <input
+                      type="text"
+                      name="requiredExperience"
+                      className="form-control"
+                      placeholder="Experience required"
+                      value={formData.jobDetails.requiredExperience}
+                      onChange={handleChange}
+                    />
                   </div>
                   <div className="form-group full-width">
-                    <label className="form-label">Education Qualification:</label>
-                    <input type="text" name="educationQualification" className="form-control" placeholder="Enter Qualification" value={formData.jobDetails.educationQualification} onChange={handleChange} />
+                    <label className="form-label">
+                      Education Qualification:
+                    </label>
+                    <input
+                      type="text"
+                      name="educationQualification"
+                      className="form-control"
+                      placeholder="Enter Qualification"
+                      value={formData.jobDetails.educationQualification}
+                      onChange={handleChange}
+                    />
                   </div>
 
-
                   <div className="form-group full-width">
-                    <label className="form-label">Salary Range Per Annum:</label>
+                    <label className="form-label">
+                      Salary Range Per Annum:
+                    </label>
                     <div className="d-flex gap-2">
-                      <input 
-                        type="text" 
-                        name="salaryRange.currency" 
-                        className="form-control w-25" 
-                        placeholder="Currency (e.g., USD, EUR)" 
-                        value={formData.jobDetails.salaryRange.currency || ''} 
-                        onChange={handleChange} 
+                      <input
+                        type="text"
+                        name="salaryRange.currency"
+                        className="form-control w-25"
+                        placeholder="Currency (e.g., USD, EUR)"
+                        value={formData.jobDetails.salaryRange.currency || ""}
+                        onChange={handleChange}
                         disabled={formData.disableSalary}
                       />
-                      <input 
-                        type="number" 
-                        name="salaryRange.min" 
-                        className="form-control" 
-                        placeholder="Min Salary" 
-                        value={formData.jobDetails.salaryRange.min} 
-                        onChange={handleChange} 
-                        disabled={formData.disableSalary} 
+                      <input
+                        type="number"
+                        name="salaryRange.min"
+                        className="form-control"
+                        placeholder="Min Salary"
+                        value={formData.jobDetails.salaryRange.min}
+                        onChange={handleChange}
+                        disabled={formData.disableSalary}
                       />
-                      <input 
-                        type="number" 
-                        name="salaryRange.max" 
-                        className="form-control" 
-                        placeholder="Max Salary" 
-                        value={formData.jobDetails.salaryRange.max} 
-                        onChange={handleChange} 
-                        disabled={formData.disableSalary} 
+                      <input
+                        type="number"
+                        name="salaryRange.max"
+                        className="form-control"
+                        placeholder="Max Salary"
+                        value={formData.jobDetails.salaryRange.max}
+                        onChange={handleChange}
+                        disabled={formData.disableSalary}
                       />
                     </div>
-                    {errors.currency && <small className="text-danger">{errors.currency}</small>}
-                    
+                    {errors.currency && (
+                      <small className="text-danger">{errors.currency}</small>
+                    )}
+
                     <label className="form-label mt-1">
-                      <input 
-                        type="checkbox" 
-                        name="disableSalary" 
-                        checked={formData.disableSalary} 
-                        onChange={handleChange} 
-                      /> Prefer not to disclose
+                      <input
+                        type="checkbox"
+                        name="disableSalary"
+                        checked={formData.disableSalary}
+                        onChange={handleChange}
+                      />{" "}
+                      Prefer not to disclose
                     </label>
                   </div>
 
                   <div className="form-group w-100">
                     <label className="form-label">Department:</label>
-                    <select 
-                      name="departmentId" 
-                      className="form-control" 
-                      value={formData.jobDetails.departmentId} 
+                    <select
+                      name="departmentId"
+                      className="form-control"
+                      value={formData.jobDetails.departmentId}
                       onChange={handleDepartmentChange}
                     >
                       <option value="">-- Select Department --</option>
                       {departments.map((dept) => (
-                        <option key={dept.departmentid} value={dept.departmentid}>
+                        <option
+                          key={dept.departmentid}
+                          value={dept.departmentid}
+                        >
                           {dept.departmentName}
                         </option>
                       ))}
@@ -540,47 +667,117 @@ const AddAnnouncement = () => {
 
                   <div className="form-group full-width">
                     <label className="form-label">Total Vacancy:</label>
-                    <input type="number" name="totalVacancy" className="form-control" placeholder="Total Vacancy" value={formData.jobDetails.totalVacancy} onChange={handleChange} />
+                    <input
+                      type="number"
+                      name="totalVacancy"
+                      className="form-control"
+                      placeholder="Total Vacancy"
+                      value={formData.jobDetails.totalVacancy}
+                      onChange={handleChange}
+                    />
                   </div>
                   <div className="form-group full-width">
                     <label className="form-label">Application Deadline:</label>
-                    <input type="datetime-local" name="applicationDeadline" className="form-control" value={formData.jobDetails.applicationDeadline} onChange={handleChange} />
+                    <input
+                      type="datetime-local"
+                      name="applicationDeadline"
+                      className="form-control"
+                      value={formData.jobDetails.applicationDeadline}
+                      onChange={handleChange}
+                    />
+                    {errors.applicationDeadline && (
+                      <small className="text-danger">
+                        {errors.applicationDeadline}
+                      </small>
+                    )}
                   </div>
                   <div className="d-flex justify-content-between w-100 mt-4">
-                    <button type="button" className="btn btn-primary px-4" onClick={handleJobDone}>Finalize Job</button>
-                    <button type="button" className="btn btn-dark px-4" onClick={handleJobDelete}>Clear Job</button>
+                    <button
+                      type="button"
+                      className="btn btn-primary px-4"
+                      onClick={handleJobDone}
+                    >
+                      Finalize Job
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-dark px-4"
+                      onClick={handleJobDelete}
+                    >
+                      Clear Job
+                    </button>
                   </div>
                 </>
               )}
             </div>
           )}
-          
+
           <div className="form-group full-width">
             <label className="form-label">Schedule Time:</label>
-            <input 
-              type="datetime-local" 
-              name="announcementScheduleTime" 
-              className="form-control" 
-              value={formData.announcementScheduleTime} 
-              onChange={handleChange} 
+            <input
+              type="datetime-local"
+              name="announcementScheduleTime"
+              className="form-control"
+              value={formData.announcementScheduleTime}
+              onChange={handleChange}
             />
+            {errors.announcementScheduleTime && (
+              <small className="text-danger">
+                {errors.announcementScheduleTime}
+              </small>
+            )}
           </div>
 
           <div className="form-group">
             <label className="form-label">Send Announcement:</label>
             <div className="form-check">
-              <input type="checkbox" className="form-check-input" name="sendDiscord" checked={formData.announcementSend.sendDiscord} onChange={handleCheckboxChange} />
-              <label className="form-check-label"><FaDiscord /> Send to Discord</label>
+              <input
+                type="checkbox"
+                className="form-check-input"
+                name="sendDiscord"
+                checked={formData.announcementSend.sendDiscord}
+                onChange={handleCheckboxChange}
+              />
+              <label className="form-check-label">
+                <FaDiscord /> Send to Discord
+              </label>
             </div>
             <div className="form-check">
-              <input type="checkbox" className="form-check-input" name="sendEmail" checked={formData.announcementSend.sendEmail} onChange={handleCheckboxChange} />
-              <label className="form-check-label"><FaEnvelope /> Send to Email</label>
+              <input
+                type="checkbox"
+                className="form-check-input"
+                name="sendEmail"
+                checked={formData.announcementSend.sendEmail}
+                onChange={handleCheckboxChange}
+              />
+              <label className="form-check-label">
+                <FaEnvelope /> Send to Email
+              </label>
             </div>
           </div>
           <div className="d-flex justify-content-between w-100 mt-4">
-            <button type="button" className="btn btn-danger px-4" onClick={handleGoBack}>Go Back</button>
-            <button type="submit" className="btn btn-primary px-4" disabled={isLoading}>Submit</button>
-            <button type="button" className="btn btn-dark px-4" onClick={handleClear}>Clear Data</button>
+            <button
+              type="button"
+              className="btn btn-danger px-4"
+              onClick={handleGoBack}
+            >
+              Go Back
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary px-4"
+              disabled={isLoading || Object.keys(errors).length > 0}
+            >
+              Submit
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-dark px-4"
+              onClick={handleClear}
+            >
+              Clear Data
+            </button>
           </div>
         </form>
       </div>

@@ -119,7 +119,9 @@ export const historyData = async (req, res) => {
     // Fetch latest actions from each collection
     const actions = await Promise.all([
       User.findOne({ createdBy: userId }).sort({ createdAt: -1 }).select("createdAt _id"),
-      Leave.findOne({ employeeId: userId }).sort({ createdAt: -1 }).select("createdAt _id leaveName"),
+      Leave.findOne({ employeeId: userId, status: "pending" })
+        .sort({ createdAt: -1 })
+        .select("createdAt _id leaveName status"),    
       EmployeeAppraisalModel.findOne({ createdBy: userId }).sort({ createdAt: -1 }).select("createdAt _id status"),
       concernModel.findOne({ userId }).sort({ createdAt: -1 }).select("createdAt _id subject"),
       Announcement.findOne({ createdBy: userId }).sort({ createdAt: -1 }).select("createdAt _id announcementTitle"),
@@ -333,5 +335,24 @@ export const verifyCaptcha = async (req, res) => {
   } catch (err) {
     console.error("CAPTCHA verification error:", err);
     res.status(500).json({ success: false, message: "Error verifying CAPTCHA" });
+  }
+};
+
+
+export const apiStatus = async (req, res) => {
+  try {
+    const healthResponse = await axios.get("http://localhost:8000/health");
+
+    const apiStatus = healthResponse.data?.status === "ok" ? "API LIVE" : "API OFFLINE";
+    const message = healthResponse.data?.message || "No message from Python API";
+
+    res.status(200).json({ apiStatus, message });
+  } catch (error) {
+    console.error("🔴 API Health Check Failed:", error.message);
+
+    res.status(500).json({
+      apiStatus: "API OFFLINE",
+      message: error.response?.data?.message || error.message || "Health check failed"
+    });
   }
 };

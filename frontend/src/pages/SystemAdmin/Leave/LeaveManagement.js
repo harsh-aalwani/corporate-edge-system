@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import SUTemplate from "../../../components/SuperAdmin/SUTemplate";
+import SUTemplate from "../../../components/SystemAdmin/SYTemplate";
 import Leave from "../../../components/Main/Leave/ManageLeaveAllocation";
 
 const LeaveAllocation = () => {

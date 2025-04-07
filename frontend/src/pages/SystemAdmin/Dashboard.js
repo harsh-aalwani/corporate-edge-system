@@ -39,6 +39,8 @@ const Dashboard = () => {
   const ITEMS_PER_PAGE = 5;
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [history, setHistory] = useState([]);
+  const [apiStatus, setApiStatus] = useState("Checking...");
+
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
   };
@@ -78,6 +80,29 @@ const Dashboard = () => {
   };
   const navigate = useNavigate(); // For navigation
 
+  useEffect(() => {
+    const checkApiHealth = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/manage/apiStatus");
+  
+        if (res.data?.apiStatus) {
+          setApiStatus(res.data.apiStatus);
+          console.log("✅ API Health:", res.data.message);
+        } else {
+          setApiStatus("API OFFLINE");
+          console.warn("⚠️ Invalid API health response");
+        }
+      } catch (error) {
+        setApiStatus("API OFFLINE");
+        console.error("❌ Error checking API health:", error.message);
+      }
+    };
+  
+    checkApiHealth();
+    const interval = setInterval(checkApiHealth, 5000);
+    return () => clearInterval(interval);
+  }, []);
+  
   useEffect(() => {
     let isMounted = true;
     // Fetch All Counts in a Single API Call
@@ -276,22 +301,19 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Pending Requests */}
+          {/* API Health Status */}
           <div className="col-md-3">
             <div
-              className="card shadow-sm p-4 text-center border-danger clickable"
-              onClick={() => navigate("/List")}
-              style={{ cursor: "pointer" }}
+              className={`card shadow-sm p-4 text-center ${
+                apiStatus === "API LIVE" ? "border-success" : "border-danger"
+              }`}
+              style={{ cursor: "default" }}
             >
-              <div className="icon mb-3 text-danger">
+              <div className={`icon mb-3 ${apiStatus === "API LIVE" ? "text-success" : "text-danger"}`}>
                 <Bell size={30} />
               </div>
-              <h5 className="fw-bold mb-2">Pending Requests</h5>
-              <p className="text-muted">
-                {pendingLeaveCount !== null
-                  ? `${pendingLeaveCount} Open Requests`
-                  : "Loading..."}
-              </p>
+              <h5 className="fw-bold mb-2">API Status</h5>
+              <p className="text-muted">{apiStatus}</p>
             </div>
           </div>
         </div>

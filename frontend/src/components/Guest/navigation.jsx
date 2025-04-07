@@ -20,7 +20,11 @@ export const Navigation = () => {
   }, []);
 
   const handleScroll = (id) => {
-    if (["/PublicAnnouncement", "/JobApplicationForm"].includes(location.pathname)) {
+    const isNonHomePage =
+      location.pathname !== "/" &&
+      !location.pathname.startsWith("/#"); // Just in case
+  
+    if (isNonHomePage) {
       navigate("/", { replace: true });
       setTimeout(() => {
         scrollToSection(id);
@@ -29,6 +33,7 @@ export const Navigation = () => {
       scrollToSection(id);
     }
   };
+  
 
   const scrollToSection = (id) => {
     const element = document.querySelector(id);

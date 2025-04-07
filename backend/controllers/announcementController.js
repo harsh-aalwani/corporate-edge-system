@@ -5,6 +5,7 @@ import Candidate from "../models/candidateModel.js";
 import bccLinkTextSendEmail from "../utils/bccLinkTextSendEmail.js";
 import { sendAnnouncement as sendBotAnnouncement } from "../discordbot/bot.js"; // Corrected import
 import sendEmail from "../utils/linkTextSendEmail.js"; 
+import AnnouncementLog from "../models/Log/announcementLogModel.js";
 
 export const createAnnouncement = async (req, res) => {
   try {
@@ -53,30 +54,57 @@ export const createAnnouncement = async (req, res) => {
 
     const isPublic = Boolean(announcementPublic);
 
-    // ✅ Save announcement
+
+    // Generate custom announcementId (e.g., AN1, AN2...)
+    const latestAnnouncement = await Announcement.findOne().sort({ createdAt: -1 });
+    let nextIdNumber = 1;
+    if (latestAnnouncement && latestAnnouncement.announcementId) {
+      const match = latestAnnouncement.announcementId.match(/AN(\d+)/);
+      if (match) {
+        nextIdNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+    const announcementId = `AN${nextIdNumber}`;
+
     const newAnnouncement = new Announcement({
+      announcementId,
       announcementTitle,
       announcementDescription,
       announcementTag,
       announcementPublic: isPublic,
       announcementScheduleTime: scheduleTime.toISOString(),
       announcementSend: { sendDiscord, sendEmail },
-      createdBy,
-      ...(isPublic && {
-        jobPosition,
-        jobType,
-        jobDescription,
-        salaryRange,
-        requiredExperience,
-        skillsRequired: skillsRequired ? skillsRequired.split(",").map(s => s.trim()).filter(s => s) : [],
-        educationQualification,
-        totalVacancy,
-        applicationDeadline,
-        departmentId,
-      }),
+      createdBy: createdBy,
     });
 
-    const savedAnnouncement = await newAnnouncement.save();
+    if (isPublic) {
+      newAnnouncement.jobPosition = jobPosition || null;
+      newAnnouncement.jobType = jobType || null;
+      newAnnouncement.jobDescription = jobDescription || null;
+      newAnnouncement.salaryRange = salaryRange || { currency: null, min: null, max: null };
+      newAnnouncement.requiredExperience = requiredExperience || null;
+      newAnnouncement.skillsRequired = skillsRequired 
+        ? skillsRequired.split(",").map(s => s.trim()).filter(s => s) 
+        : [];
+      newAnnouncement.educationQualification = educationQualification || null;
+      newAnnouncement.totalVacancy = totalVacancy ? Number(totalVacancy) : null;
+      newAnnouncement.applicationDeadline = applicationDeadline 
+        ? new Date(applicationDeadline).toISOString() 
+        : null;
+      newAnnouncement.departmentId = departmentId || null;
+    }
+
+    const saved = await newAnnouncement.save();
+
+    await AnnouncementLog.create({
+      action: "create",
+      announcementId: saved.announcementId,
+      isJobVacancy: isPublic,
+      performedBy: {
+        userId: createdBy,
+        fullName: creatorName
+      }
+    });
 
     // ✅ Format for Discord
     const formattedTitle = `**${announcementTitle.toUpperCase()}**`;
@@ -113,7 +141,7 @@ export const createAnnouncement = async (req, res) => {
       }
     }
 
-    res.status(201).json({ message: "✅ Announcement created successfully!", data: savedAnnouncement });
+    res.status(201).json({ message: "Announcement created successfully!", data: saved });
   } catch (error) {
     console.error("❌ Error creating announcement:", error);
     res.status(500).json({ error: "Error creating announcement" });
@@ -173,11 +201,42 @@ export const deleteAnnouncements = async (req, res) => {
       return res.status(400).json({ message: "No valid announcement IDs provided" });
     }
 
+    // ✅ Retrieve user from session
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: Please log in to delete announcements." });
+    }
+
+    const user = await User.findOne({ userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // ✅ Fetch announcements before deleting to retain info for logging
+    const announcementsToDelete = await Announcement.find({ announcementId: { $in: ids } });
+
+    if (announcementsToDelete.length === 0) {
+      return res.status(404).json({ message: "No announcements found for deletion" });
+    }
+
     const deleteResult = await Announcement.deleteMany({ announcementId: { $in: ids } });
 
     if (deleteResult.deletedCount === 0) {
       return res.status(404).json({ message: "No announcements found for deletion" });
     }
+
+    // ✅ Create log entries for each deleted announcement
+    const logs = announcementsToDelete.map((announcement) => ({
+      action: "delete",
+      announcementId: announcement.announcementId,
+      isJobVacancy: announcement.announcementPublic,
+      performedBy: {
+        userId: user.userId,
+        fullName: user.fullName
+      }
+    }));
+
+    await AnnouncementLog.insertMany(logs);
 
     res.json({ message: "Announcements deleted successfully", deletedCount: deleteResult.deletedCount });
   } catch (error) {
@@ -217,6 +276,29 @@ export const updateAnnouncement = async (req, res) => {
     if (!updatedAnnouncement) {
       return res.status(500).json({ message: "Could not update announcement" });
     }
+
+
+    // ✅ Retrieve user info from session
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: Please log in to update announcements." });
+    }
+
+    const user = await User.findOne({ userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // ✅ Create log entry for update
+    await AnnouncementLog.create({
+      action: "update",
+      announcementId: updatedAnnouncement.announcementId,
+      isJobVacancy: updatedAnnouncement.announcementPublic,
+      performedBy: {
+        userId: user.userId,
+        fullName: user.fullName
+      }
+    });
 
     res.json({ message: "Announcement updated successfully", updatedAnnouncement });
 
@@ -717,5 +799,41 @@ export const getRecentAnnouncements = async (req, res) => {
   } catch (error) {
     console.error("Error fetching announcements:", error);
     res.status(500).json([]); // ✅ Always return an empty array on error
+  }
+};
+
+
+export const getAnnouncementLogs = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      sortField = "timestamp",
+      sortOrder = "desc",
+      action, // optional filter (e.g., 'create', 'update')
+    } = req.query;
+
+    const query = {};
+    if (action) {
+      query.action = action;
+    }
+
+    const totalLogs = await AnnouncementLog.countDocuments(query);
+    const totalPages = Math.ceil(totalLogs / limit);
+
+    const logs = await AnnouncementLog.find(query)
+      .sort({ [sortField]: sortOrder === "asc" ? 1 : -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.status(200).json({
+      logs,
+      currentPage: Number(page),
+      totalPages,
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching announcement logs:", error);
+    res.status(500).json({ error: "Failed to fetch announcement logs" });
   }
 };

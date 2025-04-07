@@ -61,7 +61,7 @@ const OptionModal = ({
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 4;
   const [isFull, setIsFull] = useState(false);
-
+  const today = new Date().toISOString().split("T")[0];
   const fetchAnnouncement = async () => {
     if (!candidates.length || !allUsers.length) return;
 
@@ -102,31 +102,36 @@ const OptionModal = ({
     }
   }, [selectedDepartment, allUsers]);
 
-  // Manage Users & Departments
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSaveEvaluators = async () => {
-    if (!candidates.length) return; // ✅ Ensure candidates exist
+    if (!candidates.length) return;
 
     const announcementIdFromCandidate = candidates[0]?.announcementId;
-    if (!announcementIdFromCandidate) return; // ✅ Prevent saving if ID is missing
+    if (!announcementIdFromCandidate) return;
+
+    setIsSaving(true); // 🔄 Start loader
 
     try {
       await axios.post(
         "http://localhost:5000/api/announcements/updateAssignedEvaluators",
         {
           announcementId: announcementIdFromCandidate,
-          assignedEvaluators: assignedUsers.map((user) => user.userId), // ✅ Send only user IDs
+          assignedEvaluators: assignedUsers.map((user) => user.userId),
         }
       );
 
       enqueueSnackbar("Assigned evaluators saved successfully!", {
         variant: "success",
-      }); // ✅ Success Snackbar
+      });
     } catch (error) {
       console.error("Error saving assigned evaluators:", error);
 
       enqueueSnackbar("Failed to save evaluators. Please try again.", {
         variant: "error",
-      }); // ✅ Error Snackbar
+      });
+    } finally {
+      setIsSaving(false); // ✅ Stop loader
     }
   };
 
@@ -981,7 +986,7 @@ const OptionModal = ({
                     type="date"
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]} // Prevent past dates
+                    min={today} // ✅ Set min date here
                     className="form-control"
                     style={{
                       flex: "1",
@@ -1193,8 +1198,9 @@ const OptionModal = ({
                     <button
                       className="btn btn-success px-4 mt-4"
                       onClick={handleSaveEvaluators}
+                      disabled={isSaving}
                     >
-                      Save
+                      {isSaving ? "Saving..." : "Save"}
                     </button>
                   )}
                 </div>

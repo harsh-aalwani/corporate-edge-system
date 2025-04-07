@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSnackbar } from "notistack"; // Import useSnackbar
 
 // CSS
@@ -15,6 +15,7 @@ import UserActivityHandler from "../../components/Main/UserActivityHandler.js"; 
 const SUTemplate = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
   const navigate = useNavigate();
+  const location = useLocation();
   const [fullName, setFullName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const backToTop = () => {
@@ -25,6 +26,14 @@ const SUTemplate = ({ children }) => {
   };
 
   useSidebarLogic();
+  const isActive = (paths) => {
+    if (Array.isArray(paths)) {
+      // Check if the current location matches any of the paths or starts with any of the paths
+      return paths.some((path) => location.pathname === path || location.pathname.startsWith(path));
+    }
+    // If not an array, just return false
+    return false;
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -67,7 +76,7 @@ const SUTemplate = ({ children }) => {
       <div className="sidebar" data-background-color="dark">
         <div className="sidebar-logo">
           <div className="logo-header" data-background-color="dark">
-            <a href="#" className="logo">
+            <a href="/dashboard" className="logo">
               <img
                 src={logo}
                 alt="navbar brand"
@@ -99,14 +108,14 @@ const SUTemplate = ({ children }) => {
                 </span>
                 <h4 className="text-section">Components</h4>
               </li>
-              <li className="nav-item active">
+              <li className={`nav-item ${isActive(['/dashboard']) ? 'active' : ''}`}>
                 <Link to="/dashboard" className="collapsed">
                   <i className="fas fa-home"></i>
                   <p>Dashboard</p>
                 </Link>
               </li>
 
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/ManageEmployee']) ? 'active' : ''}`}>
                 <Link to="#" data-bs-toggle="collapse">
                   <i className="fas fa-users-cog"></i>
                   <p>Manage Users</p>
@@ -114,14 +123,8 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="sidebarLayouts">
                   <ul className="nav nav-collapse">
-                    {/*                    
-                   
-                    <li>
-                      <Link to="/ManageProjectManager">
-                        <span className="sub-item">Project-Manager</span>
-                      </Link>
-                    </li> */}
-                    <li>
+
+                    <li className={isActive(['/ManageEmployee']) ? 'active' : ''}>
                       <Link to="/ManageEmployee">
                         <span className="sub-item">Employee</span>
                       </Link>
@@ -130,25 +133,7 @@ const SUTemplate = ({ children }) => {
                 </div>
               </li>
 
-              {/* <li className="nav-item">
-                <Link to="/AddProject">
-                  <i className="fas fa-project-diagram"></i>
-                  <p>Add Project</p>
-                </Link>
-              </li> */}
-              {/* <li className="nav-item">
-                <Link to="/ManageProject">
-                  <i className="fas fa-tasks"></i>
-                  <p>Manage Project</p>
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/AddCredits">
-                  <i className="fas fa-coins"></i>
-                  <p>Employee Credits</p>
-                </Link>
-              </li> */}
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/LeaveApply', '/MyLeave', '/WithdrawLeave', '/DmList']) ? 'active' : ''}`}>
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
                   <i className="fas fa-id-card"></i>
                   <p>Leave Management</p>
@@ -156,22 +141,22 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
+                    <li className={isActive(['/LeaveApply']) ? 'active' : ''}>
                       <Link to="/LeaveApply">
                         <span className="sub-item">Leave Apply</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/MyLeave']) ? 'active' : ''}>
                       <Link to="/MyLeave">
                         <span className="sub-item">My Leave</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/WithdrawLeave']) ? 'active' : ''}>
                       <Link to="/WithdrawLeave">
                         <span className="sub-item">Withdraw Leave</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/DmList']) ? 'active' : ''}>
                       <Link to="/DmList">
                         <span className="sub-item">Leave Request</span>
                       </Link>
@@ -179,27 +164,28 @@ const SUTemplate = ({ children }) => {
                   </ul>
                 </div>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/PrivateAnnouncements']) ? 'active' : ''}`}>
                 <Link to="/PrivateAnnouncements">
                   <i className="fas fa-bullhorn"></i>
                   <p>Receive Announcement</p>
                 </Link>
               </li>
 
-              <li className="nav-item">
-                <Link to="/EmployeeAssistances" data-bs-toggle="collapse">
+
+              <li className={`nav-item ${isActive(['/FinalEmployeeConcerns', '/FinalEmployeeAppraisal']) ? 'active' : ''}`}>
+                <Link to="/LeaveManagement" data-bs-toggle="collapse">
                   <i className="fas fa-handshake"></i>
                   <p>Employee Assistance </p>
                   <span className="caret"></span>
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                  <li>
+                    <li className={isActive(['/EmployeeConcerns']) ? 'active' : ''}>
                       <Link to="/EmployeeConcerns">
                         <span className="sub-item">Employee Concern</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/EmployeeAppraisal']) ? 'active' : ''}>
                       <Link to="/EmployeeAppraisal">
                         <span className="sub-item">Employee Appraisal</span>
                       </Link>
@@ -207,14 +193,14 @@ const SUTemplate = ({ children }) => {
                   </ul>
                 </div>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/MyProfile']) ? 'active' : ''}`}>
                 <Link to="/MyProfile">
                   <i className="fas fa-user"></i>
                   <p>My Profile</p>
                 </Link>
               </li>
 
-              
+
             </ul>
           </div>
         </div>
@@ -268,28 +254,26 @@ const SUTemplate = ({ children }) => {
                             >
                               <div className="quick-actions-item">
                                 <div
-                                  className={`avatar-item bg-${
-                                    [
-                                      "danger",
-                                      "warning",
-                                      "info",
-                                      "success",
-                                      "primary",
-                                      "secondary",
-                                    ][index]
-                                  } rounded-circle`}
+                                  className={`avatar-item bg-${[
+                                    "danger",
+                                    "warning",
+                                    "info",
+                                    "success",
+                                    "primary",
+                                    "secondary",
+                                  ][index]
+                                    } rounded-circle`}
                                 >
                                   <i
-                                    className={`fas fa-${
-                                      [
-                                        "calendar-alt",
-                                        "map",
-                                        "file-excel",
-                                        "envelope",
-                                        "file-invoice-dollar",
-                                        "credit-card",
-                                      ][index]
-                                    }`}
+                                    className={`fas fa-${[
+                                      "calendar-alt",
+                                      "map",
+                                      "file-excel",
+                                      "envelope",
+                                      "file-invoice-dollar",
+                                      "credit-card",
+                                    ][index]
+                                      }`}
                                   ></i>
                                 </div>
                                 <span className="text">{action}</span>
@@ -468,34 +452,28 @@ const SUTemplate = ({ children }) => {
                       >
                         Popular Category
                       </h4>
-                      <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
                         {[
-                          "Dashboard",
-                          "System Admin",
-                          "HR manager",
-                          "Department-Manager",
-                          "Project-Manager",
-                          "Employee",
-                          "Manage Department",
-                          "Add Project",
-                          "Manage Project",
-                          "Employee Credits",
-                          "Leave Management",
-                          "Announcement",
-                          "My Profile",
+                          { label: 'Dashboard', path: '/dashboard' },
+                          
+                          { label: 'Employee', path: '/ManageEmployee' },
+                          { label: 'Manage Department', path: '/departments' },
+                          // { label: 'Employee Asistance', path: '/employee-assistance' },
+                          { label: 'Announcement', path: '/announcement' },
+                          // { label: 'Logs', path: '/logs' },
                         ].map((item) => (
-                          <li key={item} style={{ lineHeight: "32px" }}>
-                            <a
-                              href="#"
+                          <li key={item.label} style={{ lineHeight: '32px' }}>
+                            <Link
+                              to={item.path}
                               style={{
-                                fontSize: "15px",
-                                color: "#898b96",
-                                textDecoration: "none",
-                                transition: ".3s",
+                                fontSize: '15px',
+                                color: '#898b96',
+                                textDecoration: 'none',
+                                transition: '.3s',
                               }}
                             >
-                              {item}
-                            </a>
+                              {item.label}
+                            </Link>
                           </li>
                         ))}
                       </ul>
@@ -525,25 +503,25 @@ const SUTemplate = ({ children }) => {
                       >
                         Our Company
                       </h4>
-                      <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
                         {[
-                          "Home",
-                          "Company Policy",
-                          "Organization Chart",
-                          "Public Announcement",
-                          "About Us",
+                          // { label: 'Home', path: '/' },
+                          { label: 'Company Policy', path: '/Policy' },
+                          { label: 'Organization Chart', path: '/OrganizationChart' },
+                          { label: 'Public Announcement', path: '/PublicAnnouncement' },
+                          { label: 'About Us', path: '/#about' },
                         ].map((item) => (
-                          <li key={item} style={{ lineHeight: "32px" }}>
+                          <li key={item.label} style={{ lineHeight: '32px' }}>
                             <a
-                              href="#"
+                              href={item.path}
                               style={{
-                                fontSize: "15px",
-                                color: "#898b96",
-                                textDecoration: "none",
-                                transition: ".3s",
+                                fontSize: '15px',
+                                color: '#898b96',
+                                textDecoration: 'none',
+                                transition: '.3s',
                               }}
                             >
-                              {item}
+                              {item.label}
                             </a>
                           </li>
                         ))}
@@ -554,78 +532,92 @@ const SUTemplate = ({ children }) => {
 
                 {/* Help Support Section */}
                 <div className="col-md-3 col-sm-4">
-                  <div
-                    className="footer-widget"
-                    style={{ marginBottom: "40px" }}
-                  >
-                    <div
-                      className="footer-menu no-padding"
-                      style={{ padding: "0!important" }}
-                    >
-                      <h4
-                        className="footer-widget-title"
-                        style={{
-                          lineHeight: "42px",
-                          marginBottom: "10px",
-                          fontSize: "18px",
-                          fontFamily: "Rubik, sans-serif",
-                          color: "white",
-                        }}
-                      >
-                        Logs
-                      </h4>
-                      <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
-                        {[
-                          "Employee log",
-                          "System Access log",
-                          "Project log",
-                          "Announcment log",
-                          "Leave log",
-                        ].map((item) => (
-                          <li key={item} style={{ lineHeight: "32px" }}>
-                            <a
-                              href="#"
-                              style={{
-                                fontSize: "15px",
-                                color: "#898b96",
-                                textDecoration: "none",
-                                transition: ".3s",
-                              }}
-                            >
-                              {item}
-                            </a>
+                  <div className="footer-widget" style={{ marginBottom: '40px' }}>
+                    <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
+                      <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
+                        {['Home'].map((item) => (
+                          <li key={item} style={{ lineHeight: '32px' }}>
+                            <a href="/" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
-
-                  <div
-                    className="backToTop"
-                    onClick={backToTop}
-                    style={{
-                      lineHeight: "40px",
-                      cursor: "pointer",
-                      width: "40px",
-                      background: "#5867dd",
-                      color: "#fff",
-                      position: "fixed",
-                      boxShadow: "0 4px 4px rgba(0,0,0,.1)",
-                      borderRadius: "50%",
-                      right: "calc((100% - 1200px)/ 2)",
-                      zIndex: 111,
-                      bottom: "80px",
-                      textAlign: "center",
-                    }}
-                  >
-                    <span
-                      className="icon-arrow-up"
-                      style={{
-                        display: "inline-block",
-                      }}
-                    ></span>
-                  </div>
                 </div>
+                {/* <div className="col-md-3 col-sm-4">
+                          <div
+                            className="footer-widget"
+                            style={{ marginBottom: "40px" }}
+                          >
+                            <div
+                              className="footer-menu no-padding"
+                              style={{ padding: "0!important" }}
+                            >
+                              <h4
+                                className="footer-widget-title"
+                                style={{
+                                  lineHeight: "42px",
+                                  marginBottom: "10px",
+                                  fontSize: "18px",
+                                  fontFamily: "Rubik, sans-serif",
+                                  color: "white",
+                                }}
+                              >
+                                Logs
+                              </h4>
+                              <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
+                                {[
+                                  "Announcement log",
+                                  "Candidate log",
+                                  "Leave log",
+                                  "Vacancy log",
+                                  "Project log",
+                                ].map((item) => (
+                                  <li key={item} style={{ lineHeight: "32px" }}>
+                                    <a
+                                      href="#"
+                                      style={{
+                                        fontSize: "15px",
+                                        color: "#898b96",
+                                        textDecoration: "none",
+                                        transition: ".3s",
+                                      }}
+                                    >
+                                      {item}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+        
+                          <div
+                            className="backToTop"
+                            onClick={backToTop}
+                            style={{
+                              lineHeight: "40px",
+                              cursor: "pointer",
+                              width: "40px",
+                              background: "#5867dd",
+                              color: "#fff",
+                              position: "fixed",
+                              boxShadow: "0 4px 4px rgba(0,0,0,.1)",
+                              borderRadius: "50%",
+                              right: "calc((100% - 1200px)/ 2)",
+                              zIndex: 111,
+                              bottom: "80px",
+                              textAlign: "center",
+                            }}
+                          >
+                            <span
+                              className="icon-arrow-up"
+                              style={{
+                                display: "inline-block",
+                              }}
+                            ></span>
+                          </div>
+                        </div> */}
               </div>
             </div>
           </div>

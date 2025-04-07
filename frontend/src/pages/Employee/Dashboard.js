@@ -16,6 +16,7 @@ import {
   ListOrdered,
   X,
   ShieldCheck,
+  ListChecks,
 } from "lucide-react";
 import styled from "styled-components";
 import axios from "axios";
@@ -40,6 +41,7 @@ const Dashboard = () => {
   const ITEMS_PER_PAGE = 5;
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [history, setHistory] = useState([]);
+  const [departmentName, setDepartmentName] = useState("");
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
   };
@@ -172,6 +174,22 @@ const Dashboard = () => {
     });
   };
 
+  useEffect(() => {
+    const fetchDepartment = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/users/getLoggedInUserDepartment", {
+          withCredentials: true // 🔑 important if session is cookie-based
+        });
+        setDepartmentName(res.data?.department || "Unknown");
+      } catch (err) {
+        console.error("Error fetching department:", err);
+        setDepartmentName("Unknown");
+      }
+    };
+  
+    fetchDepartment();
+  }, []);
+  
   const handleDateClick = (date) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0); // Reset to start of the day
@@ -258,17 +276,13 @@ const Dashboard = () => {
 
           {/* Departments */}
           <div className="col-md-3">
-            <div
-              className="card shadow-sm p-4 text-center border-success clickable"
-            >
+            <div className="card shadow-sm p-4 text-center border-success clickable">
               <div className="icon mb-3 text-success">
                 <Briefcase size={30} />
               </div>
               <h5 className="fw-bold mb-2">Departments</h5>
               <p className="text-muted">
-                {departmentCount !== null
-                  ? `${departmentCount} Departments`
-                  : "Loading..."}
+                {departmentName ? departmentName : ""}
               </p>
             </div>
           </div>
@@ -296,15 +310,15 @@ const Dashboard = () => {
           <div className="col-md-3">
             <div
               className="card shadow-sm p-4 text-center border-danger clickable"
+                onClick={() => navigate("/WithdrawLeave")}
+                style={{ cursor: "pointer" }}
             >
               <div className="icon mb-3 text-danger">
-                <Bell size={30} />
+                <ListOrdered size={30} />
               </div>
-              <h5 className="fw-bold mb-2">Pending Requests</h5>
+              <h5 className="fw-bold mb-2">LEAVE HISTORY</h5>
               <p className="text-muted">
-                {pendingLeaveCount !== null
-                  ? `${pendingLeaveCount} Open Requests`
-                  : "Loading..."}
+                Previous Leave History
               </p>
             </div>
           </div>

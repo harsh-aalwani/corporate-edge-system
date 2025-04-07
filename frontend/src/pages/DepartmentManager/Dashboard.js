@@ -37,6 +37,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const ITEMS_PER_PAGE = 5;
+  const [departmentName, setDepartmentName] = useState("");
   const [leaveBalances, setLeaveBalances] = useState([]);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [history, setHistory] = useState([]);
@@ -131,6 +132,22 @@ const Dashboard = () => {
         }
       });
   }, []);
+
+    useEffect(() => {
+      const fetchDepartment = async () => {
+        try {
+          const res = await axios.get("http://localhost:5000/api/users/getLoggedInUserDepartment", {
+            withCredentials: true // 🔑 important if session is cookie-based
+          });
+          setDepartmentName(res.data?.department || "Unknown");
+        } catch (err) {
+          console.error("Error fetching department:", err);
+          setDepartmentName("Unknown");
+        }
+      };
+    
+      fetchDepartment();
+    }, []);
 
   useEffect(() => {
     // Fetch schedules for logged-in user
@@ -252,16 +269,13 @@ const Dashboard = () => {
 
           {/* Departments */}
           <div className="col-md-3">
-            <div
-              className="card shadow-sm p-4 text-center border-success clickable"            >
+            <div className="card shadow-sm p-4 text-center border-success clickable">
               <div className="icon mb-3 text-success">
                 <Briefcase size={30} />
               </div>
               <h5 className="fw-bold mb-2">Departments</h5>
               <p className="text-muted">
-                {departmentCount !== null
-                  ? `${departmentCount} Departments`
-                  : "Loading..."}
+                {departmentName ? departmentName : ""}
               </p>
             </div>
           </div>
@@ -295,11 +309,9 @@ const Dashboard = () => {
               <div className="icon mb-3 text-danger">
                 <Bell size={30} />
               </div>
-              <h5 className="fw-bold mb-2">Pending Requests</h5>
+              <h5 className="fw-bold mb-2">PENDING Requests</h5>
               <p className="text-muted">
-                {pendingLeaveCount !== null
-                  ? `${pendingLeaveCount} Open Requests`
-                  : "Loading..."}
+                Check Leave Request
               </p>
             </div>
           </div>

@@ -139,6 +139,12 @@ import SuUSerLog from "./pages/SuperAdmin/Log/UserLog";
 // import DMUSerLog from './pages/DepartmentManager/Log/UserLog';
 // import EmpUSerLog from './pages/Employee/Log/UserLog';
 
+// Department Log
+import SuDeptLog from './pages/SuperAdmin/Log/DepartmentLog';
+
+// Announcement log
+import SuAnnouncelog from './pages/SuperAdmin/Log/AnnouncementLog';
+
 // Organization Charts
 import SUOrgChart from "./pages/SuperAdmin/SUOrgChart";
 import SYOrgChart from "./pages/SystemAdmin/SYOrgChart";
@@ -531,6 +537,8 @@ const App = () => {
                   switch (userRole) {
                     case "R1":
                       return <SuperAdminEditAnnouncements />;
+                    case "R2":
+                      return <SystemAdminEditAnnouncements />;
                     default:
                       return <Navigate to="/login" />;
                   }
@@ -1116,6 +1124,50 @@ const App = () => {
                   switch (userRole) {
                     case "R3":
                       return <HRAdminEditPolicy />;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          />
+                    <Route
+            path="/DepartmentLog"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SuDeptLog />;
+                    // case 'R2': return <SyUSerLog />;
+                    // case 'R3': return <HRUSerLog/>;
+                    // case 'R4': return <DMUSerLog/>;
+                    // case 'R5': return <EmpUSerLog/>;
+
+                    default:
+                      return <Navigate to="/login" />;
+                  }
+                }}
+              />
+            }
+          /> 
+          <Route
+            path="/Announcementlog"
+            element={
+              <ProtectedRoute
+                requiredRoles={["R1", "R2", "R3", "R4", "R5"]}
+                Component={() => {
+                  const userRole = getUserRoleCookie();
+                  switch (userRole) {
+                    case "R1":
+                      return <SuAnnouncelog/>;
+                    // case 'R2': return <SyUSerLog />;
+                    // case 'R3': return <HRUSerLog/>;
+                    // case 'R4': return <DMUSerLog/>;
+                    // case 'R5': return <EmpUSerLog/>;
 
                     default:
                       return <Navigate to="/login" />;

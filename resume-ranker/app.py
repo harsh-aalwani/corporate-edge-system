@@ -126,6 +126,13 @@ async def rank_candidate(
     
     return evaluation_result
 
+@app.get("/health")
+async def health_check():
+    try:
+        return {"status": "ok", "message": "API is live"}
+    except Exception as e:
+        return {"status": "error", "message": f"Health check failed: {str(e)}"}
+
 # Run FastAPI
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

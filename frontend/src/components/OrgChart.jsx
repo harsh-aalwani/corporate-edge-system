@@ -120,8 +120,8 @@ const OrgChart = () => {
           ...prev,
           superAdmin: true,
         }));
-        
-        setUsers(filteredUsers);
+
+        setUsers(usersData);
         setDepartments(deptsData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -135,7 +135,9 @@ const OrgChart = () => {
 
   return (
     <div style={containerStyle} className="orgchart-container">
-      <h2 className="title text-center mt-2 mb-5" style={{fontSize:"2rem"}}>Organization Chart</h2>
+      <h2 className="title text-center mt-2 mb-5" style={{ fontSize: "2rem" }}>
+        Organization Chart
+      </h2>
       <Tree
         label={renderNode("superAdmin", "Super Admin", "superAdmin")}
         lineWidth={expandedNodes.superAdmin ? "2px" : "0px"}
@@ -228,11 +230,11 @@ const OrgChart = () => {
                           label={renderNode(
                             "hrManager",
                             <div>
-                            <div>{user.fullName}</div>
-                            <div style={{ fontSize: "12px" }}>
-                              {user.userDesignation}
-                            </div>
-                          </div>,
+                              <div>{user.fullName}</div>
+                              <div style={{ fontSize: "12px" }}>
+                                {user.userDesignation}
+                              </div>
+                            </div>,
                             user.userId
                           )}
                         />
@@ -274,7 +276,7 @@ const OrgChart = () => {
                         {users.some(
                           (user) =>
                             user.userRoleid === "R4" &&
-                            user.userDepartment === dept.departmentid
+                            user.userDepartment === dept.departmentName
                         ) ? (
                           expandedNodes[`manager-${dept.departmentid}`] ? (
                             <TreeNode
@@ -299,7 +301,7 @@ const OrgChart = () => {
                                 .filter(
                                   (user) =>
                                     user.userRoleid === "R4" &&
-                                    user.userDepartment === dept.departmentid
+                                    user.userDepartment === dept.departmentName
                                 )
                                 .map((user) => (
                                   <TreeNode
@@ -349,7 +351,7 @@ const OrgChart = () => {
                         {users.some(
                           (user) =>
                             user.userRoleid === "R5" &&
-                            user.userDepartment === dept.departmentid
+                            user.userDepartment === dept.departmentName
                         ) &&
                           (expandedNodes[`employees-${dept.departmentid}`] ? (
                             <TreeNode

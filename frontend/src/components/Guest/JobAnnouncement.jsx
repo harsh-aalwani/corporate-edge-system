@@ -18,6 +18,13 @@ const cardContainer = {
   flexDirection: "column", // Stack elements vertically
 };
 
+const heading2Style = {
+  position: "relative",
+  fontFamily: '"Raleway", sans-serif',
+  fontSize: "2.4rem",
+  textAlign: "center", // 👈 Add this line to center the heading
+};
+
 const contentStyle = {
   padding: "20px",
   background: "linear-gradient(135deg, #f5f7fa, #c3cfe2)",
@@ -97,44 +104,50 @@ const JobAnnouncement = () => {
   
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-      {announcements.length > 0 ? (
-        announcements.map((announcement, index) => (
-          <motion.div
-            key={announcement._id}
-            style={cardContainer}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <div style={contentStyle}>
-              <h2 style={titleStyle}>{announcement.announcementTitle}</h2>
-              <div style={tagContainerStyle}>
-                {announcement.announcementTag?.split(",").map((tag, index) => (
-                  <span
-                    key={index}
-                    style={{
-                      ...tagStyle,
-                      backgroundColor: tagColors[index % tagColors.length],
-                    }}
-                  >
-                    {tag.trim()}
-                  </span>
-                ))}
+    <div style={{ padding: "30px 40px" }}>
+      <h2 style={heading2Style}>Announcements</h2> {/* 👈 Added Heading */}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
+        {announcements.length > 0 ? (
+          announcements.map((announcement, index) => (
+            <motion.div
+              key={announcement._id}
+              style={cardContainer}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <div style={contentStyle}>
+                <h2 style={titleStyle}>{announcement.announcementTitle}</h2>
+                <div style={tagContainerStyle}>
+                  {announcement.announcementTag?.split(",").map((tag, index) => (
+                    <span
+                      key={index}
+                      style={{
+                        ...tagStyle,
+                        backgroundColor: tagColors[index % tagColors.length],
+                      }}
+                    >
+                      {tag.trim()}
+                    </span>
+                  ))}
+                </div>
+                <div style={buttonContainerStyle}>
+                  <button style={buttonStyle} onClick={() => handleLearnMore(announcement)}>
+                    Learn More →
+                  </button>
+                </div>
               </div>
-              <div style={buttonContainerStyle}>
-                <button style={buttonStyle} onClick={() => handleLearnMore(announcement)}>
-                  Learn More →
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))
-      ) : (
-        <p style={{ textAlign: "center", fontSize: "1.2rem", color: "#555" }}>No Announcements Available</p>
-      )}
+            </motion.div>
+          ))
+        ) : (
+          <p style={{ textAlign: "center", fontSize: "1.2rem", color: "#555" }}>
+            No Announcements Available
+          </p>
+        )}
+      </div>
     </div>
   );
+  
 };
 
 export default JobAnnouncement;

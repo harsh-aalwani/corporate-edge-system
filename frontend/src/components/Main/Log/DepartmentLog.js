@@ -3,10 +3,10 @@ import axios from "axios";
 import "../../../assets/css/TableCss/TableManage.css";
 import "../../../assets/css/TableCss/TableIcon.css";
 
-const UserLogs = () => {
+const DepartmentLogs = () => {
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10); // default limit is 10, but user can change it
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [sortField, setSortField] = useState("timestamp");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -20,11 +20,11 @@ const UserLogs = () => {
       if (eventFilter) {
         params.event = eventFilter;
       }
-      const response = await axios.get("http://localhost:5000/api/users/getUserLogs", { params });
+      const response = await axios.get("http://localhost:5000/api/departments/getDepartmentLogs", { params });
       setLogs(response.data.logs);
       setTotalPages(response.data.totalPages);
     } catch (error) {
-      console.error("Error fetching logs:", error);
+      console.error("Error fetching department logs:", error);
     }
     setLoading(false);
   };
@@ -33,9 +33,10 @@ const UserLogs = () => {
   useEffect(() => {
     fetchLogs();
   }, [page, limit, sortField, sortOrder, eventFilter]);
+
   const handleSortFieldChange = (e) => {
     setSortField(e.target.value);
-    setPage(1); // Reset to first page
+    setPage(1);
   };
 
   const handleSortOrderChange = (e) => {
@@ -62,9 +63,9 @@ const UserLogs = () => {
 
   return (
     <div className="page-inner page-box page-start mt-5">
-      <h4 className="fw-bold mb-4">User Login/Logout Logs</h4>
-
-      {/* Grid structure for filter, sort, and limit controls */}
+      <h4 className="fw-bold mb-4">Department Logs</h4>
+      
+      {/* Controls for filtering, sorting, and pagination */}
       <div className="row mb-4">
         <div className="col-3">
           <label htmlFor="eventFilter" className="control-label">Filter by Event:</label>
@@ -75,10 +76,9 @@ const UserLogs = () => {
             className="form-control"
           >
             <option value="">All</option>
-            <option value="Login">Login</option>
-            <option value="Logout">Logout</option>
-            <option value="AddUser">User Added</option>  {/* ✅ Added */}
-            <option value="EditUser">User Edited</option> {/* ✅ Added */}
+            <option value="Add">Add</option>
+            <option value="Edit">Edit</option>
+            <option value="Delete">Delete</option>
           </select>
         </div>
         <div className="col-3">
@@ -114,11 +114,10 @@ const UserLogs = () => {
             value={limit}
             onChange={handleLimitChange}
             className="form-control"
-
           />
         </div>
       </div>
-
+      
       {loading ? (
         <div className="d-flex justify-content-center my-4">
           <div className="spinner-border text-primary" role="status">
@@ -133,6 +132,7 @@ const UserLogs = () => {
                 <th>Log ID</th>
                 <th>User ID</th>
                 <th>User Name</th>
+                <th>Department</th>
                 <th>Event</th>
                 <th>Timestamp</th>
               </tr>
@@ -144,18 +144,19 @@ const UserLogs = () => {
                     <td>{log.logId || log._id}</td>
                     <td>{log.userId}</td>
                     <td>{log.fullName || "N/A"}</td>
+                    <td>{log.departmentName || "N/A"}</td>
                     <td>
-                      {log.event === "Login" && <span className="badge bg-success">Login</span>}
-                      {log.event === "Logout" && <span className="badge bg-danger">Logout</span>}
-                      {log.event === "AddUser" && <span className="badge bg-primary">User Added</span>} {/* ✅ Added */}
-                      {log.event === "EditUser" && <span className="badge bg-warning">User Edited</span>} {/* ✅ Added */}
+                      
+                      {log.event === "Delete" && <span className="badge bg-danger">Delete</span>}
+                      {log.event === "Add" && <span className="badge bg-primary">Add</span>} {/* ✅ Added */}
+                      {log.event === "Edit" && <span className="badge bg-warning">Edit</span>} {/* ✅ Added */}
                     </td>
                     <td>{new Date(log.timestamp).toLocaleString()}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center">
+                  <td colSpan="6" className="text-center">
                     No logs found
                   </td>
                 </tr>
@@ -165,8 +166,7 @@ const UserLogs = () => {
         </div>
       )}
 
-
-      {/* Enhanced Pagination Controls */}
+      {/* Pagination Controls */}
       <div className="pagination-controls mt-4 d-flex justify-content-center align-items-center">
         <button
           className="btn btn-secondary me-2"
@@ -190,4 +190,4 @@ const UserLogs = () => {
   );
 };
 
-export default UserLogs;
+export default DepartmentLogs;

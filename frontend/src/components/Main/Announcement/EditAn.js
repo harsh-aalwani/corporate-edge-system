@@ -315,6 +315,7 @@ const EditAnnouncement = () => {
   
     try {
       const response = await axios.put("http://localhost:5000/api/announcements/update", formDataToSend, {
+        withCredentials:true,
         headers: {
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
@@ -446,7 +447,7 @@ const EditAnnouncement = () => {
   return (
     <div className="container mt-5 px-5">
       <div className="card p-4 page-box">
-        <h4 className="mb-3 text-center">Add Announcement</h4>
+        <h4 className="mb-3 text-center">Edit Announcement</h4>
         <form className="custom-form" onSubmit={handleSubmit}>
           <div className="form-group full-width">
             <label className="form-label">Title:</label>

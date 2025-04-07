@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSnackbar } from "notistack"; // Import useSnackbar
 
 // CSS
@@ -15,6 +15,7 @@ import UserActivityHandler from "../../components/Main/UserActivityHandler.js"; 
 const SUTemplate = ({ children }) => {
   const { enqueueSnackbar } = useSnackbar(); // To show snackbar notifications
   const navigate = useNavigate();
+  const location = useLocation();
   const [fullName, setFullName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const backToTop = () => {
@@ -25,6 +26,15 @@ const SUTemplate = ({ children }) => {
   };
 
   useSidebarLogic();
+
+  const isActive = (paths) => {
+    if (Array.isArray(paths)) {
+      // Check if the current location matches any of the paths or starts with any of the paths
+      return paths.some((path) => location.pathname === path || location.pathname.startsWith(path));
+    }
+    // If not an array, just return false
+    return false;
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -67,7 +77,7 @@ const SUTemplate = ({ children }) => {
       <div className="sidebar" data-background-color="dark">
         <div className="sidebar-logo">
           <div className="logo-header" data-background-color="dark">
-            <a href="#" className="logo">
+            <a href="/dashboard" className="logo">
               <img
                 src={logo}
                 alt="navbar brand"
@@ -99,14 +109,14 @@ const SUTemplate = ({ children }) => {
                 </span>
                 <h4 className="text-section">Components</h4>
               </li>
-              <li className="nav-item active">
+              <li className={`nav-item ${isActive(['/dashboard']) ? 'active' : ''}`}>
                 <Link to="/dashboard" className="collapsed">
                   <i className="fas fa-home"></i>
                   <p>Dashboard</p>
                 </Link>
               </li>
 
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/ManageSystemAdmin', '/ManageHRManager', '/ManageDepartmentManager', '/ManageProjectManager', '/ManageEmployee']) ? 'active' : ''}`}>
                 <Link to="#" data-bs-toggle="collapse">
                   <i className="fas fa-users-cog"></i>
                   <p>Manage Users</p>
@@ -114,17 +124,14 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="sidebarLayouts">
                   <ul className="nav nav-collapse">
-                    <li>
+
+                    <li className={isActive(['/ManageDepartmentManager']) ? 'active' : ''}>
                       <Link to="/ManageDepartmentManager">
                         <span className="sub-item">Department-Manager</span>
                       </Link>
                     </li>
-                    {/* <li>
-                      <Link to="/ManageProjectManager">
-                        <span className="sub-item">Project-Manager</span>
-                      </Link>
-                    </li> */}
-                    <li>
+
+                    <li className={isActive(['/ManageEmployee']) ? 'active' : ''}>
                       <Link to="/ManageEmployee">
                         <span className="sub-item">Employee</span>
                       </Link>
@@ -132,56 +139,50 @@ const SUTemplate = ({ children }) => {
                   </ul>
                 </div>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/Recruitment']) ? 'active' : ''}`}>
                 <Link to="/Recruitment">
                   <i className="fas fa-user-check"></i>
                   <p>Recruitment</p>
                 </Link>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/SetPolicy']) ? 'active' : ''}`}>
                 <Link to="/SetPolicy">
                   <i className="fas fa-user-shield"></i>
                   <p>Set Policy</p>
                 </Link>
               </li>
-              {/* <li className="nav-item">
-                <Link to="/AddDepartment">
-                  <i className="fas fa-clipboard-list"></i>
-                  <p>Add Department</p>
-                </Link>
-              </li> */}
 
-              <li className="nav-item">
-                <Link to="/LeaveManagement" data-bs-toggle="collapse">
+              <li className={`nav-item ${isActive(['/HRleaveList','/LeaveManagement','/LeaveApply', '/MyLeave', '/WithdrawLeave']) ? 'active' : ''}`}>
+                <Link to="/" data-bs-toggle="collapse">
                   <i className="fas fa-id-card"></i>
                   <p>Leave Management</p>
                   <span className="caret"></span>
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
+                    <li className={isActive(['/LeaveManagement']) ? 'active' : ''}>
                       <Link to="/LeaveManagement">
                         <span className="sub-item">Leave Allocation</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/LeaveApply']) ? 'active' : ''}>
                       <Link to="/LeaveApply">
                         <span className="sub-item">Leave Apply</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/MyLeave']) ? 'active' : ''}>
                       <Link to="/MyLeave">
                         <span className="sub-item">My Leave</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/WithdrawLeave']) ? 'active' : ''}>
                       <Link to="/WithdrawLeave">
                         <span className="sub-item">Withdraw Leave</span>
                       </Link>
                     </li>
                     <li></li>
 
-                    <li>
+                    <li className={isActive(['/HRleaveList']) ? 'active' : ''}>
                       <Link to="/HRleaveList">
                         <span className="sub-item">Leave Request</span>
                       </Link>
@@ -189,20 +190,20 @@ const SUTemplate = ({ children }) => {
                   </ul>
                 </div>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/OrganizationChart']) ? 'active' : ''}`}>
                 <Link to="/OrganizationChart">
                   <i className="fas fa-sitemap"></i>
                   <p>Organization Chart</p>
                 </Link>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/PrivateAnnouncements']) ? 'active' : ''}`}>
                 <Link to="/PrivateAnnouncements">
                   <i className="fas fa-bullhorn"></i>
                   <p>Receive Announcement</p>
                 </Link>
               </li>
 
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/FinalEmployeeConcerns', '/FinalEmployeeAppraisal']) ? 'active' : ''}`}>
                 <Link to="/LeaveManagement" data-bs-toggle="collapse">
                   <i className="fas fa-handshake"></i>
                   <p>Employee Assistance </p>
@@ -210,12 +211,12 @@ const SUTemplate = ({ children }) => {
                 </Link>
                 <div className="collapse" id="tables">
                   <ul className="nav nav-collapse">
-                    <li>
+                    <li className={isActive(['/FinalEmployeeConcerns']) ? 'active' : ''}>
                       <Link to="/FinalEmployeeConcerns">
                         <span className="sub-item">Employee Concern</span>
                       </Link>
                     </li>
-                    <li>
+                    <li className={isActive(['/FinalEmployeeAppraisal']) ? 'active' : ''}>
                       <Link to="/FinalEmployeeAppraisal">
                         <span className="sub-item">Employee Appraisal</span>
                       </Link>
@@ -223,49 +224,12 @@ const SUTemplate = ({ children }) => {
                   </ul>
                 </div>
               </li>
-              <li className="nav-item">
+              <li className={`nav-item ${isActive(['/MyProfile']) ? 'active' : ''}`}>
                 <Link to="/MyProfile">
                   <i className="fas fa-user"></i>
                   <p>My Profile</p>
                 </Link>
               </li>
-
-              {/* <li className="nav-item">
-                <Link to="/Logs" data-bs-toggle="collapse">
-                  <i className="fas fa-cogs"></i>
-                  <p>Logs</p>
-                  <span className="caret"></span>
-                </Link>
-                <div className="collapse" id="tables">
-                  <ul className="nav nav-collapse">
-                    <li>
-                      <Link to="/AnnocementLog">
-                        <span className="sub-item">Annoncement log</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/CandidateLog">
-                        <span className="sub-item">Candidate log</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/LeaveLog">
-                        <span className="sub-item">Leave log</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/VacnacyLog">
-                        <span className="sub-item">Vacancy log</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/ProjectLog">
-                        <span className="sub-item">Project log</span>
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </li> */}
             </ul>
           </div>
         </div>
@@ -454,36 +418,26 @@ const SUTemplate = ({ children }) => {
                       >
                         Popular Category
                       </h4>
-                      <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
                         {[
-                          "Dashboard",
-                          "System Admin",
-                          "HR manager",
-                          "Department-Manager",
-                          "Project-Manager",
-                          "Employee",
-                          "Manage Department",
-                          "job Vacancy",
-                          "Recruitment",
-                          "Set Policy",
-                          "Organization Chart",
-                          "Leave Management",
-                          "Employee Asistance",
-                          "Announcement",
-                          "Logs",
+                          { label: 'Dashboard', path: '/dashboard' },
+                          { label: 'Department-Manager', path: '/ManageDepartmentManager' },
+
+                          { label: 'Employee', path: '/ManageEmployee' },
+                          // { label: 'Logs', path: '/logs' },
                         ].map((item) => (
-                          <li key={item} style={{ lineHeight: "32px" }}>
-                            <a
-                              href="#"
+                          <li key={item.label} style={{ lineHeight: '32px' }}>
+                            <Link
+                              to={item.path}
                               style={{
-                                fontSize: "15px",
-                                color: "#898b96",
-                                textDecoration: "none",
-                                transition: ".3s",
+                                fontSize: '15px',
+                                color: '#898b96',
+                                textDecoration: 'none',
+                                transition: '.3s',
                               }}
                             >
-                              {item}
-                            </a>
+                              {item.label}
+                            </Link>
                           </li>
                         ))}
                       </ul>
@@ -513,25 +467,25 @@ const SUTemplate = ({ children }) => {
                       >
                         Our Company
                       </h4>
-                      <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
                         {[
-                          "Home",
-                          "Company Policy",
-                          "Organization Chart",
-                          "Public Announcement",
-                          "About Us",
+                          // { label: 'Home', path: '/' },
+                          { label: 'Company Policy', path: '/Policy' },
+                          { label: 'Organization Chart', path: '/OrganizationChart' },
+                          { label: 'Public Announcement', path: '/PublicAnnouncement' },
+                          { label: 'About Us', path: '/#about' },
                         ].map((item) => (
-                          <li key={item} style={{ lineHeight: "32px" }}>
+                          <li key={item.label} style={{ lineHeight: '32px' }}>
                             <a
-                              href="#"
+                              href={item.path}
                               style={{
-                                fontSize: "15px",
-                                color: "#898b96",
-                                textDecoration: "none",
-                                transition: ".3s",
+                                fontSize: '15px',
+                                color: '#898b96',
+                                textDecoration: 'none',
+                                transition: '.3s',
                               }}
                             >
-                              {item}
+                              {item.label}
                             </a>
                           </li>
                         ))}
@@ -541,6 +495,20 @@ const SUTemplate = ({ children }) => {
                 </div>
 
                 {/* Help Support Section */}
+                <div className="col-md-3 col-sm-4">
+                  <div className="footer-widget" style={{ marginBottom: '40px' }}>
+                    <div className="footer-menu no-padding" style={{ padding: '0!important' }}>
+                      <h4 className="footer-widget-title" style={{ lineHeight: '42px', marginBottom: '10px', fontSize: '18px', fontFamily: 'Rubik, sans-serif', color: 'white' }}>Logs</h4>
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
+                        {['Home'].map((item) => (
+                          <li key={item} style={{ lineHeight: '32px' }}>
+                            <a href="/" style={{ fontSize: '15px', color: '#898b96', textDecoration: 'none', transition: '.3s' }}>{item}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
                 {/* <div className="col-md-3 col-sm-4">
                   <div
                     className="footer-widget"

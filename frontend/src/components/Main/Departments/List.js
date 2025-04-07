@@ -81,6 +81,7 @@ const List = () => {
   const deleteDepartments = async () => {
     try {
       const response = await axios.delete("http://localhost:5000/api/departments/deleteDepartment", {
+        withCredentials:true,
         data: { ids: checkedRows },
       });
       if (response.status === 200) {

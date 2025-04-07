@@ -339,6 +339,27 @@ const Dashboard = () => {
                     <ShieldCheck className="text-primary me-2" size={18} /> 
                     <span className="fw-semibold">User Access Logs</span>
                     </li>
+                    {/* Department Log */}
+                    {/* ✅ Redirect to User Access Logs */}
+                    <li
+                    className="list-group-item d-flex align-items-center py-3 clickable"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate("/DepartmentLog")}
+                    >
+                    <ShieldCheck className="text-primary me-2" size={18} /> 
+                    <span className="fw-semibold">Department Log</span>
+                    </li>
+                    {/* Announcement Log */}
+                    {/* ✅ Redirect to User Access Logs */}
+                    <li
+                    className="list-group-item d-flex align-items-center py-3 clickable"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate("/AnnouncementLog")}
+                    >
+                    <ShieldCheck className="text-primary me-2" size={18} /> 
+                    <span className="fw-semibold">Announcement Log</span>
+                    </li>
+                    {/* <hr/> */}
                 </ul>
             </div>
 

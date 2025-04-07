@@ -1,5 +1,5 @@
 import express from 'express';
-import { getHRManagers,getEmployee,getDeptManager,getSystemAdmin,getAllCounts,historyData,verifyCaptcha,getUserLeaveBalances, toggleSystemAdminStatus,toggleHRManagerStatus,toggleDepartmentManagerStatus,toggleEmployeeStatus} from '../controllers/manageControllers.js';  // Import controller function
+import { getHRManagers,getEmployee,getDeptManager,getSystemAdmin,getAllCounts,apiStatus,historyData,verifyCaptcha,getUserLeaveBalances, toggleSystemAdminStatus,toggleHRManagerStatus,toggleDepartmentManagerStatus,toggleEmployeeStatus} from '../controllers/manageControllers.js';  // Import controller function
 
 const router = express.Router();
 
@@ -26,5 +26,7 @@ router.put('/department-managers/status/:userId', toggleDepartmentManagerStatus)
 router.put('/employees/status/:userId', toggleEmployeeStatus);
 
 router.post('/verify-captcha', verifyCaptcha);
+
+router.get("/apiStatus", apiStatus); 
 
 export default router;

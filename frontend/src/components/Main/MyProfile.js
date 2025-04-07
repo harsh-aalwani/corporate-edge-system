@@ -103,6 +103,7 @@ const MyProfile = () => {
       enqueueSnackbar("An error occurred while updating your profile picture.", { variant: "error" });
     } finally {
       setIsUploading(false);
+      setShowImageModal(false);
     }
   };
   

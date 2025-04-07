@@ -456,7 +456,7 @@ const getConfirmationStatusText = (status) => {
       <div className="d-flex flex-column align-items-center mt-3">
         <div className="d-flex align-items-center">
           <button 
-            className="btn btn-secondary me-2 px-3 py-2 rounded-pill" 
+            className="btn btn-primary me-2 px-3 py-2 rounded-pill" 
             onClick={prevPage} 
             disabled={currentPage === 1}
           >
@@ -466,7 +466,7 @@ const getConfirmationStatusText = (status) => {
           <span className="fw-bold mx-3">Page {currentPage} of {totalPages}</span>
 
           <button 
-            className="btn btn-secondary px-3 py-2 rounded-pill" 
+            className="btn btn-primary px-3 py-2 rounded-pill" 
             onClick={nextPage} 
             disabled={currentPage === totalPages}
           >
