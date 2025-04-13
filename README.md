@@ -8,7 +8,7 @@ This system integrates diverse corporate functions into a customizable platform 
 
 ## 📑 Report
 
-For detailed information about the project, please refer to the [project report](./report/Project Report.pdf).
+For detailed information about the project, please refer to the [project report](https://github.com/harsh-aalwani/corporate-edge-system/tree/main/report).
 
 ---
 
