@@ -1,4 +1,11 @@
 export const PORT = 5000;
+export const mongoURI = "mongodb://127.0.0.1:27017/ces_db";
+export const fastApiUrl = "http://127.0.0.1:8000/rank_candidate/"; 
 export const DISCORD_WEBHOOK_URL = 'webhook';
 export const BOT_TOKEN = 'bot_token';
 export const DISCORD_CHANNEL_ID= 'channel_id';
+export const SESSION_SECRET_KEY='your_session_key';
+export const COOKIE_SECRET_KEY='zwRfwfJxDHWefrwwfewfECWCW';
+export const EMAIL_USER="your_email_id";
+export const EMAIL_PASS="your_token_pass"
+export const CAPTCHA_SECRET = "your_secret_key";

@@ -1,0 +1,1 @@
+export const CAPTCHA_KEY = "your_public_key";
