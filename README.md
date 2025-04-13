@@ -6,14 +6,9 @@ This system integrates diverse corporate functions into a customizable platform 
 
 ---
 
-## 🖼️ Screenshots
+## 📑 Report
 
-> Add screenshots of your Homepage and Dashboard below for better visualization.
-
-```
-![Homepage](./report/screenshots/homepage.png)
-![Dashboard](./report/screenshots/dashboard.png)
-```
+For detailed information about the project, please refer to the [project report](./report/Project Report.pdf).
 
 ---
 
